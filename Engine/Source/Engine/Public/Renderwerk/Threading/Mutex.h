@@ -58,12 +58,12 @@ public:
 	/**
 	 * @brief Locks the mutex manually.
 	 */
-	void Lock() const;
+	void Lock();
 
 	/**
 	 * @brief Unlocks the mutex manually.
 	 */
-	void Unlock() const;
+	void Unlock();
 
 private:
 	FMutex& Mutex;

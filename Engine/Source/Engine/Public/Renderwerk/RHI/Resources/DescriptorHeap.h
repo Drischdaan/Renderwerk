@@ -20,6 +20,8 @@ public:
 	NODISCARD FDescriptorHandle AllocateDescriptor();
 	void FreeDescriptor(const FDescriptorHandle& Handle);
 
+	void CheckForLeaks();
+
 public:
 	NODISCARD TComPtr<ID3D12DescriptorHeap> GetHandle() const { return DescriptorHeap; }
 
@@ -37,5 +39,5 @@ private:
 
 	FMutex Mutex;
 	TVector<FDescriptorHandle> DescriptorHandles;
-	TQueue<uint32> FreeHandleIndices;
+	TDeque<uint32> FreeHandleIndices;
 };

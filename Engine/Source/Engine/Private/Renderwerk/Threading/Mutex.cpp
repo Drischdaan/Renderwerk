@@ -39,15 +39,18 @@ FScopedLock::FScopedLock(FMutex& InMutex)
 
 FScopedLock::~FScopedLock()
 {
-	Unlock();
+	if (bIsLocked)
+		Unlock();
 }
 
-void FScopedLock::Lock() const
+void FScopedLock::Lock()
 {
 	Mutex.Lock();
+	bIsLocked = true;
 }
 
-void FScopedLock::Unlock() const
+void FScopedLock::Unlock()
 {
 	Mutex.Unlock();
+	bIsLocked = false;
 }

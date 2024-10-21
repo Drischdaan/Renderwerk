@@ -29,7 +29,7 @@ FDescriptorHeap::FDescriptorHeap(FDevice* InDevice, const FDescriptorHeapDesc& I
 			CPUHandle,
 			GPUHandle,
 		};
-		FreeHandleIndices.push(Index);
+		FreeHandleIndices.push_back(Index);
 	}
 }
 
@@ -45,7 +45,7 @@ FDescriptorHandle FDescriptorHeap::AllocateDescriptor()
 	FScopedLock Lock(Mutex);
 	DEBUG_D3D_CHECKM(!FreeHandleIndices.empty(), "Descriptor heap is full");
 	FDescriptorHandle Handle = DescriptorHandles.at(FreeHandleIndices.front());
-	FreeHandleIndices.pop();
+	FreeHandleIndices.pop_front();
 	return Handle;
 }
 
@@ -54,5 +54,15 @@ void FDescriptorHeap::FreeDescriptor(const FDescriptorHandle& Handle)
 	RW_PROFILING_MARK_FUNCTION();
 
 	FScopedLock Lock(Mutex);
-	FreeHandleIndices.push(Handle.GetIndex());
+	FreeHandleIndices.push_back(Handle.GetIndex());
+}
+
+void FDescriptorHeap::CheckForLeaks()
+{
+	FScopedLock Lock(Mutex);
+	if (FreeHandleIndices.size() != DescriptorHandles.size())
+	{
+		Lock.Unlock();
+		RW_LOG(LogRHI, Warn, "Descriptor heap has leaked descriptors");
+	}
 }
