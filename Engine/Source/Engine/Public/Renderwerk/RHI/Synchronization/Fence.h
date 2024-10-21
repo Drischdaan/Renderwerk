@@ -5,7 +5,7 @@
 class RENDERWERK_API FFence : public IDeviceChild
 {
 public:
-	FFence(FDevice* InDevice);
+	FFence(FDevice* InDevice, uint64 InitialValue = 0);
 	~FFence() override;
 
 	DELETE_COPY_AND_MOVE(FFence);
@@ -76,6 +76,7 @@ public:
 private:
 	TComPtr<ID3D12Fence1> Fence;
 
+	FMutex Mutex;
 	HANDLE EventHandle;
 	uint64 LastSignaledValue = 0;
 };

@@ -39,7 +39,10 @@ void FJobSubsystem::Initialize()
 		Workers.push_back({
 			.Thread = MakeShared<FThread>(std::move([=](const FThreadContext& Context, void* UserData)
 			{
-				RW_PROFILING_MARK_THREAD(std::format("WorkerThread{}", Index).c_str());
+				RW_PROFILING_MARK_THREAD(std::format("JobThread{}", Index).c_str());
+				{
+					RW_PROFILING_MARK_SCOPE("Startup");
+				}
 				Worker(Index);
 			})),
 			.bIsIdle = true
@@ -73,10 +76,12 @@ void FJobSubsystem::Worker(const uint32 Index)
 
 		FJobFunction Job = std::move(JobQueue.front());
 		JobQueue.pop();
-		Lock.Unlock();
 
+		Lock.Unlock();
 		JobWorker.bIsIdle = false;
-		Job();
+		if (Job)
+			Job();
 		JobWorker.bIsIdle = true;
+		Lock.Lock();
 	}
 }

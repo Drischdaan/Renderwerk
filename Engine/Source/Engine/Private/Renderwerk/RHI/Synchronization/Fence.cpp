@@ -3,12 +3,14 @@
 #include "Renderwerk/RHI/Synchronization/Fence.h"
 #include "Renderwerk/RHI/Commands/CommandQueue.h"
 
-FFence::FFence(FDevice* InDevice)
-	: IDeviceChild(TEXT("Fence"), InDevice)
+FFence::FFence(FDevice* InDevice, const uint64 InitialValue)
+	: IDeviceChild(TEXT("Fence"), InDevice), LastSignaledValue(InitialValue)
 {
-	FD3DResult CreateResult = GetDeviceHandle()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Fence));
+	FD3DResult CreateResult = GetDeviceHandle()->CreateFence(InitialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Fence));
 	D3D_CHECKM(CreateResult, "Failed to create fence");
 	D3D12_SET_NAME(Fence, GetObjectName().c_str());
+
+	EventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
 FFence::~FFence()
@@ -26,6 +28,9 @@ void FFence::SignalCPU()
 
 void FFence::SignalCPU(const uint64 Value)
 {
+	RW_PROFILING_MARK_FUNCTION();
+
+	FScopedLock Lock(Mutex);
 	FD3DResult SignalResult = Fence->Signal(Value);
 	D3D_CHECKM(SignalResult, "Failed to signal fence");
 	LastSignaledValue = Value;
@@ -39,6 +44,9 @@ void FFence::SignalGPU(const TSharedPtr<FCommandQueue>& CommandQueue)
 
 void FFence::SignalGPU(const TSharedPtr<FCommandQueue>& CommandQueue, const uint64 Value)
 {
+	RW_PROFILING_MARK_FUNCTION();
+
+	FScopedLock Lock(Mutex);
 	D3D_CHECKM(CommandQueue->GetHandle()->Signal(Fence.Get(), Value), "Failed to signal fence");
 	LastSignaledValue = Value;
 }
@@ -50,8 +58,13 @@ void FFence::WaitOnCPU(const uint64 Timeout) const
 
 void FFence::WaitOnCPU(const uint64 Value, const uint64 Timeout) const
 {
+	RW_PROFILING_MARK_FUNCTION();
+
 	if (IsCompleted(Value))
+	{
+		RW_PROFILING_MARK_SCOPE("IsAlreadyCompleted");
 		return;
+	}
 	D3D_CHECKM(Fence->SetEventOnCompletion(Value, EventHandle), "Failed to set event on completion")
 	DWORD WaitResult = WaitForSingleObject(EventHandle, static_cast<DWORD>(Timeout));
 	ASSERTM(WaitResult == WAIT_OBJECT_0, "Failed to wait for fence")
@@ -64,6 +77,8 @@ void FFence::WaitOnGPU(const TSharedPtr<FCommandQueue>& CommandQueue) const
 
 void FFence::WaitOnGPU(const TSharedPtr<FCommandQueue>& CommandQueue, const uint64 Value) const
 {
+	RW_PROFILING_MARK_FUNCTION();
+
 	D3D_CHECKM(CommandQueue->GetHandle()->Wait(Fence.Get(), Value), "Failed to wait for fence on gpu")
 }
 

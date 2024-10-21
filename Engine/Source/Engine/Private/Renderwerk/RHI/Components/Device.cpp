@@ -75,9 +75,9 @@ TSharedPtr<FCommandQueue> FDevice::CreateCommandQueue(ECommandListType Type)
 	return MakeShared<FCommandQueue>(this, Type);
 }
 
-TSharedPtr<FFence> FDevice::CreateFence()
+TSharedPtr<FFence> FDevice::CreateFence(uint64 InitialValue)
 {
-	return MakeShared<FFence>(this);
+	return MakeShared<FFence>(this, InitialValue);
 }
 
 const FAdapterCapabilities& FDevice::GetCapabilities() const

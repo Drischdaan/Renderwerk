@@ -3,6 +3,7 @@
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Engine/Subsystem.h"
 #include "Renderwerk/Logging/LogCategory.h"
+#include "Renderwerk/Logging/LogManager.h"
 #include "Renderwerk/Threading/Mutex.h"
 #include "Renderwerk/Threading/Signal.h"
 #include "Renderwerk/Threading/Thread.h"

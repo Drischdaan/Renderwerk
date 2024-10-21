@@ -8,6 +8,8 @@
 
 FRHIBackend::FRHIBackend()
 {
+	RW_PROFILING_MARK_FUNCTION();
+
 	Context = MakeShared<FRHIContext>();
 
 	TVector<TSharedPtr<FAdapter>> Adapters = Context->QueryAdapters();
