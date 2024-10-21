@@ -15,6 +15,8 @@ public:
 
 	NODISCARD TSharedPtr<FFence> CreateFence(uint64 InitialValue = 0);
 
+	NODISCARD TSharedPtr<FDescriptorHeap> CreateDescriptorHeap(const FDescriptorHeapDesc& Desc);
+
 	/**
 	 * @brief Function that forwards the capabilities of the adapter.
 	 */

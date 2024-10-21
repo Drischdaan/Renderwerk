@@ -169,6 +169,20 @@ FString ToString(const ECommandListType& CommandListType)
 	}
 }
 
+FString ToString(const EDescriptorHeapType& DescriptorHeapType)
+{
+	switch (DescriptorHeapType)
+	{
+	ENUM_CASE(EDescriptorHeapType, None);
+	ENUM_CASE(EDescriptorHeapType, ShaderAssetView);
+	ENUM_CASE(EDescriptorHeapType, Sampler);
+	ENUM_CASE(EDescriptorHeapType, RenderTargetView);
+	ENUM_CASE(EDescriptorHeapType, DepthStencilView);
+	default:
+		return TEXT("Unknown");
+	}
+}
+
 IRHIObject::IRHIObject(FString&& InDefaultObjectName)
 	: ObjectName(std::move(InDefaultObjectName))
 {

@@ -15,3 +15,6 @@ class FAdapter;
 class FDevice;
 class FCommandQueue;
 class FFence;
+struct FDescriptorHandle;
+struct FDescriptorHeapDesc;
+class FDescriptorHeap;

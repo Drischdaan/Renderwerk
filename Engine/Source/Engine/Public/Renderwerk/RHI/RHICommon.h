@@ -155,6 +155,15 @@ enum class RENDERWERK_API ECommandListType
 	Copy = D3D12_COMMAND_LIST_TYPE_COPY,
 };
 
+enum class RENDERWERK_API EDescriptorHeapType
+{
+	None = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES,
+	ShaderAssetView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, // Constant Buffer View, Shader Resource View, Unordered Access View
+	Sampler = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+	RenderTargetView = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+	DepthStencilView = D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+};
+
 #pragma endregion
 
 #pragma region ToString Functions
@@ -169,6 +178,7 @@ RENDERWERK_API FString ToString(const ERaytracingTier& RaytracingTier);
 RENDERWERK_API FString ToString(const EVariableShadingRateTier& VariableShadingRateTier);
 RENDERWERK_API FString ToString(const EMeshShaderTier& MeshShaderTier);
 RENDERWERK_API FString ToString(const ECommandListType& CommandListType);
+RENDERWERK_API FString ToString(const EDescriptorHeapType& DescriptorHeapType);
 
 #pragma endregion
 

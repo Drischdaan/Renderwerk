@@ -3,6 +3,7 @@
 #include "Renderwerk/RHI/Components/Device.h"
 #include "Renderwerk/RHI/Commands/CommandQueue.h"
 #include "Renderwerk/RHI/Components/Adapter.h"
+#include "Renderwerk/RHI/Resources/DescriptorHeap.h"
 #include "Renderwerk/RHI/Synchronization/Fence.h"
 
 DECLARE_LOG_CATEGORY(LogD3D12, Trace);
@@ -78,6 +79,11 @@ TSharedPtr<FCommandQueue> FDevice::CreateCommandQueue(ECommandListType Type)
 TSharedPtr<FFence> FDevice::CreateFence(uint64 InitialValue)
 {
 	return MakeShared<FFence>(this, InitialValue);
+}
+
+TSharedPtr<FDescriptorHeap> FDevice::CreateDescriptorHeap(const FDescriptorHeapDesc& Desc)
+{
+	return MakeShared<FDescriptorHeap>(this, Desc);
 }
 
 const FAdapterCapabilities& FDevice::GetCapabilities() const
