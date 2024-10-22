@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Threading/Mutex.h"
+#include "Renderwerk/Platform/Threading/Mutex.h"
 
 /**
  * @brief A signal is a synchronization primitive that allows threads to wait for a notification.

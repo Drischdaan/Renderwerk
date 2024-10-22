@@ -4,9 +4,9 @@
 #include "Renderwerk/Engine/Subsystem.h"
 #include "Renderwerk/Logging/LogCategory.h"
 #include "Renderwerk/Logging/LogManager.h"
-#include "Renderwerk/Threading/Mutex.h"
-#include "Renderwerk/Threading/Signal.h"
-#include "Renderwerk/Threading/Thread.h"
+#include "Renderwerk/Platform/Threading/Mutex.h"
+#include "Renderwerk/Platform/Threading/Signal.h"
+#include "Renderwerk/Platform/Threading/Thread.h"
 
 DECLARE_LOG_CATEGORY(LogJob, Trace);
 

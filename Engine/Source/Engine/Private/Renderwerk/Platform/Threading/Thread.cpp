@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "Renderwerk/Threading/Thread.h"
+#include "Renderwerk/Platform/Threading/Thread.h"
 
 int32 ConvertThreadPriority(const EThreadPriority& InPriority)
 {
