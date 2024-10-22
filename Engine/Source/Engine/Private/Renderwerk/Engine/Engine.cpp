@@ -5,7 +5,7 @@
 #include "Renderwerk/Engine/Engine.h"
 
 #include "Renderwerk/Jobs/JobSubsystem.h"
-#include "Renderwerk/Platform/WindowSubsystem.h"
+#include "Renderwerk/Platform/Windowing/WindowSubsystem.h"
 #include "Renderwerk/Renderer/RendererSubsystem.h"
 #include "Renderwerk/Utils/Timer.h"
 

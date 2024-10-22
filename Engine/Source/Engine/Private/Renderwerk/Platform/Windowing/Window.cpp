@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "Renderwerk/Platform/Window.h"
+#include "Renderwerk/Platform/Windowing/Window.h"
 
 FWindow::FWindow(const WNDCLASSEX& WindowClass, const FWindowDesc& InDescription)
 	: Id(NewGuid()), Description(InDescription)

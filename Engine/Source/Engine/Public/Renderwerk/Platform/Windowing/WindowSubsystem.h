@@ -4,7 +4,7 @@
 #include "Renderwerk/Engine/Subsystem.h"
 #include "Renderwerk/Logging/LogCategory.h"
 #include "Renderwerk/Platform/Guid.h"
-#include "Renderwerk/Platform/Window.h"
+#include "Renderwerk/Platform/Windowing/Window.h"
 
 DECLARE_LOG_CATEGORY(LogWindow, Trace);
 

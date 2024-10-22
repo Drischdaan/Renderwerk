@@ -3,8 +3,8 @@
 #include "Renderwerk/Renderer/RendererSubsystem.h"
 
 #include "Renderwerk/Engine/Engine.h"
-#include "Renderwerk/Platform/Window.h"
-#include "Renderwerk/Platform/WindowSubsystem.h"
+#include "Renderwerk/Platform/Windowing/Window.h"
+#include "Renderwerk/Platform/Windowing/WindowSubsystem.h"
 #include "Renderwerk/RHI/RHIBackend.h"
 #include "Renderwerk/RHI/Components/Device.h"
 #include "Renderwerk/RHI/Components/Swapchain.h"
