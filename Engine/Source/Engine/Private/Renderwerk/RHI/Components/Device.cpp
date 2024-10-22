@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 
 #include "Renderwerk/RHI/Components/Device.h"
+#include "Renderwerk/RHI/Commands/CommandList.h"
 #include "Renderwerk/RHI/Commands/CommandQueue.h"
 #include "Renderwerk/RHI/Components/Adapter.h"
 #include "Renderwerk/RHI/Resources/DescriptorHeap.h"
@@ -74,6 +75,18 @@ FDevice::~FDevice()
 TSharedPtr<FCommandQueue> FDevice::CreateCommandQueue(ECommandListType Type)
 {
 	return MakeShared<FCommandQueue>(this, Type);
+}
+
+TComPtr<ID3D12CommandAllocator> FDevice::CreateCommandAllocator(ECommandListType Type) const
+{
+	TComPtr<ID3D12CommandAllocator> Allocator;
+	D3D_CHECKM(Device->CreateCommandAllocator(static_cast<D3D12_COMMAND_LIST_TYPE>(Type), IID_PPV_ARGS(&Allocator)), "Failed to create command allocator");
+	return Allocator;
+}
+
+TSharedPtr<FCommandList> FDevice::CreateCommandList(ECommandListType Type, ID3D12CommandAllocator* Allocator)
+{
+	return MakeShared<FCommandList>(this, Type, Allocator);
 }
 
 TSharedPtr<FFence> FDevice::CreateFence(uint64 InitialValue)

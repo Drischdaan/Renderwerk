@@ -12,6 +12,8 @@ public:
 
 public:
 	NODISCARD TSharedPtr<FCommandQueue> CreateCommandQueue(ECommandListType Type);
+	NODISCARD TComPtr<ID3D12CommandAllocator> CreateCommandAllocator(ECommandListType Type) const;
+	NODISCARD TSharedPtr<FCommandList> CreateCommandList(ECommandListType Type, ID3D12CommandAllocator* Allocator);
 
 	NODISCARD TSharedPtr<FFence> CreateFence(uint64 InitialValue = 0);
 

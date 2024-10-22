@@ -18,3 +18,4 @@ class FFence;
 struct FDescriptorHandle;
 struct FDescriptorHeapDesc;
 class FDescriptorHeap;
+class FCommandList;
