@@ -1,12 +1,18 @@
 ﻿#pragma once
 
+#include "WindowEvents.h"
+
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Engine/Subsystem.h"
 #include "Renderwerk/Logging/LogCategory.h"
 #include "Renderwerk/Platform/Guid.h"
+#include "Renderwerk/Platform/Threading/BufferedContainer.h"
 #include "Renderwerk/Platform/Windowing/Window.h"
 
 DECLARE_LOG_CATEGORY(LogWindow, Trace);
+
+using FEventPtr = TSharedPtr<IWindowEvent>;
+using FEventQueue = FBufferedContainer<TQueue<FEventPtr>, FEventPtr>;
 
 class RENDERWERK_API FWindowSubsystem : public ISubsystem
 {
@@ -33,6 +39,8 @@ public:
 	NODISCARD WNDCLASSEX GetWindowClass() const { return WindowClass; }
 	NODISCARD FGuid GetMainWindowId() const { return MainWindowId; }
 
+	NODISCARD FEventQueue& GetEventQueue() { return EventQueue; }
+
 private:
 	void Initialize() override;
 	void Shutdown() override;
@@ -49,4 +57,6 @@ private:
 	TMap<FGuid, TSharedPtr<FWindow>> Windows;
 
 	TQueue<FGuid> WindowsToDelete;
+
+	FEventQueue EventQueue;
 };

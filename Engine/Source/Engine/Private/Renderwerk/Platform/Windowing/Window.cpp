@@ -111,6 +111,13 @@ void FWindow::AppendTitle(const FString& Title)
 	SetTitle(State.Title + Title);
 }
 
+void FWindow::SetFullscreenState(const bool8 bState)
+{
+	State.bIsFullscreen = bState;
+	TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+	WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowFullscreenStateChangedEvent>(State.bIsFullscreen));
+}
+
 bool8 FWindow::IsValid() const
 {
 	return WindowHandle && !IsClosed() && !IsDestroyed();
@@ -121,16 +128,16 @@ LRESULT FWindow::WindowProcess(const HWND InWindowHandle, const UINT Message, co
 	switch (Message)
 	{
 	case WM_SIZE:
-		OnSizeMessage(LParam);
+		OnSizeMessage(WParam, LParam);
 		break;
 	case WM_MOVE:
 		OnMoveMessage(LParam);
 		break;
 	case WM_ENTERSIZEMOVE:
-		OnEnterSizeMoveMessage(WParam);
+		OnEnterSizeMoveMessage();
 		break;
 	case WM_EXITSIZEMOVE:
-		OnExitSizeMoveMessage(WParam);
+		OnExitSizeMoveMessage();
 		break;
 	case WM_SHOWWINDOW:
 		OnShowWindowMessage(WParam);
@@ -153,7 +160,7 @@ LRESULT FWindow::WindowProcess(const HWND InWindowHandle, const UINT Message, co
 	return DefWindowProc(InWindowHandle, Message, WParam, LParam);
 }
 
-void FWindow::OnSizeMessage(const LPARAM LParam)
+void FWindow::OnSizeMessage(const WPARAM WParam, const LPARAM LParam)
 {
 	State.ClientWidth = LOWORD(LParam);
 	State.ClientHeight = HIWORD(LParam);
@@ -163,8 +170,12 @@ void FWindow::OnSizeMessage(const LPARAM LParam)
 	State.WindowWidth = WindowRect.right - WindowRect.left;
 	State.WindowHeight = WindowRect.bottom - WindowRect.top;
 
-	OnWindowResized.Execute(State.WindowWidth, State.WindowHeight);
-	OnClientAreaResized.Execute(State.ClientWidth, State.ClientHeight);
+	if (!State.bIsResizing)
+	{
+		TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+		WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowResizedEvent>(State.WindowWidth, State.WindowHeight));
+		WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowClientAreaResizedEvent>(State.ClientWidth, State.ClientHeight));
+	}
 }
 
 void FWindow::OnMoveMessage(const LPARAM LParam)
@@ -173,20 +184,27 @@ void FWindow::OnMoveMessage(const LPARAM LParam)
 	State.PositionY = HIWORD(LParam);
 }
 
-void FWindow::OnEnterSizeMoveMessage(const WPARAM WParam)
+void FWindow::OnEnterSizeMoveMessage()
 {
-	if (WParam == SC_MOVE)
-		State.bIsMoving = true;
-	else if (WParam == SC_SIZE)
-		State.bIsResizing = true;
+	State.bIsMoving = true;
+	State.bIsResizing = true;
 }
 
-void FWindow::OnExitSizeMoveMessage(const WPARAM WParam)
+void FWindow::OnExitSizeMoveMessage()
 {
-	if (WParam == SC_MOVE)
-		State.bIsMoving = false;
-	else if (WParam == SC_SIZE)
-		State.bIsResizing = false;
+	State.bIsMoving = false;
+	State.bIsResizing = false;
+
+	// If the window size has changed, send a resize event
+	if (State.WindowWidth != LastSizeWidth || State.WindowHeight != LastSizeHeight)
+	{
+		LastSizeWidth = State.WindowWidth;
+		LastSizeHeight = State.WindowHeight;
+
+		TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+		WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowResizedEvent>(State.WindowWidth, State.WindowHeight));
+		WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowClientAreaResizedEvent>(State.ClientWidth, State.ClientHeight));
+	}
 }
 
 void FWindow::OnShowWindowMessage(const WPARAM WParam)
@@ -197,13 +215,17 @@ void FWindow::OnShowWindowMessage(const WPARAM WParam)
 void FWindow::OnSetFocusMessage()
 {
 	State.bIsFocused = true;
-	OnFocusChange.Execute(true);
+
+	TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+	WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowFocusChangedEvent>(State.bIsFocused));
 }
 
 void FWindow::OnKillFocusMessage()
 {
 	State.bIsFocused = false;
-	OnFocusChange.Execute(false);
+
+	TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+	WindowSubsystem->GetEventQueue().Emplace(MakeShared<FWindowFocusChangedEvent>(State.bIsFocused));
 }
 
 void FWindow::OnCloseMessage()
@@ -256,6 +278,7 @@ void FWindow::SetWindowedFullscreen(const TComPtr<IDXGISwapChain4>& Swapchain, c
 			PreviousWindowRect.right - PreviousWindowRect.left,
 			PreviousWindowRect.bottom - PreviousWindowRect.top,
 			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
 		ShowWindow(WindowHandle, SW_NORMAL);
 	}
 }

@@ -40,8 +40,8 @@ public:
 		const FAnsiString TypeName = TypeInfo.name();
 		DEBUG_ASSERTM(!Subsystems.contains(TypeName), "Subsystem already registered");
 		TSharedPtr<ISubsystem> Subsystem = MakeShared<TSubsystem>(std::forward<TArguments>(Arguments)...);
-		Subsystem->Initialize();
 		Subsystems.insert({TypeName, Subsystem});
+		Subsystem->Initialize();
 	}
 
 	template <typename TSubsystem, typename = std::is_base_of<ISubsystem, TSubsystem>>

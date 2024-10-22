@@ -24,7 +24,7 @@ void FRendererSubsystem::Initialize()
 
 	OnTickHandle = GetEngine()->GetTickDelegate()->Bind(BIND_MEMBER_ONE(FRendererSubsystem::OnTick));
 
-	TSharedPtr<FWindowSubsystem> WindowSubsystem = GetSubsystem<FWindowSubsystem>();
+	WindowSubsystem = GetSubsystem<FWindowSubsystem>();
 	Window = WindowSubsystem->GetWindow(WindowSubsystem->GetMainWindowId());
 	ASSERTM(Window, "Failed to get main window");
 
@@ -36,23 +36,51 @@ void FRendererSubsystem::Initialize()
 
 	Fence = Backend->GetDevice()->CreateFence();
 
-	OnClientAreaResizedHandle = Window->GetClientAreaResizedDelegate()->Bind(BIND_MEMBER_TWO(FRendererSubsystem::OnClientAreaResized));
-
 	RW_LOG(LogRenderer, Info, "Renderer subsystem initialized");
 }
 
 void FRendererSubsystem::Shutdown()
 {
 	Backend->GetDevice()->WaitForGraphicsQueueIdle();
-	if (Window)
-		Window->GetClientAreaResizedDelegate()->Unbind(OnClientAreaResizedHandle);
+
 	Fence.reset();
 	Swapchain.reset();
 	Backend.reset();
 	GetEngine()->GetTickDelegate()->Unbind(OnTickHandle);
 }
 
-static bool8 bState = false;
+void FRendererSubsystem::ProcessWindowEvents(TQueue<FEventPtr>& Events) const
+{
+	RW_PROFILING_MARK_FUNCTION();
+
+	if (Events.empty())
+		return;
+
+	do
+	{
+		FEventPtr Event = Events.front();
+		Events.pop();
+
+		switch (Event->Type)
+		{
+		case EWindowEventType::ClientAreaResized:
+			{
+				TSharedPtr<FWindowClientAreaResizedEvent> ResizedEvent = CastEvent<FWindowClientAreaResizedEvent>(Event);
+				OnClientAreaResized(ResizedEvent->Width, ResizedEvent->Height);
+			}
+			break;
+		case EWindowEventType::FullscreenStateChanged:
+			{
+				TSharedPtr<FWindowFullscreenStateChangedEvent> FullscreenEvent = CastEvent<FWindowFullscreenStateChangedEvent>(Event);
+				OnFullscreenStateChanged(FullscreenEvent->bState);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	while (!Events.empty());
+}
 
 void FRendererSubsystem::OnTick(MAYBE_UNUSED float64 DeltaTime) const
 {
@@ -60,13 +88,11 @@ void FRendererSubsystem::OnTick(MAYBE_UNUSED float64 DeltaTime) const
 
 	if (!Window || !Window->IsValid())
 		return;
-	Swapchain->Present();
 
-	if (GetAsyncKeyState(VK_ESCAPE) & 1)
-	{
-		bState = !bState;
-		Swapchain->SetWindowedFullscreen(bState);
-	}
+	WindowSubsystem->GetEventQueue().SwapContainers();
+	ProcessWindowEvents(WindowSubsystem->GetEventQueue().GetBackContainer());
+
+	Swapchain->Present();
 }
 
 void FRendererSubsystem::OnClientAreaResized(const int32 Width, const int32 Height) const
@@ -76,4 +102,12 @@ void FRendererSubsystem::OnClientAreaResized(const int32 Width, const int32 Heig
 	Backend->GetDevice()->WaitForGraphicsQueueIdle();
 
 	Swapchain->Resize(Width, Height);
+	RW_LOG(LogRenderer, Trace, "Resized to {}x{}", Width, Height);
+}
+
+void FRendererSubsystem::OnFullscreenStateChanged(const bool8 bState) const
+{
+	Swapchain->SetWindowedFullscreen(bState);
+
+	RW_LOG(LogRenderer, Trace, "Fullscreen state changed to {}", bState);
 }

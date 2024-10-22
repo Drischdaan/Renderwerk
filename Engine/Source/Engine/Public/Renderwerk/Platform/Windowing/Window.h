@@ -3,10 +3,6 @@
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/RHI/RHICommon.h"
 
-DECLARE_MULTICAST_DELEGATE(WindowResized, uint32, uint32);
-DECLARE_MULTICAST_DELEGATE(ClientAreaResized, uint32, uint32);
-DECLARE_MULTICAST_DELEGATE(FocusChange, bool8);
-
 enum class RENDERWERK_API EWindowStyle : uint8
 {
 	Windowed = 0,
@@ -65,6 +61,8 @@ public:
 	void SetTitle(const FString& Title);
 	void AppendTitle(const FString& Title);
 
+	void SetFullscreenState(bool8 bState);
+
 	NODISCARD bool8 IsValid() const;
 
 public:
@@ -75,17 +73,13 @@ public:
 	NODISCARD bool8 IsClosed() const { return bIsClosed; }
 	NODISCARD bool8 IsDestroyed() const { return bIsDestroyed; }
 
-	NODISCARD FWindowResizedDelegate* GetWindowResizedDelegate() { return &OnWindowResized; }
-	NODISCARD FClientAreaResizedDelegate* GetClientAreaResizedDelegate() { return &OnClientAreaResized; }
-	NODISCARD FFocusChangeDelegate* GetFocusChangeDelegate() { return &OnFocusChange; }
-
 private:
 	LRESULT WindowProcess(HWND InWindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
 
-	void OnSizeMessage(LPARAM LParam);
+	void OnSizeMessage(WPARAM WParam, LPARAM LParam);
 	void OnMoveMessage(LPARAM LParam);
-	void OnEnterSizeMoveMessage(WPARAM WParam);
-	void OnExitSizeMoveMessage(WPARAM WParam);
+	void OnEnterSizeMoveMessage();
+	void OnExitSizeMoveMessage();
 	void OnShowWindowMessage(WPARAM WParam);
 	void OnSetFocusMessage();
 	void OnKillFocusMessage();
@@ -110,9 +104,8 @@ private:
 	bool8 bIsClosed = false;
 	bool8 bIsDestroyed = false;
 
-	FWindowResizedDelegate OnWindowResized;
-	FClientAreaResizedDelegate OnClientAreaResized;
-	FFocusChangeDelegate OnFocusChange;
+	uint32 LastSizeWidth = 0;
+	uint32 LastSizeHeight = 0;
 
 	RECT PreviousWindowRect;
 

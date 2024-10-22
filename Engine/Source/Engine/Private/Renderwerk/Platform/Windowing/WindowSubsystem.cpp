@@ -142,4 +142,11 @@ void FWindowSubsystem::OnTick(MAYBE_UNUSED float64 DeltaTime)
 			WindowsToDelete.pop();
 		}
 	}
+
+	// TODO: Remove this. Only for testing purposes
+	if (GetAsyncKeyState(VK_ESCAPE) & 1)
+	{
+		TSharedPtr<FWindow> MainWindow = GetWindow(MainWindowId);
+		MainWindow->SetFullscreenState(!MainWindow->GetState().bIsFullscreen);
+	}
 }
