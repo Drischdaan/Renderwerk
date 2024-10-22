@@ -4,6 +4,7 @@
 #include "Renderwerk/RHI/Commands/CommandList.h"
 #include "Renderwerk/RHI/Commands/CommandQueue.h"
 #include "Renderwerk/RHI/Components/Adapter.h"
+#include "Renderwerk/RHI/Components/Swapchain.h"
 #include "Renderwerk/RHI/Resources/DescriptorHeap.h"
 #include "Renderwerk/RHI/Synchronization/Fence.h"
 
@@ -58,10 +59,21 @@ FDevice::FDevice(FAdapter* Adapter)
 
 	CopyQueue = CreateCommandQueue(ECommandListType::Copy);
 	RHI_SET_NAME(CopyQueue, TEXT("CopyCommandQueue"));
+
+	FDescriptorHeapDesc DescriptorHeapDesc;
+	DescriptorHeapDesc.Type = EDescriptorHeapType::RenderTargetView;
+	DescriptorHeapDesc.Capacity = 10;
+	RenderTargetViewHeap = CreateDescriptorHeap(DescriptorHeapDesc);
 }
 
 FDevice::~FDevice()
 {
+	if (RenderTargetViewHeap)
+		RenderTargetViewHeap->CheckForLeaks();
+	RenderTargetViewHeap.reset();
+	CopyQueue.reset();
+	ComputeQueue.reset();
+	GraphicsQueue.reset();
 #if RW_ENABLE_GPU_DEBUGGING
 	if (InfoQueue)
 	{
@@ -70,6 +82,20 @@ FDevice::~FDevice()
 	InfoQueue.Reset();
 #endif
 	Device.Reset();
+}
+
+void FDevice::WaitForQueueIdle(const TSharedPtr<FCommandQueue>& CommandQueue)
+{
+	RW_PROFILING_MARK_FUNCTION();
+
+	TSharedPtr<FFence> Fence = CreateFence();
+	Fence->SignalGPU(CommandQueue);
+	Fence->WaitOnCPU();
+}
+
+void FDevice::WaitForGraphicsQueueIdle()
+{
+	WaitForQueueIdle(GraphicsQueue);
 }
 
 TSharedPtr<FCommandQueue> FDevice::CreateCommandQueue(ECommandListType Type)
@@ -94,9 +120,14 @@ TSharedPtr<FFence> FDevice::CreateFence(uint64 InitialValue)
 	return MakeShared<FFence>(this, InitialValue);
 }
 
-TSharedPtr<FDescriptorHeap> FDevice::CreateDescriptorHeap(const FDescriptorHeapDesc& Desc)
+TSharedPtr<FDescriptorHeap> FDevice::CreateDescriptorHeap(const FDescriptorHeapDesc& Description)
 {
-	return MakeShared<FDescriptorHeap>(this, Desc);
+	return MakeShared<FDescriptorHeap>(this, Description);
+}
+
+TSharedPtr<FSwapchain> FDevice::CreateSwapchain(const FSwapchainDesc& Description)
+{
+	return MakeShared<FSwapchain>(this, Description);
 }
 
 const FAdapterCapabilities& FDevice::GetCapabilities() const

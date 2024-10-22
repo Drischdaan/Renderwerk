@@ -80,7 +80,7 @@ void FWindowSubsystem::Initialize()
 	WindowClass.lpfnWndProc = WindowProcess;
 	WindowClass.hInstance = GetModuleHandle(nullptr);
 	WindowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	WindowClass.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
+	WindowClass.hbrBackground = nullptr;
 	WindowClass.lpszClassName = TEXT("RenderwerkDefaultWindowClass");
 	ASSERTM(RegisterClassEx(&WindowClass) != 0, "Failed to register window class")
 

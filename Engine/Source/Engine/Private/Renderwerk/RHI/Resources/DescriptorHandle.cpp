@@ -17,3 +17,8 @@ bool8 FDescriptorHandle::IsValid() const
 {
 	return Type != EDescriptorHeapType::None;
 }
+
+bool8 FDescriptorHandle::IsShaderVisible() const
+{
+	return GPUHandle.ptr != 0;
+}

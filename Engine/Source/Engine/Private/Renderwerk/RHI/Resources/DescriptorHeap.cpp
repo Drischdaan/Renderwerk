@@ -6,9 +6,11 @@
 FDescriptorHeap::FDescriptorHeap(FDevice* InDevice, const FDescriptorHeapDesc& InDescription)
 	: IDeviceChild(TEXT("DescriptorHeap"), InDevice), Description(InDescription)
 {
+	bIsShaderVisible = Description.Type == EDescriptorHeapType::ShaderAssetView || Description.Type == EDescriptorHeapType::Sampler;
+
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
 	DescriptorHeapDesc.NodeMask = 0;
-	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	DescriptorHeapDesc.Flags = bIsShaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	DescriptorHeapDesc.Type = static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(Description.Type);
 	DescriptorHeapDesc.NumDescriptors = Description.Capacity;
 	FD3DResult CreateResult = GetDeviceHandle()->CreateDescriptorHeap(&DescriptorHeapDesc, IID_PPV_ARGS(&DescriptorHeap));
@@ -16,13 +18,16 @@ FDescriptorHeap::FDescriptorHeap(FDevice* InDevice, const FDescriptorHeapDesc& I
 
 	DescriptorSize = GetDeviceHandle()->GetDescriptorHandleIncrementSize(DescriptorHeapDesc.Type);
 	CPUStartHandle = DescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	GPUStartHandle = DescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	if (bIsShaderVisible)
+		GPUStartHandle = DescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
 	DescriptorHandles.resize(Description.Capacity);
 	for (uint32 Index = 0; Index < Description.Capacity; ++Index)
 	{
 		CD3DX12_CPU_DESCRIPTOR_HANDLE CPUHandle(CPUStartHandle, Index, DescriptorSize);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GPUHandle(GPUStartHandle, Index, DescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GPUHandle;
+		if (bIsShaderVisible)
+			GPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GPUStartHandle, Index, DescriptorSize);
 		DescriptorHandles[Index] = {
 			Description.Type,
 			Index,

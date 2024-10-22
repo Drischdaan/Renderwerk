@@ -22,11 +22,15 @@ private:
 	void Shutdown() override;
 
 	void OnTick(float64 DeltaTime) const;
+	void OnClientAreaResized(int32 Width, int32 Height) const;
 
 private:
 	FDelegateHandle OnTickHandle;
 
 	TSharedPtr<FWindow> Window;
+	FDelegateHandle OnClientAreaResizedHandle;
 
 	TLocalPtr<FRHIBackend> Backend;
+
+	TSharedPtr<FSwapchain> Swapchain;
 };

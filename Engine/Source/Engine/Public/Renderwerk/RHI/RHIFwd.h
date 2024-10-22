@@ -19,3 +19,5 @@ struct FDescriptorHandle;
 struct FDescriptorHeapDesc;
 class FDescriptorHeap;
 class FCommandList;
+struct FSwapchainDesc;
+class FSwapchain;

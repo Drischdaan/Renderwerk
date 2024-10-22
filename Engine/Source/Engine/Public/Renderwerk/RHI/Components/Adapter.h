@@ -14,7 +14,7 @@ struct RENDERWERK_API FAdapterCapabilities
 class RENDERWERK_API FAdapter : public IRHIObject
 {
 public:
-	FAdapter(const TComPtr<IDXGIAdapter4>& InAdapter, uint32 InIndex);
+	FAdapter(FRHIContext* InContext, const TComPtr<IDXGIAdapter4>& InAdapter, uint32 InIndex);
 	~FAdapter() override;
 
 	DELETE_COPY_AND_MOVE(FAdapter);
@@ -25,6 +25,8 @@ public:
 public:
 	NODISCARD TComPtr<IDXGIAdapter4> GetHandle() const { return Adapter; }
 
+	NODISCARD FRHIContext* GetContext() const { return Context; }
+
 	NODISCARD uint32 GetIndex() const { return Index; }
 	NODISCARD FString GetName() const { return Name; }
 	NODISCARD EAdapterType GetType() const { return Type; }
@@ -33,6 +35,7 @@ public:
 	NODISCARD const FAdapterCapabilities& GetCapabilities() const { return Capabilities; }
 
 private:
+	FRHIContext* Context;
 	TComPtr<IDXGIAdapter4> Adapter;
 	uint32 Index;
 

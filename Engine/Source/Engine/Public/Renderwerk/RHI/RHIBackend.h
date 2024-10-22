@@ -17,6 +17,7 @@ public:
 	DELETE_COPY_AND_MOVE(FRHIBackend);
 
 public:
+	NODISCARD TSharedPtr<FRHIContext> GetContext() const { return Context; }
 	NODISCARD TSharedPtr<FDevice> GetDevice() const { return Device; }
 
 private:

@@ -14,6 +14,7 @@ public:
 
 public:
 	NODISCARD bool8 IsValid() const;
+	NODISCARD bool8 IsShaderVisible() const;
 
 public:
 	NODISCARD EDescriptorHeapType GetType() const { return Type; }

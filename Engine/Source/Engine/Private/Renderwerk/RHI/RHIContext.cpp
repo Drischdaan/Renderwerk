@@ -41,19 +41,19 @@ FRHIContext::~FRHIContext()
 #endif
 }
 
-TVector<TSharedPtr<FAdapter>> FRHIContext::QueryAdapters() const
+TVector<TSharedPtr<FAdapter>> FRHIContext::QueryAdapters()
 {
 	TVector<TSharedPtr<FAdapter>> Adapters;
 	TComPtr<IDXGIAdapter4> TempAdapter;
 	for (uint32 Index = 0; Factory->EnumAdapterByGpuPreference(Index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&TempAdapter)) != DXGI_ERROR_NOT_FOUND; ++Index)
-		Adapters.push_back(MakeShared<FAdapter>(TempAdapter, Index));
+		Adapters.push_back(MakeShared<FAdapter>(this, TempAdapter, Index));
 	return Adapters;
 }
 
-TSharedPtr<FAdapter> FRHIContext::GetAdapterByIndex(uint32 Index) const
+TSharedPtr<FAdapter> FRHIContext::GetAdapterByIndex(uint32 Index)
 {
 	TComPtr<IDXGIAdapter4> TempAdapter;
 	if (Factory->EnumAdapterByGpuPreference(Index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&TempAdapter)) == DXGI_ERROR_NOT_FOUND)
 		return nullptr;
-	return MakeShared<FAdapter>(TempAdapter, Index);
+	return MakeShared<FAdapter>(this, TempAdapter, Index);
 }

@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 
 #include "Renderwerk/RHI/Components/Adapter.h"
+#include "Renderwerk/RHI/RHIContext.h"
 #include "Renderwerk/RHI/Components/Device.h"
 
 EAdapterVendor ConvertVendor(const uint32 VendorId)
@@ -18,8 +19,8 @@ EAdapterVendor ConvertVendor(const uint32 VendorId)
 #undef DEFINE_CASE
 }
 
-FAdapter::FAdapter(const TComPtr<IDXGIAdapter4>& InAdapter, const uint32 InIndex)
-	: IRHIObject(TEXT("Adapter")), Adapter(InAdapter), Index(InIndex)
+FAdapter::FAdapter(FRHIContext* InContext, const TComPtr<IDXGIAdapter4>& InAdapter, const uint32 InIndex)
+	: IRHIObject(TEXT("Adapter")), Context(InContext), Adapter(InAdapter), Index(InIndex)
 {
 	DEBUG_ASSERTM(Adapter, "Adapter is null");
 

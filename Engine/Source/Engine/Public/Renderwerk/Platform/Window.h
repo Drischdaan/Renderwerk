@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/RHI/RHICommon.h"
 
 DECLARE_MULTICAST_DELEGATE(WindowResized, uint32, uint32);
 DECLARE_MULTICAST_DELEGATE(ClientAreaResized, uint32, uint32);
@@ -25,6 +26,7 @@ struct RENDERWERK_API FWindowState
 	bool8 bIsResizing = false;
 	bool8 bIsVisible = false;
 	bool8 bIsFocused = false;
+	bool bIsFullscreen = false;
 };
 
 struct RENDERWERK_API FWindowDesc
@@ -90,13 +92,18 @@ private:
 	void OnCloseMessage();
 	void OnDestroyMessage();
 
+	void SetWindowedFullscreen(const TComPtr<IDXGISwapChain4>& Swapchain, bool8 bState);
+
 private:
+	static uint32 GetStyleFromWindowStyle(EWindowStyle WindowStyle);
 	static uint32 GetStyleFromDescription(const FWindowDesc& Description);
+	static uint32 GetExStyleFromWindowStyle(EWindowStyle WindowStyle);
 	static uint32 GetExtendedStyleFromDescription(const FWindowDesc& Description);
 
 private:
 	FGuid Id;
 	FWindowDesc Description;
+
 	HWND WindowHandle;
 
 	FWindowState State;
@@ -107,5 +114,8 @@ private:
 	FClientAreaResizedDelegate OnClientAreaResized;
 	FFocusChangeDelegate OnFocusChange;
 
+	RECT PreviousWindowRect;
+
 	friend LRESULT CALLBACK WindowProcess(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
+	friend class FSwapchain;
 };

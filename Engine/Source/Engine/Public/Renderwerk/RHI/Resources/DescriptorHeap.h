@@ -28,9 +28,12 @@ public:
 	NODISCARD EDescriptorHeapType GetType() const { return Description.Type; }
 	NODISCARD uint32 GetCapacity() const { return Description.Capacity; }
 
+	NODISCARD bool8 IsShaderVisible() const { return bIsShaderVisible; }
+
 private:
 	FDescriptorHeapDesc Description;
 
+	bool8 bIsShaderVisible;
 	TComPtr<ID3D12DescriptorHeap> DescriptorHeap;
 	uint32 DescriptorSize;
 

@@ -216,30 +216,82 @@ void FWindow::OnDestroyMessage()
 	bIsDestroyed = true;
 }
 
-uint32 FWindow::GetStyleFromDescription(const FWindowDesc& Description)
+void FWindow::SetWindowedFullscreen(const TComPtr<IDXGISwapChain4>& Swapchain, const bool8 bState)
+{
+	State.bIsFullscreen = bState;
+	if (State.bIsFullscreen)
+	{
+		GetWindowRect(WindowHandle, &PreviousWindowRect);
+		SetWindowLong(WindowHandle, GWL_STYLE, GetStyleFromWindowStyle(EWindowStyle::Borderless));
+		SetWindowLong(WindowHandle, GWL_EXSTYLE, GetExStyleFromWindowStyle(EWindowStyle::Borderless));
+
+		TComPtr<IDXGIOutput> Output;
+		FD3DResult OutputResult = Swapchain->GetContainingOutput(&Output);
+		D3D_CHECKM(OutputResult, "Failed to get output from swapchain")
+
+		DXGI_OUTPUT_DESC OutputDesc;
+		FD3DResult OutputDescResult = Output->GetDesc(&OutputDesc);
+		D3D_CHECKM(OutputDescResult, "Failed to get output description")
+
+		SetWindowPos(
+			WindowHandle,
+			HWND_TOPMOST,
+			OutputDesc.DesktopCoordinates.left,
+			OutputDesc.DesktopCoordinates.top,
+			OutputDesc.DesktopCoordinates.right,
+			OutputDesc.DesktopCoordinates.bottom,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+		Maximize();
+	}
+	else
+	{
+		SetWindowLong(WindowHandle, GWL_STYLE, GetStyleFromWindowStyle(EWindowStyle::Windowed));
+		SetWindowLong(WindowHandle, GWL_EXSTYLE, GetExStyleFromWindowStyle(EWindowStyle::Windowed));
+		SetWindowPos(
+			WindowHandle,
+			HWND_NOTOPMOST,
+			PreviousWindowRect.left,
+			PreviousWindowRect.top,
+			PreviousWindowRect.right - PreviousWindowRect.left,
+			PreviousWindowRect.bottom - PreviousWindowRect.top,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+		ShowWindow(WindowHandle, SW_NORMAL);
+	}
+}
+
+uint32 FWindow::GetStyleFromWindowStyle(const EWindowStyle WindowStyle)
 {
 	uint32 Style = 0;
-
-	if (Description.Style == EWindowStyle::Windowed)
+	if (WindowStyle == EWindowStyle::Windowed)
 		Style |= WS_OVERLAPPEDWINDOW;
-	else if (Description.Style == EWindowStyle::Borderless)
-		Style |= WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	else if (WindowStyle == EWindowStyle::Borderless)
+		Style |= WS_POPUP;
+	return Style;
+}
 
+uint32 FWindow::GetStyleFromDescription(const FWindowDesc& Description)
+{
+	uint32 Style = GetStyleFromWindowStyle(Description.Style);
 	if (Description.ParentWindow)
 		Style |= WS_CHILDWINDOW;
-
 	if (Description.bShowAfterCreation)
 		Style |= WS_VISIBLE;
-
 	return Style;
+}
+
+uint32 FWindow::GetExStyleFromWindowStyle(const EWindowStyle WindowStyle)
+{
+	uint32 ExStyle = 0;
+	if (WindowStyle == EWindowStyle::Windowed)
+		ExStyle |= WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW;
+	else if (WindowStyle == EWindowStyle::Borderless)
+		ExStyle |= WS_EX_APPWINDOW;
+	return ExStyle;
 }
 
 uint32 FWindow::GetExtendedStyleFromDescription(const FWindowDesc& Description)
 {
-	uint32 ExStyle = 0;
-	if (Description.Style == EWindowStyle::Windowed)
-		ExStyle |= WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW;
-	else if (Description.Style == EWindowStyle::Borderless)
-		ExStyle |= WS_EX_APPWINDOW;
+	uint32 ExStyle = GetExStyleFromWindowStyle(Description.Style);
 	return ExStyle;
 }
