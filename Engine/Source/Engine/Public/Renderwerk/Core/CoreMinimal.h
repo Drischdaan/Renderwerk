@@ -3,6 +3,8 @@
 #include "Renderwerk/Core/CoreAPI.h"
 #include "Renderwerk/Core/CoreFwd.h"
 #include "Renderwerk/Core/Definitions/CoreDefinitions.h"
+#include "Renderwerk/Core/Delegates/Delegate.h"
+#include "Renderwerk/Core/Delegates/MulticastDelegate.h"
 #include "Renderwerk/Core/Memory/Allocators.h"
 #include "Renderwerk/Core/Memory/Memory.h"
 #include "Renderwerk/Core/Memory/SmartPointers.h"
