@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/DataTypes/String.h"
 #include "Renderwerk/Logging/LogVerbosity.h"
 
 struct RENDERWERK_API ILogCategory
@@ -66,4 +65,4 @@ struct std::hash<ILogCategory>
 	} CategoryName
 
 
-#define DEFINE_LOG_CATEGORY(CategoryName) FLogCategory##CategoryName CategoryName;
+#define DEFINE_LOG_CATEGORY(CategoryName) FLogCategory##CategoryName CategoryName

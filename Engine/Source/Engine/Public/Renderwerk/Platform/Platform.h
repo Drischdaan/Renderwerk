@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Memory/SmartPointers.h"
 
 struct RENDERWERK_API FProcessorInfo
 {
@@ -28,6 +27,8 @@ public:
 public:
 	NODISCARD HMODULE LoadDynamicLibrary(const FString& LibraryPath) const;
 	NODISCARD void UnloadDynamicLibrary(HMODULE LibraryHandle) const;
+
+	NODISCARD uint64 GetCurrentThreadId() const;
 
 public:
 	NODISCARD FProcessorInfo GetProcessorInfo() const { return ProcessorInfo; }

@@ -8,8 +8,9 @@ FSubsystemManager::FSubsystemManager()
 
 FSubsystemManager::~FSubsystemManager()
 {
-	for (TSharedPtr<ISubsystem>& Subsystem : Subsystems | std::views::values)
+	for (auto Iterator = Subsystems.rbegin(); Iterator != Subsystems.rend(); ++Iterator)
 	{
+		TSharedPtr<ISubsystem> Subsystem = Iterator->second;
 		Subsystem->Shutdown();
 		Subsystem.reset();
 	}

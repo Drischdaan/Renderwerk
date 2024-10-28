@@ -1,8 +1,7 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Memory/SmartPointers.h"
-#include "Renderwerk/Threading/Mutex.h"
+#include "Renderwerk/Platform/Threading/Mutex.h"
 
 #include "spdlog/async_logger.h"
 #include "spdlog/spdlog.h"

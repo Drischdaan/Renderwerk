@@ -1,10 +1,8 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/DataTypes/Containers.h"
-#include "Renderwerk/DataTypes/String.h"
+#include "Renderwerk/Core/Memory/SmartPointers.h"
 #include "Renderwerk/Engine/Subsystem.h"
-#include "Renderwerk/Memory/SmartPointers.h"
 
 class RENDERWERK_API FSubsystemManager
 {
@@ -42,8 +40,8 @@ public:
 		const FAnsiString TypeName = TypeInfo.name();
 		DEBUG_ASSERTM(!Subsystems.contains(TypeName), "Subsystem already registered");
 		TSharedPtr<ISubsystem> Subsystem = MakeShared<TSubsystem>(std::forward<TArguments>(Arguments)...);
-		Subsystem->Initialize();
 		Subsystems.insert({TypeName, Subsystem});
+		Subsystem->Initialize();
 	}
 
 	template <typename TSubsystem, typename = std::is_base_of<ISubsystem, TSubsystem>>

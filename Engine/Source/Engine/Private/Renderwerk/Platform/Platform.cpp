@@ -37,13 +37,18 @@ void FPlatform::UnloadDynamicLibrary(const HMODULE LibraryHandle) const
 	FreeLibrary(LibraryHandle);
 }
 
+uint64 FPlatform::GetCurrentThreadId() const
+{
+	return ::GetCurrentThreadId();
+}
+
 FString FPlatform::QueryCPUName()
 {
 	TArray<int32, 4> IntegerBuffer = {};
-	constexpr size_t SizeofIntegerBuffer = sizeof(int) * IntegerBuffer.size();
+	CONSTEXPR size_t SizeofIntegerBuffer = sizeof(int) * IntegerBuffer.size();
 	TArray<FAnsiChar, 64> CharBuffer = {};
 	// https://learn.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
-	constexpr TArray<uint32, 3> FunctionIds = {
+	CONSTEXPR TArray<uint32, 3> FunctionIds = {
 		// Manufacturer
 		0x8000'0002,
 		// Model

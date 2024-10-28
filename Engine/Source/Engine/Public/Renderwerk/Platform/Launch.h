@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/DataTypes/String.h"
-#include "Renderwerk/DataTypes/Types.h"
 
 #if RW_KIND_CONSOLE_APP
 #	ifdef RW_USE_ANSI_STRINGS
@@ -22,6 +20,9 @@
 RENDERWERK_API int32 LaunchRenderwerk();
 
 #define LAUNCH_RENDERWERK() \
+	extern "C" { _declspec(dllexport) extern const uint32 D3D12SDKVersion = 614;} \
+	extern "C" { _declspec(dllexport) extern const FAnsiChar* D3D12SDKPath = ".\\D3D12\\"; } \
+	 \
 	ENTRYPOINT_HEADER \
 	{ \
 		return LaunchRenderwerk(); \
