@@ -19,10 +19,15 @@ public:
 public:
 	CONSTEXPR TSTLAllocator() noexcept = default;
 	CONSTEXPR TSTLAllocator(const TSTLAllocator&) noexcept = default;
-	constexpr TSTLAllocator(TSTLAllocator&&) noexcept = default;
+	CONSTEXPR TSTLAllocator(TSTLAllocator&&) noexcept = default;
 
 	template <typename TOther>
 	CONSTEXPR TSTLAllocator(const TSTLAllocator<TOther>&) noexcept
+	{
+	}
+
+	template <typename TOther>
+	CONSTEXPR TSTLAllocator(const TSTLAllocator<TOther>&&) noexcept
 	{
 	}
 
@@ -31,14 +36,14 @@ public:
 	CONSTEXPR TSTLAllocator& operator=(const TSTLAllocator&) = default;
 	CONSTEXPR TSTLAllocator& operator=(TSTLAllocator&&) = default;
 
-	NODISCARD CONSTEXPR value_type* allocate(const size_type Count)
+	NODISCARD static CONSTEXPR value_type* allocate(const size_type Count)
 	{
-		return static_cast<T*>(FMemory::NewArray<T>(Count));
+		return static_cast<T*>(FMemory::Allocate(Count * sizeof(T)));
 	}
 
-	CONSTEXPR void deallocate(value_type* Pointer, size_type Count) noexcept
+	static CONSTEXPR void deallocate(value_type* Pointer, size_type Count) noexcept
 	{
-		FMemory::DeleteArray(Pointer, Count);
+		FMemory::Free(Pointer);
 	}
 
 	template <typename TOther>
