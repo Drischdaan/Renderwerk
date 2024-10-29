@@ -6,6 +6,7 @@
 DECLARE_LOG_CATEGORY(LogEngine, Trace);
 
 DECLARE_DELEGATE(SignalReceived, uint32);
+DECLARE_MULTICAST_DELEGATE(Tick, float64);
 
 class RENDERWERK_API FEngine
 {
@@ -17,6 +18,9 @@ public:
 
 public:
 	void RequestExit();
+
+public:
+	static FTickDelegate& GetTickDelegate() { return OnTick; }
 
 private:
 	void Run();
@@ -31,6 +35,7 @@ private:
 
 private:
 	static FSignalReceivedDelegate OnSignalReceived;
+	static FTickDelegate OnTick;
 
 private:
 	FMutex RunningMutex;

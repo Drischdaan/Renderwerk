@@ -32,6 +32,7 @@ void FEngine::Run()
 
 	while (bIsRunning)
 	{
+		OnTick.Execute(0.0f);
 		if (GetAsyncKeyState(VK_ESCAPE) & 1)
 			RequestExit();
 	}
