@@ -4,6 +4,8 @@
 
 #include <csignal>
 
+#include "Renderwerk/Engine/SystemManager.h"
+
 DEFINE_LOG_CATEGORY(LogEngine);
 
 TSharedPtr<FEngine> GEngine = nullptr;
@@ -45,6 +47,7 @@ void FEngine::Initialize()
 
 void FEngine::Shutdown()
 {
+	FSystemManger::Clear();
 }
 
 void FEngine::SignalHandler(int32 Signal)

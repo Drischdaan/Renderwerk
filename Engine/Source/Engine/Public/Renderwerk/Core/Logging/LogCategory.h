@@ -61,10 +61,11 @@ struct std::hash<ILogCategory>
 };
 
 #define DECLARE_LOG_CATEGORY(CategoryName, Verbosity) \
-	extern struct FLogCategory##CategoryName : public FLogCategory<ELogVerbosity::Verbosity> \
+	struct RENDERWERK_API FLogCategory##CategoryName : public FLogCategory<ELogVerbosity::Verbosity> \
 	{ \
 		FORCEINLINE FLogCategory##CategoryName() : FLogCategory(#CategoryName) {} \
-	} CategoryName
+	}; \
+	RENDERWERK_API extern FLogCategory##CategoryName CategoryName
 
 
 #define DEFINE_LOG_CATEGORY(CategoryName) FLogCategory##CategoryName CategoryName
