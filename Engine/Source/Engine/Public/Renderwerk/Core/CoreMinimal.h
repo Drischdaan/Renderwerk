@@ -15,5 +15,6 @@
 #include "Renderwerk/Core/Memory/SmartPointers.h"
 #include "Renderwerk/Core/Types/Containers.h"
 #include "Renderwerk/Core/Types/CoreTypes.h"
+#include "Renderwerk/Core/Types/Guid.h"
 #include "Renderwerk/Core/Types/String.h"
 #include "Renderwerk/Core/Types/StringUtils.h"
