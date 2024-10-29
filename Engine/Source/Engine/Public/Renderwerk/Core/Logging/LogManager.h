@@ -48,7 +48,8 @@ private:
 	static ENativeVerbosity ConvertVerbosity(uint32 Verbosity);
 
 private:
-	friend RENDERWERK_API int32 LaunchRenderwerk();
+	friend void InitializeCore();
+	friend void ShutdownCore();
 };
 
 #define RW_LOG(Category, Verbosity, Format, ...) \

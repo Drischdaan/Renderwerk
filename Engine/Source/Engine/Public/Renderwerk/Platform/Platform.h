@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY(LogPlatform, Trace);
+
 struct RENDERWERK_API FProcessorInfo
 {
 	uint32 PhysicalCoreCount = 0;
@@ -13,15 +15,10 @@ struct RENDERWERK_API FProcessorInfo
 struct RENDERWERK_API FMemoryInfo
 {
 	uint64 TotalPhysicalMemory = 0;
-	uint64 FreePhysicalMemory = 0;
 };
 
 class RENDERWERK_API FPlatform
 {
-public:
-	static void Initialize();
-	static void Shutdown();
-
 public:
 	NODISCARD static uint64 GetCurrentThreadId();
 
@@ -30,10 +27,17 @@ public:
 	NODISCARD static const FMemoryInfo& GetMemoryInfo() { return MemoryInfo; }
 
 private:
+	static void Initialize();
+	static void Shutdown();
+
+private:
 	static FString QueryCPUName();
 	static uint32 QueryPhysicalCoreCount();
 
 private:
 	static FProcessorInfo ProcessorInfo;
 	static FMemoryInfo MemoryInfo;
+
+	friend void InitializeCore();
+	friend void ShutdownCore();
 };

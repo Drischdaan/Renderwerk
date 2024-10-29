@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Platform/Platform.h"
 
+DEFINE_LOG_CATEGORY(LogPlatform);
+
 FProcessorInfo FPlatform::ProcessorInfo = {};
 FMemoryInfo FPlatform::MemoryInfo = {};
 
@@ -20,7 +22,17 @@ void FPlatform::Initialize()
 	GlobalMemoryStatusEx(&MemoryStatus);
 
 	MemoryInfo.TotalPhysicalMemory = MemoryStatus.ullTotalPhys;
-	MemoryInfo.FreePhysicalMemory = MemoryStatus.ullAvailPhys;
+
+	RW_LOG(LogPlatform, Info, "Platform initialized");
+
+	RW_LOG(LogPlatform, Info, "CPU Information:");
+	RW_LOG(LogPlatform, Info, "\t- Name: {}", ProcessorInfo.Name);
+	RW_LOG(LogPlatform, Info, "\t- Physical Cores: {}", ProcessorInfo.PhysicalCoreCount);
+	RW_LOG(LogPlatform, Info, "\t- Logical Cores: {}", ProcessorInfo.LogicalCoreCount);
+	RW_LOG(LogPlatform, Info, "\t- x64 Architecture: {}", ProcessorInfo.bIs64Bit);
+
+	RW_LOG(LogPlatform, Info, "Memory Information:");
+	RW_LOG(LogPlatform, Info, "\t- Total Physical Memory: {}", MemoryInfo.TotalPhysicalMemory);
 }
 
 void FPlatform::Shutdown()

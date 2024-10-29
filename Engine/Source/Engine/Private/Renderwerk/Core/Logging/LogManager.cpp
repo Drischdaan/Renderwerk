@@ -38,6 +38,7 @@ void FLogManager::Initialize()
 	spdlog::set_pattern(LOG_PATTERN);
 
 	RegisterLogCategory(LogDefault);
+	RW_LOG(LogDefault, Info, "Log Manager Initialized");
 }
 
 void FLogManager::Shutdown()

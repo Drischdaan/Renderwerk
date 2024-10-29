@@ -18,9 +18,9 @@ public:
 public:
 	void RequestExit();
 
+private:
 	void Run();
 
-private:
 	void Initialize();
 	void Shutdown();
 
@@ -35,6 +35,8 @@ private:
 private:
 	FMutex RunningMutex;
 	bool8 bIsRunning = true;
+
+	friend void GuardedMain();
 };
 
 /**

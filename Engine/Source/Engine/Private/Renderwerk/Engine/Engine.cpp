@@ -43,6 +43,8 @@ void FEngine::Initialize()
 {
 	RegisterInterruptSignals();
 	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
+
+	RW_LOG(LogEngine, Info, "Engine initialized");
 }
 
 void FEngine::Shutdown()
@@ -92,6 +94,7 @@ void FEngine::RegisterInterruptSignals()
 	signal(SIGILL, SignalHandlerFunc);
 	signal(SIGABRT, SignalHandlerFunc);
 	signal(SIGFPE, SignalHandlerFunc);
+	RW_LOG(LogEngine, Info, "Signal handlers registered");
 }
 
 TSharedPtr<FEngine> GetEngine()
