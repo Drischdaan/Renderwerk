@@ -5,6 +5,8 @@
 #include "Renderwerk/Core/Definitions/CoreDefinitions.h"
 #include "Renderwerk/Core/Delegates/Delegate.h"
 #include "Renderwerk/Core/Delegates/MulticastDelegate.h"
+#include "Renderwerk/Core/ExceptionHandling/Assert.h"
+#include "Renderwerk/Core/ExceptionHandling/ExceptionHandling.h"
 #include "Renderwerk/Core/Logging/LogCategory.h"
 #include "Renderwerk/Core/Logging/LogManager.h"
 #include "Renderwerk/Core/Logging/LogVerbosity.h"
