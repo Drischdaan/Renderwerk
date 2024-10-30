@@ -3,6 +3,8 @@
 
 #include "Renderwerk/Platform/Platform.h"
 
+DEFINE_LOG_CATEGORY(LogPlatform);
+
 TSharedPtr<FPlatform> GPlatform = nullptr;
 
 FPlatform::FPlatform()
@@ -20,24 +22,24 @@ FPlatform::FPlatform()
 	GlobalMemoryStatusEx(&MemoryStatus);
 
 	MemoryInfo.TotalPhysicalMemory = MemoryStatus.ullTotalPhys;
-	MemoryInfo.FreePhysicalMemory = MemoryStatus.ullAvailPhys;
+
+	RW_LOG(LogPlatform, Info, "Platform initialized");
+
+	RW_LOG(LogPlatform, Info, "CPU Information:");
+	RW_LOG(LogPlatform, Info, "\t- Name: {}", ProcessorInfo.Name);
+	RW_LOG(LogPlatform, Info, "\t- Physical Cores: {}", ProcessorInfo.PhysicalCoreCount);
+	RW_LOG(LogPlatform, Info, "\t- Logical Cores: {}", ProcessorInfo.LogicalCoreCount);
+	RW_LOG(LogPlatform, Info, "\t- x64 Architecture: {}", ProcessorInfo.bIs64Bit);
+
+	RW_LOG(LogPlatform, Info, "Memory Information:");
+	RW_LOG(LogPlatform, Info, "\t- Total Physical Memory: {}", MemoryInfo.TotalPhysicalMemory);
 }
 
 FPlatform::~FPlatform()
 {
 }
 
-HMODULE FPlatform::LoadDynamicLibrary(const FString& LibraryPath) const
-{
-	return LoadLibrary(LibraryPath.c_str());
-}
-
-void FPlatform::UnloadDynamicLibrary(const HMODULE LibraryHandle) const
-{
-	FreeLibrary(LibraryHandle);
-}
-
-uint64 FPlatform::GetCurrentThreadId() const
+uint64 FPlatform::GetCurrentThreadId()
 {
 	return ::GetCurrentThreadId();
 }
@@ -90,11 +92,12 @@ uint32 FPlatform::QueryPhysicalCoreCount()
 		++PhysicalCoreCount;
 	}
 	while (Offset < BufferSize);
+	FMemory::DeleteArray(Buffer, BufferSize);
 	return PhysicalCoreCount;
 }
 
 TSharedPtr<FPlatform> GetPlatform()
 {
-	DEBUG_ASSERTM(GPlatform, "Global platform pointer is null");
+	DEBUG_ASSERTM(GPlatform != nullptr, "Global platform pointer is invalid.");
 	return GPlatform;
 }

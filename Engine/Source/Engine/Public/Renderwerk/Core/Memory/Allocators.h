@@ -1,39 +1,47 @@
 ﻿#pragma once
-// ReSharper disable CppMemberFunctionMayBeStatic
-// ReSharper disable CppClangTidyCppcoreguidelinesSpecialMemberFunctions
 
-#include "Renderwerk/Core/Compiler.h"
+#include "Renderwerk/Core/CoreAPI.h"
 #include "Renderwerk/Core/Memory/Memory.h"
-#include "Renderwerk/Core/Types/Types.h"
+#include "Renderwerk/Core/Types/CoreTypes.h"
 
-#include <cstddef>
-
+/**
+ * @brief Standard library compatible allocator. This allocator is used to allocate memory for STL containers.
+ * @tparam T Type of the elements to allocate.
+ */
 template <typename T>
-class FSTLAllocator
+class RENDERWERK_API TSTLAllocator
 {
 public:
 	using value_type = T;
 	using size_type = size64;
 	using difference_type = std::ptrdiff_t;
 
-	CONSTEXPR FSTLAllocator() noexcept = default;
-	CONSTEXPR FSTLAllocator(const FSTLAllocator&) noexcept = default;
+public:
+	CONSTEXPR TSTLAllocator() noexcept = default;
+	CONSTEXPR TSTLAllocator(const TSTLAllocator&) noexcept = default;
+	CONSTEXPR TSTLAllocator(TSTLAllocator&&) noexcept = default;
 
 	template <typename TOther>
-	CONSTEXPR FSTLAllocator(const FSTLAllocator<TOther>&) noexcept
+	CONSTEXPR TSTLAllocator(const TSTLAllocator<TOther>&) noexcept
 	{
 	}
 
-	CONSTEXPR ~FSTLAllocator() = default;
-
-	CONSTEXPR FSTLAllocator& operator=(const FSTLAllocator&) = default;
-
-	NODISCARD CONSTEXPR value_type* allocate(const size_type Count)
+	template <typename TOther>
+	CONSTEXPR TSTLAllocator(const TSTLAllocator<TOther>&&) noexcept
 	{
-		return static_cast<T*>(FMemory::Allocate(sizeof(T) * Count));
 	}
 
-	CONSTEXPR void deallocate(value_type* Pointer, size_type Count) noexcept
+	CONSTEXPR ~TSTLAllocator() = default;
+
+	CONSTEXPR TSTLAllocator& operator=(const TSTLAllocator&) = default;
+	CONSTEXPR TSTLAllocator& operator=(TSTLAllocator&&) = default;
+
+	NODISCARD static CONSTEXPR value_type* allocate(const size_type Count)
+	{
+		return static_cast<T*>(FMemory::Allocate(Count * sizeof(T)));
+	}
+
+	static CONSTEXPR void deallocate(value_type* Pointer, size_type Count) noexcept
 	{
 		FMemory::Free(Pointer);
 	}
@@ -41,14 +49,12 @@ public:
 	template <typename TOther>
 	struct rebind
 	{
-		using other = FSTLAllocator<TOther>;
+		using other = TSTLAllocator<TOther>;
 	};
-
-private:
 };
 
 template <class T, class TOther>
-bool operator==(const FSTLAllocator<T>&, const FSTLAllocator<TOther>&) { return true; }
+bool operator==(const TSTLAllocator<T>&, const TSTLAllocator<TOther>&) { return true; }
 
 template <class T, class TOther>
-bool operator!=(const FSTLAllocator<T>&, const FSTLAllocator<TOther>&) { return false; }
+bool operator!=(const TSTLAllocator<T>&, const TSTLAllocator<TOther>&) { return false; }

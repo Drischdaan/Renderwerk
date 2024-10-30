@@ -1,7 +1,6 @@
 ﻿#include "pch.h"
 
 #include "Renderwerk/Core/Types/StringUtils.h"
-#include "Renderwerk/Core/Types/String.h"
 
 #include <WinString.h>
 

@@ -1,17 +1,18 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Platform/Threading/Mutex.h"
 
 #define BUFFERED_CONTAINER_SIZE FORWARD(2)
 
 template <typename TContainer, typename TItem>
-class FBufferedContainer
+class TBufferedContainer
 {
 public:
-	FBufferedContainer() = default;
-	~FBufferedContainer() = default;
+	TBufferedContainer() = default;
+	~TBufferedContainer() = default;
 
-	DEFINE_DEFAULT_COPY_AND_MOVE(FBufferedContainer);
+	DEFINE_DEFAULT_COPY_AND_MOVE(TBufferedContainer);
 
 public:
 	void Emplace(const TItem& Item)

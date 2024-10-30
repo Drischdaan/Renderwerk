@@ -1,17 +1,17 @@
 ﻿#include "pch.h"
 
-#include <csignal>
-
 #include "Renderwerk/Engine/Engine.h"
 
-#include "Renderwerk/Jobs/JobSubsystem.h"
-#include "Renderwerk/Platform/Windowing/WindowSubsystem.h"
-#include "Renderwerk/Renderer/RendererSubsystem.h"
-#include "Renderwerk/Utils/Timer.h"
+#include <csignal>
+
+#include "Renderwerk/Engine/SystemManager.h"
 
 DEFINE_LOG_CATEGORY(LogEngine);
 
 TSharedPtr<FEngine> GEngine = nullptr;
+
+FSignalReceivedDelegate FEngine::OnSignalReceived;
+FTickDelegate FEngine::OnTick;
 
 FEngine::FEngine()
 {
@@ -23,25 +23,22 @@ FEngine::~FEngine()
 
 void FEngine::RequestExit()
 {
-	RW_LOG(LogEngine, Warn, "Engine exit requested");
+	FScopedLock Lock(RunningMutex);
 	bIsRunning = false;
+	RW_LOG(LogEngine, Warn, "Exit was requested");
 }
 
 void FEngine::Run()
 {
 	Initialize();
 
-	FTimer Timer;
 	while (bIsRunning)
 	{
-		RW_PROFILING_MARK_FRAME_START();
-		Timer.Start();
-		{
-			RW_PROFILING_MARK_SCOPE("OnTick");
-			OnTick.Execute(Timer.GetElapsedTime());
-		}
-		Timer.Stop();
-		RW_PROFILING_MARK_FRAME_END();
+		PROFILER_MARK_FRAME_START();
+		OnTick.Execute(0.0f);
+		if (GetAsyncKeyState(VK_ESCAPE) & 1)
+			RequestExit();
+		PROFILER_MARK_FRAME_START();
 	}
 
 	Shutdown();
@@ -49,24 +46,21 @@ void FEngine::Run()
 
 void FEngine::Initialize()
 {
-	RW_PROFILING_MARK_FUNCTION();
-
+	PROFILER_MARK_FUNCTION();
 	RegisterInterruptSignals();
 	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
 
-	SubsystemManager = MakeShared<FSubsystemManager>();
-	SubsystemManager->Register<FJobSubsystem>();
-	SubsystemManager->Register<FWindowSubsystem>();
-	SubsystemManager->Register<FRendererSubsystem>();
+	SystemManager = MakeShared<FSystemManger>();
+
+	RW_LOG(LogEngine, Info, "Engine initialized");
 }
 
 void FEngine::Shutdown()
 {
-	SubsystemManager.reset();
-	OnSignalReceived.Unbind();
+	SystemManager.reset();
 }
 
-void FEngine::SignalHandler(int Signal)
+void FEngine::SignalHandler(int32 Signal)
 {
 	switch (Signal)
 	{
@@ -92,8 +86,7 @@ void FEngine::SignalHandler(int Signal)
 		RW_LOG(LogEngine, Warn, "Signal {} received", Signal);
 		break;
 	}
-	RW_LOG(LogEngine, Warn, "Shutting down the engine");
-	bIsRunning = false;
+	RequestExit();
 }
 
 void FEngine::RegisterInterruptSignals()
@@ -109,10 +102,11 @@ void FEngine::RegisterInterruptSignals()
 	signal(SIGILL, SignalHandlerFunc);
 	signal(SIGABRT, SignalHandlerFunc);
 	signal(SIGFPE, SignalHandlerFunc);
+	RW_LOG(LogEngine, Info, "Signal handlers registered");
 }
 
 TSharedPtr<FEngine> GetEngine()
 {
-	DEBUG_ASSERTM(GEngine, "Global engine pointer is null");
+	DEBUG_ASSERTM(GEngine != nullptr, "Global engine pointer is invalid.");
 	return GEngine;
 }

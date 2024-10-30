@@ -1,23 +1,16 @@
 ﻿#pragma once
 
-#include <type_traits>
-
-#include "Renderwerk/Core/Compiler.h"
 #include "Renderwerk/Core/CoreAPI.h"
-#include "Renderwerk/Core/CoreDefinitions.h"
-#include "Renderwerk/Core/Types/Types.h"
-
-#if RW_ENABLE_MEMORY_TRACKING
-
-struct RENDERWERK_API FMemoryStatistics
-{
-	size64 CurrentUsage = 0;
-};
-
-#endif
+#include "Renderwerk/Core/Definitions/CompilerDefinitions.h"
+#include "Renderwerk/Core/Types/CoreTypes.h"
 
 #define RW_DEFAULT_MEMORY_ALIGNMENT FORWARD(16)
 
+/**
+ * Memory management utility class. Provides static methods for allocating, freeing, reallocating, and copying memory.
+ * Also provides methods for creating and destroying objects and arrays.
+ * @note All memory allocations are aligned to a specified alignment.
+ */
 class RENDERWERK_API FMemory
 {
 public:
@@ -27,9 +20,16 @@ public:
 	NODISCARD static void* Reallocate(void* Memory, size64 Size, size64 Alignment = RW_DEFAULT_MEMORY_ALIGNMENT);
 	static void Copy(void* Destination, const void* Source, size64 Size);
 
-	NODISCARD static size64 GetSizeOfMemory(const void* Memory);
-	NODISCARD static size64 CalculateAlignedSize(size64 Size, size64 Alignment);
+public:
+	/**
+	 * Returns the size of the memory block pointed to by the specified pointer.
+	 * @param Memory Pointer to the memory block. This memory must have been allocated by this class.
+	 * @return Size of the memory block.
+	 */
+	NODISCARD static size64 GetSizeOf(const void* Memory);
+	NODISCARD static size64 CalculateAlignedSize(size64 Size, size64 Alignment = RW_DEFAULT_MEMORY_ALIGNMENT);
 
+public:
 	template <typename T, typename... TArguments, typename = std::enable_if_t<std::is_constructible_v<T, TArguments...>>>
 	NODISCARD static T* New(TArguments&&... Arguments)
 	{
@@ -74,14 +74,4 @@ public:
 			std::destroy_at(Array + Index);
 		Free(Array);
 	}
-
-public:
-#if RW_ENABLE_MEMORY_TRACKING
-	NODISCARD static FMemoryStatistics* GetMemoryStatistics();
-#endif
-
-private:
-#if RW_ENABLE_MEMORY_TRACKING
-	static FMemoryStatistics* MemoryStatistics;
-#endif
 };

@@ -2,18 +2,19 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY(LogPlatform, Trace);
+
 struct RENDERWERK_API FProcessorInfo
 {
 	uint32 PhysicalCoreCount = 0;
 	uint32 LogicalCoreCount = 0;
 	bool bIs64Bit = false;
-	FString Name = TEXT("");
+	FString Name;
 };
 
 struct RENDERWERK_API FMemoryInfo
 {
 	uint64 TotalPhysicalMemory = 0;
-	uint64 FreePhysicalMemory = 0;
 };
 
 class RENDERWERK_API FPlatform
@@ -25,22 +26,22 @@ public:
 	DELETE_COPY_AND_MOVE(FPlatform);
 
 public:
-	NODISCARD HMODULE LoadDynamicLibrary(const FString& LibraryPath) const;
-	NODISCARD void UnloadDynamicLibrary(HMODULE LibraryHandle) const;
-
-	NODISCARD uint64 GetCurrentThreadId() const;
+	NODISCARD uint64 GetCurrentThreadId();
 
 public:
-	NODISCARD FProcessorInfo GetProcessorInfo() const { return ProcessorInfo; }
-	NODISCARD FMemoryInfo GetMemoryInfo() const { return MemoryInfo; }
+	NODISCARD const FProcessorInfo& GetProcessorInfo() const { return ProcessorInfo; }
+	NODISCARD const FMemoryInfo& GetMemoryInfo() const { return MemoryInfo; }
 
 private:
 	static FString QueryCPUName();
 	static uint32 QueryPhysicalCoreCount();
 
 private:
-	FProcessorInfo ProcessorInfo = {};
-	FMemoryInfo MemoryInfo = {};
+	FProcessorInfo ProcessorInfo;
+	FMemoryInfo MemoryInfo;
+
+	friend void InitializeCore();
+	friend void ShutdownCore();
 };
 
 /**

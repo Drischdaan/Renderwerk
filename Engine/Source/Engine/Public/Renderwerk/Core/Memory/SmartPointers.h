@@ -6,12 +6,12 @@
 #include "Renderwerk/Core/Memory/Memory.h"
 
 template <class T>
-struct FDefaultDelete
+struct TDefaultDelete
 {
-	CONSTEXPR FDefaultDelete() noexcept = default;
+	CONSTEXPR TDefaultDelete() noexcept = default;
 
 	template <class TOther>
-	CONSTEXPR FDefaultDelete(const FDefaultDelete<TOther>&) noexcept requires (std::is_convertible_v<TOther*, T*>)
+	CONSTEXPR TDefaultDelete(const TDefaultDelete<TOther>&) noexcept requires (std::is_convertible_v<TOther*, T*>)
 	{
 	}
 
@@ -27,7 +27,7 @@ struct FDefaultDelete
  * @tparam T The type of the object that the unique pointer is managing.
  */
 template <typename T>
-using TLocalPtr = std::unique_ptr<T, FDefaultDelete<T>>;
+using TLocalPtr = std::unique_ptr<T, TDefaultDelete<T>>;
 
 template <typename T>
 using TSharedPtr = std::shared_ptr<T>;
@@ -39,12 +39,12 @@ template <typename T, typename... TArguments, typename = std::enable_if_t<std::i
 INLINE TLocalPtr<T> MakeLocal(TArguments&&... Arguments)
 {
 	T* Pointer = FMemory::New<T>(std::forward<TArguments>(Arguments)...);
-	return TLocalPtr<T>(Pointer, FDefaultDelete<T>());
+	return TLocalPtr<T>(Pointer, TDefaultDelete<T>());
 }
 
 template <typename T, typename... TArguments, typename = std::enable_if_t<std::is_constructible_v<T, TArguments...>>>
 INLINE TSharedPtr<T> MakeShared(TArguments&&... Arguments)
 {
 	T* Pointer = FMemory::New<T>(std::forward<TArguments>(Arguments)...);
-	return TSharedPtr<T>(Pointer, FDefaultDelete<T>());
+	return TSharedPtr<T>(Pointer, TDefaultDelete<T>());
 }

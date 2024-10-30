@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/Compiler.h"
+#include "Renderwerk/Core/Definitions/CompilerDefinitions.h"
 
 // []===================================================================[]
 // The macro RW_LIBRARY_SHARED is a user defined macro that is used

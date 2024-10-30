@@ -1,8 +1,11 @@
 ﻿#pragma once
 
+#include "SystemManager.h"
+
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Engine/SubsystemManager.h"
-#include "Renderwerk/Logging/LogCategory.h"
+#include "Renderwerk/Platform/Threading/Mutex.h"
+
+class ISystem;
 
 DECLARE_LOG_CATEGORY(LogEngine, Trace);
 
@@ -21,31 +24,31 @@ public:
 	void RequestExit();
 
 public:
-	NODISCARD FTickDelegate* GetTickDelegate() { return &OnTick; }
-	NODISCARD TSharedPtr<FSubsystemManager> GetSubsystemManager() const { return SubsystemManager; }
+	NODISCARD TSharedPtr<FSystemManger> GetSystemManager() const { return SystemManager; }
+
+public:
+	static FTickDelegate& GetTickDelegate() { return OnTick; }
 
 private:
-	/**
-	 * Contains the main loop of the engine.
-	 */
 	void Run();
 
 	void Initialize();
 	void Shutdown();
 
-	void SignalHandler(int Signal);
+	void SignalHandler(int32 Signal);
 
 private:
 	static void RegisterInterruptSignals();
 
 private:
-	INLINE static FSignalReceivedDelegate OnSignalReceived;
+	static FSignalReceivedDelegate OnSignalReceived;
+	static FTickDelegate OnTick;
 
 private:
+	FMutex RunningMutex;
 	bool8 bIsRunning = true;
 
-	TSharedPtr<FSubsystemManager> SubsystemManager;
-	FTickDelegate OnTick;
+	TSharedPtr<FSystemManger> SystemManager;
 
 	friend void GuardedMain();
 };
@@ -63,12 +66,12 @@ RENDERWERK_API extern TSharedPtr<FEngine> GEngine;
 RENDERWERK_API TSharedPtr<FEngine> GetEngine();
 
 /**
- * @brief Convenience function to get a subsystem of the specified type.
- * @tparam T The type of the subsystem.
- * @return The subsystem of the specified type.
+ * Convenience function to get a system.
+ * @tparam TSystem The system type.
+ * @return The system.
  */
-template <typename T, typename = std::is_base_of<ISubsystem, T>>
-RENDERWERK_API INLINE TSharedPtr<T> GetSubsystem()
+template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
+RENDERWERK_API INLINE TSharedPtr<TSystem> GetSystem()
 {
-	return GetEngine()->GetSubsystemManager()->Get<T>();
+	return GetEngine()->GetSystemManager()->Get<TSystem>();
 }
