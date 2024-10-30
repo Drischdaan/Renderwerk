@@ -1,7 +1,11 @@
 ﻿#pragma once
 
+#include "SystemManager.h"
+
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Platform/Threading/Mutex.h"
+
+class ISystem;
 
 DECLARE_LOG_CATEGORY(LogEngine, Trace);
 
@@ -18,6 +22,9 @@ public:
 
 public:
 	void RequestExit();
+
+public:
+	NODISCARD TSharedPtr<FSystemManger> GetSystemManager() const { return SystemManager; }
 
 public:
 	static FTickDelegate& GetTickDelegate() { return OnTick; }
@@ -41,6 +48,8 @@ private:
 	FMutex RunningMutex;
 	bool8 bIsRunning = true;
 
+	TSharedPtr<FSystemManger> SystemManager;
+
 	friend void GuardedMain();
 };
 
@@ -55,3 +64,14 @@ RENDERWERK_API extern TSharedPtr<FEngine> GEngine;
  * @return The global engine pointer.
  */
 RENDERWERK_API TSharedPtr<FEngine> GetEngine();
+
+/**
+ * Convenience function to get a system.
+ * @tparam TSystem The system type.
+ * @return The system.
+ */
+template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
+RENDERWERK_API INLINE TSharedPtr<TSystem> GetSystem()
+{
+	return GetEngine()->GetSystemManager()->Get<TSystem>();
+}

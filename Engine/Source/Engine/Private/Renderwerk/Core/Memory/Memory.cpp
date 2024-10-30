@@ -10,12 +10,16 @@ void* FMemory::Allocate(const size64 Size, const size64 Alignment)
 	DEBUG_ASSERTM(Alignment % 2 == 0, "Alignment must be a power of two.");
 	size64 AlignedSize = CalculateAlignedSize(Size, Alignment);
 	void* Pointer = HeapAlloc(GetProcessHeap(), 0, AlignedSize);
+	if (FProfiler::IsProfilerConnected())
+		PROFILER_MARK_ALLOCATION(Pointer, AlignedSize);
 	return Pointer;
 }
 
 void FMemory::Free(void* Memory)
 {
 	DEBUG_ASSERTM(Memory != nullptr, "Memory must not be null.");
+	if (FProfiler::IsProfilerConnected())
+		PROFILER_MARK_FREE(Memory);
 	HeapFree(GetProcessHeap(), 0, Memory);
 }
 

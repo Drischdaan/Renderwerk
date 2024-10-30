@@ -11,22 +11,12 @@
 class RENDERWERK_API FSystemManger
 {
 public:
-	/**
-	 * Clears all registered systems and shuts them down.
-	 */
-	INLINE static void Clear()
-	{
-		for (TSharedPtr<ISystem>& System : Systems | std::views::values)
-		{
-			System->Shutdown();
-			System.reset();
-		}
-		Systems.clear();
-	}
+	FSystemManger();
+	~FSystemManger();
 
 public:
 	template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
-	NODISCARD INLINE static TSharedPtr<TSystem> Get()
+	NODISCARD INLINE TSharedPtr<TSystem> Get()
 	{
 		const std::type_info& TypeInfo = typeid(TSystem);
 		const FAnsiString TypeName = TypeInfo.name();
@@ -36,7 +26,7 @@ public:
 	}
 
 	template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
-	NODISCARD INLINE static bool8 IsRegistered()
+	NODISCARD INLINE bool8 IsRegistered() const
 	{
 		const std::type_info& TypeInfo = typeid(TSystem);
 		const FAnsiString TypeName = TypeInfo.name();
@@ -44,7 +34,7 @@ public:
 	}
 
 	template <typename TSystem, typename... TArguments, typename = std::is_base_of<ISystem, TSystem>>
-	INLINE static void Register(TArguments&&... Arguments)
+	INLINE void Register(TArguments&&... Arguments)
 	{
 		const std::type_info& TypeInfo = typeid(TSystem);
 		const FAnsiString TypeName = TypeInfo.name();
@@ -55,7 +45,7 @@ public:
 	}
 
 	template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
-	INLINE static void Unregister()
+	INLINE void Unregister()
 	{
 		const std::type_info& TypeInfo = typeid(TSystem);
 		const FAnsiString TypeName = TypeInfo.name();
@@ -67,16 +57,5 @@ public:
 	}
 
 private:
-	INLINE static TMap<FAnsiString, TSharedPtr<ISystem>> Systems;
+	TMap<FAnsiString, TSharedPtr<ISystem>> Systems;
 };
-
-/**
- * Convenience function to get a system.
- * @tparam TSystem The system type.
- * @return The system.
- */
-template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
-RENDERWERK_API INLINE TSharedPtr<TSystem> GetSystem()
-{
-	return FSystemManger::Get<TSystem>();
-}

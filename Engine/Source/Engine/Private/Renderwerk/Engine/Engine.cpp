@@ -9,7 +9,9 @@
 DEFINE_LOG_CATEGORY(LogEngine);
 
 TSharedPtr<FEngine> GEngine = nullptr;
+
 FSignalReceivedDelegate FEngine::OnSignalReceived;
+FTickDelegate FEngine::OnTick;
 
 FEngine::FEngine()
 {
@@ -32,9 +34,11 @@ void FEngine::Run()
 
 	while (bIsRunning)
 	{
+		PROFILER_MARK_FRAME_START();
 		OnTick.Execute(0.0f);
 		if (GetAsyncKeyState(VK_ESCAPE) & 1)
 			RequestExit();
+		PROFILER_MARK_FRAME_START();
 	}
 
 	Shutdown();
@@ -42,15 +46,18 @@ void FEngine::Run()
 
 void FEngine::Initialize()
 {
+	PROFILER_MARK_FUNCTION();
 	RegisterInterruptSignals();
 	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
+
+	SystemManager = MakeShared<FSystemManger>();
 
 	RW_LOG(LogEngine, Info, "Engine initialized");
 }
 
 void FEngine::Shutdown()
 {
-	FSystemManger::Clear();
+	SystemManager.reset();
 }
 
 void FEngine::SignalHandler(int32 Signal)

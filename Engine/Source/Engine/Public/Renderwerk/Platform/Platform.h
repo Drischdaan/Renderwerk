@@ -20,24 +20,38 @@ struct RENDERWERK_API FMemoryInfo
 class RENDERWERK_API FPlatform
 {
 public:
-	NODISCARD static uint64 GetCurrentThreadId();
+	FPlatform();
+	~FPlatform();
+
+	DELETE_COPY_AND_MOVE(FPlatform);
 
 public:
-	NODISCARD static const FProcessorInfo& GetProcessorInfo() { return ProcessorInfo; }
-	NODISCARD static const FMemoryInfo& GetMemoryInfo() { return MemoryInfo; }
+	NODISCARD uint64 GetCurrentThreadId();
 
-private:
-	static void Initialize();
-	static void Shutdown();
+public:
+	NODISCARD const FProcessorInfo& GetProcessorInfo() const { return ProcessorInfo; }
+	NODISCARD const FMemoryInfo& GetMemoryInfo() const { return MemoryInfo; }
 
 private:
 	static FString QueryCPUName();
 	static uint32 QueryPhysicalCoreCount();
 
 private:
-	static FProcessorInfo ProcessorInfo;
-	static FMemoryInfo MemoryInfo;
+	FProcessorInfo ProcessorInfo;
+	FMemoryInfo MemoryInfo;
 
 	friend void InitializeCore();
 	friend void ShutdownCore();
 };
+
+/**
+ * Global platform pointer. You should use GetPlatform() to safely access this pointer.
+ * Please check the validity of the pointer before using it.
+ */
+RENDERWERK_API extern TSharedPtr<FPlatform> GPlatform;
+
+/**
+ * Checks the validity of the global platform pointer and returns it.
+ * @return The global platform pointer.
+ */
+RENDERWERK_API TSharedPtr<FPlatform> GetPlatform();

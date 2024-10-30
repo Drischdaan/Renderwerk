@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
+// ReSharper disable CppMemberFunctionMayBeStatic
 
 #include "Renderwerk/Platform/Platform.h"
 
 DEFINE_LOG_CATEGORY(LogPlatform);
 
-FProcessorInfo FPlatform::ProcessorInfo = {};
-FMemoryInfo FPlatform::MemoryInfo = {};
+TSharedPtr<FPlatform> GPlatform = nullptr;
 
-void FPlatform::Initialize()
+FPlatform::FPlatform()
 {
 	SYSTEM_INFO SystemInfo = {};
 	GetNativeSystemInfo(&SystemInfo);
@@ -35,7 +35,7 @@ void FPlatform::Initialize()
 	RW_LOG(LogPlatform, Info, "\t- Total Physical Memory: {}", MemoryInfo.TotalPhysicalMemory);
 }
 
-void FPlatform::Shutdown()
+FPlatform::~FPlatform()
 {
 }
 
@@ -92,5 +92,12 @@ uint32 FPlatform::QueryPhysicalCoreCount()
 		++PhysicalCoreCount;
 	}
 	while (Offset < BufferSize);
+	FMemory::DeleteArray(Buffer, BufferSize);
 	return PhysicalCoreCount;
+}
+
+TSharedPtr<FPlatform> GetPlatform()
+{
+	DEBUG_ASSERTM(GPlatform != nullptr, "Global platform pointer is invalid.");
+	return GPlatform;
 }

@@ -41,6 +41,7 @@ workspace(project_name)
 			'RW_ENABLE_PROFILING=1',
 			'RW_ENABLE_GPU_DEBUGGING=1',
 			'TRACY_ENABLE=1',
+			'TRACY_CALLSTACK=10',
 			'SPDLOG_ACTIVE_LEVEL=0',
 		})
 	rw_filter_end()
