@@ -58,3 +58,5 @@ struct std::formatter<FGuid> : std::formatter<FAnsiString>
 		return std::formatter<FAnsiString>::format(FStringUtils::ConvertToAnsiString(Guid.ToString()), Context);
 	}
 };
+
+RENDERWERK_API FString ToString(const FGuid& Guid);

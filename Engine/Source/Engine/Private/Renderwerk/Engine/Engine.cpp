@@ -5,6 +5,8 @@
 #include <csignal>
 
 #include "Renderwerk/Engine/SystemManager.h"
+#include "Renderwerk/Graphics/Windowing/Window.h"
+#include "Renderwerk/Graphics/Windowing/WindowSystem.h"
 
 DEFINE_LOG_CATEGORY(LogEngine);
 
@@ -31,16 +33,7 @@ void FEngine::RequestExit()
 void FEngine::Run()
 {
 	Initialize();
-
-	while (bIsRunning)
-	{
-		PROFILER_MARK_FRAME_START();
-		OnTick.Execute(0.0f);
-		if (GetAsyncKeyState(VK_ESCAPE) & 1)
-			RequestExit();
-		PROFILER_MARK_FRAME_START();
-	}
-
+	Loop();
 	Shutdown();
 }
 
@@ -51,8 +44,22 @@ void FEngine::Initialize()
 	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
 
 	SystemManager = MakeShared<FSystemManger>();
+	SystemManager->Register<FWindowSystem>();
 
 	RW_LOG(LogEngine, Info, "Engine initialized");
+}
+
+void FEngine::Loop() const
+{
+	while (bIsRunning)
+	{
+		PROFILER_MARK_FRAME_START();
+		{
+			PROFILER_MARK_SCOPE("OnTick");
+			OnTick.Execute(0.0f);
+		}
+		PROFILER_MARK_FRAME_START();
+	}
 }
 
 void FEngine::Shutdown()

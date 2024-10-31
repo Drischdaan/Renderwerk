@@ -91,21 +91,20 @@ bool FGuid::IsValid() const
 
 FString FGuid::ToString() const
 {
-	FChar First[10], Second[6], Third[6], Fourth[6], Fifth[14];
+	FAnsiChar First[10], Second[6], Third[6], Fourth[6], Fifth[14];
 	int32 Written = 0;
-#ifdef RW_USE_ANSI_STRINGS
-#	define PRINTF(...) sprintf_s(__VA_ARGS__)
-#else
-#	define PRINTF(...) wprintf_s(__VA_ARGS__)
-#endif
-	Written += PRINTF(First, "%02x%02x%02x%02x", Data[0], Data[1], Data[2], Data[3]);
-	Written += PRINTF(Second, "%02x%02x", Data[4], Data[5]);
-	Written += PRINTF(Third, "%02x%02x", Data[6], Data[7]);
-	Written += PRINTF(Fourth, "%02x%02x", Data[8], Data[9]);
-	Written += PRINTF(Fifth, "%02x%02x%02x%02x%02x%02x", Data[10], Data[11], Data[12], Data[13], Data[14], Data[15]);
-#undef PRINTF
+	Written += sprintf_s(First, "%02x%02x%02x%02x", Data[0], Data[1], Data[2], Data[3]);
+	Written += sprintf_s(Second, "%02x%02x", Data[4], Data[5]);
+	Written += sprintf_s(Third, "%02x%02x", Data[6], Data[7]);
+	Written += sprintf_s(Fourth, "%02x%02x", Data[8], Data[9]);
+	Written += sprintf_s(Fifth, "%02x%02x%02x%02x%02x%02x", Data[10], Data[11], Data[12], Data[13], Data[14], Data[15]);
 	assert(Written == 32);
-	return FString(First) + TEXT("-") + FString(Second) + TEXT("-") + FString(Third) + TEXT("-") + FString(Fourth) + TEXT("-") + FString(Fifth);
+	FAnsiString String = FAnsiString(First) + "-" + FAnsiString(Second) + "-" + FAnsiString(Third) + "-" + FAnsiString(Fourth) + "-" + FAnsiString(Fifth);
+#ifdef RW_USE_ANSI_STRINGS
+	return String;
+#else
+	return FStringUtils::ConvertToWideString(String);
+#endif
 }
 
 bool FGuid::operator==(const FGuid& Other) const
@@ -164,4 +163,9 @@ FGuid NewGuid()
 	return FGuid{
 		Bytes
 	};
+}
+
+FString ToString(const FGuid& Guid)
+{
+	return Guid.ToString();
 }

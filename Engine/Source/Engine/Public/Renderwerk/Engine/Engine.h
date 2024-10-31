@@ -33,6 +33,7 @@ private:
 	void Run();
 
 	void Initialize();
+	void Loop() const;
 	void Shutdown();
 
 	void SignalHandler(int32 Signal);
