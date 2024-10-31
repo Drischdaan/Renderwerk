@@ -5,7 +5,6 @@
 #include <csignal>
 
 #include "Renderwerk/Engine/SystemManager.h"
-#include "Renderwerk/Renderer/RendererSystem.h"
 
 DEFINE_LOG_CATEGORY(LogEngine);
 
@@ -52,7 +51,6 @@ void FEngine::Initialize()
 	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
 
 	SystemManager = MakeShared<FSystemManger>();
-	SystemManager->Register<FRendererSystem>();
 
 	RW_LOG(LogEngine, Info, "Engine initialized");
 }
