@@ -2,7 +2,7 @@
 
 #include "Renderwerk/Memory/Memory.h"
 
-#include <heapapi.h>
+#include <Windows.h>
 
 void* FMemory::Allocate(const size64 Size, const size64 Alignment)
 {
@@ -28,4 +28,9 @@ void FMemory::Free(void* Memory)
 size64 FMemory::CalculateAlignedSize(const size64 Size, const size64 Alignment)
 {
 	return (Size + Alignment - 1) & ~(Alignment - 1);
+}
+
+size64 FMemory::GetMemorySize(const void* Memory)
+{
+	return HeapSize(GetProcessHeap(), 0, Memory);
 }

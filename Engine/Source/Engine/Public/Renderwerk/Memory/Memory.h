@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Core/CoreAPI.h"
+#include "Renderwerk/Core/CoreDefinitions.h"
+#include "Renderwerk/Core/Types/PrimitiveTypes.h"
 
 #define DEFAULT_MEMORY_ALIGNMENT FORWARD(16)
 
@@ -13,4 +15,5 @@ public:
 	static void Free(void* Memory);
 
 	[[nodiscard]] static size64 CalculateAlignedSize(size64 Size, size64 Alignment = DEFAULT_MEMORY_ALIGNMENT);
+	[[nodiscard]] static size64 GetMemorySize(const void* Memory);
 };
