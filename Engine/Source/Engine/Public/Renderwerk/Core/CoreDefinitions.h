@@ -38,4 +38,4 @@
 	DEFINE_DEFAULT_MOVE_ASSIGNMENT(Type)
 
 // Used to define case statements for ToString functions of enums
-#define DEFINE_ENUM_CASE(EnumType, EnumValue) case EnumType::EnumValue: return TEXT(#EnumValue)
+#define DEFINE_ENUM_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue
