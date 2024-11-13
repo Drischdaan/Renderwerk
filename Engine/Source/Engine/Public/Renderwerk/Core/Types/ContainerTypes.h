@@ -2,6 +2,7 @@
 
 #include <array>
 #include <deque>
+#include <initializer_list>
 #include <map>
 #include <queue>
 #include <set>
@@ -32,3 +33,6 @@ using TDeque = std::deque<T>;
 
 template <typename T>
 using TQueue = std::queue<T>;
+
+template <typename T>
+using TInitializerList = std::initializer_list<T>;
