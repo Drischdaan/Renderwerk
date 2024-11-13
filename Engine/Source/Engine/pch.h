@@ -18,5 +18,3 @@
 #include <xutility>
 #include <utility>
 #include <ranges>
-
-#include "Renderwerk/EngineMinimal.h"

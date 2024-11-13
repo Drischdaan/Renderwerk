@@ -18,5 +18,3 @@
 #include <utility>
 #include <vector>
 #include <xutility>
-
-#include "Renderwerk/EngineMinimal.h"
