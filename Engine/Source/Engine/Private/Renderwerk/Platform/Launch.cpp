@@ -12,6 +12,11 @@ void StartCoreServices()
 
 void RunEngine()
 {
+	GEngine = new FEngine();
+	GEngine->Initialize();
+	GEngine->RunLoop();
+	GEngine->Shutdown();
+	delete GEngine;
 }
 
 void ShutdownCoreServices()
