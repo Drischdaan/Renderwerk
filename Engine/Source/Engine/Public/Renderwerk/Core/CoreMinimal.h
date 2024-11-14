@@ -5,3 +5,4 @@
 #include "Renderwerk/Core/Types/ContainerTypes.h"
 #include "Renderwerk/Core/Types/PrimitiveTypes.h"
 #include "Renderwerk/Core/Types/StringTypes.h"
+#include "Renderwerk/Core/Utils/StringUtils.h"
