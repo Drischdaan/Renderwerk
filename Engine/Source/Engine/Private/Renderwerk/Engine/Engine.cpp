@@ -7,6 +7,7 @@ FEngine* GEngine = nullptr;
 void FEngine::RequestExit()
 {
 	bStopThreads = true;
+	RW_LOG(LogDefault, Warn, "Engine exit requested");
 }
 
 void FEngine::Initialize()
@@ -54,10 +55,7 @@ void FEngine::UpdateThread_Main()
 			continue;
 		UpdateThread_Tick();
 		RenderThread.SyncPoint.Signal();
-		{
-			PROFILE_SCOPE("SyncPoint::Wait");
-			UpdateThread.SyncPoint.Wait();
-		}
+		UpdateThread.SyncPoint.Wait();
 	}
 	UpdateThread_Shutdown();
 }
@@ -86,10 +84,7 @@ void FEngine::RenderThread_Main()
 	{
 		PROFILE_SECONDARY_FRAME("Render");
 		PROFILE_SCOPE("RenderThread_Loop");
-		{
-			PROFILE_SCOPE("SyncPoint::Wait");
-			RenderThread.SyncPoint.Wait();
-		}
+		RenderThread.SyncPoint.Wait();
 		RenderThread_Tick();
 		UpdateThread.SyncPoint.Signal();
 	}
