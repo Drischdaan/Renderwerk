@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Debug/Profiling.h"
 #include "Renderwerk/Engine/Engine.h"
 #include "Renderwerk/Platform/Assert.h"
 #include "Renderwerk/Platform/Logging/LogChannel.h"

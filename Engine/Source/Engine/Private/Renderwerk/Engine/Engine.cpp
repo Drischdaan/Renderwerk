@@ -12,6 +12,7 @@ void FEngine::RequestExit()
 void FEngine::Initialize()
 {
 	RW_LOG(LogDefault, Info, "Main thread id: {}", GetCurrentThreadId());
+	PROFILER_SET_THREAD_NAME("MainThread");
 	UpdateThread.Thread = FThread(&FEngine::UpdateThread_Main, this);
 	RenderThread.Thread = FThread(&FEngine::RenderThread_Main, this);
 }
@@ -20,6 +21,7 @@ void FEngine::RunLoop()
 {
 	while (!bStopThreads)
 	{
+		PROFILE_FRAME();
 		MainThread_Tick();
 	}
 }
@@ -35,20 +37,27 @@ void FEngine::Shutdown()
 
 void FEngine::MainThread_Tick()
 {
+	PROFILE_FUNCTION();
 	if (GetAsyncKeyState(VK_ESCAPE) & 1)
 		RequestExit();
 }
 
 void FEngine::UpdateThread_Main()
 {
+	PROFILER_SET_THREAD_NAME("UpdateThread");
 	UpdateThread_Initialize();
 	while (!bStopThreads)
 	{
-		if (RenderThread.SyncPoint.GetState() != ESyncPointState::Initialized)
+		PROFILE_SECONDARY_FRAME("Update");
+		PROFILE_SCOPE("UpdateThread_Loop");
+		if (RenderThread.SyncPoint.GetState() <= ESyncPointState::Initialized)
 			continue;
-		UpdateThread.SyncPoint.Wait();
 		UpdateThread_Tick();
 		RenderThread.SyncPoint.Signal();
+		{
+			PROFILE_SCOPE("SyncPoint::Wait");
+			UpdateThread.SyncPoint.Wait();
+		}
 	}
 	UpdateThread_Shutdown();
 }
@@ -61,6 +70,7 @@ void FEngine::UpdateThread_Initialize()
 
 void FEngine::UpdateThread_Tick()
 {
+	PROFILE_FUNCTION();
 }
 
 void FEngine::UpdateThread_Shutdown()
@@ -70,10 +80,16 @@ void FEngine::UpdateThread_Shutdown()
 
 void FEngine::RenderThread_Main()
 {
+	PROFILER_SET_THREAD_NAME("RenderThread");
 	RenderThread_Initialize();
 	while (!bStopThreads)
 	{
-		RenderThread.SyncPoint.Wait();
+		PROFILE_SECONDARY_FRAME("Render");
+		PROFILE_SCOPE("RenderThread_Loop");
+		{
+			PROFILE_SCOPE("SyncPoint::Wait");
+			RenderThread.SyncPoint.Wait();
+		}
 		RenderThread_Tick();
 		UpdateThread.SyncPoint.Signal();
 	}
@@ -88,6 +104,7 @@ void FEngine::RenderThread_Initialize()
 
 void FEngine::RenderThread_Tick()
 {
+	PROFILE_FUNCTION();
 }
 
 void FEngine::RenderThread_Shutdown()

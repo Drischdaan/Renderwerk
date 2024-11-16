@@ -7,6 +7,7 @@
 
 void StartCoreServices()
 {
+	START_PROFILER();
 	FLogManager::Initialize();
 }
 
@@ -22,6 +23,7 @@ void RunEngine()
 void ShutdownCoreServices()
 {
 	FLogManager::Shutdown();
+	SHUTDOWN_PROFILER();
 }
 
 int32 LaunchEngine([[maybe_unused]] const FLaunchParameters& Parameters)
