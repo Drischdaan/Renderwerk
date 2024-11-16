@@ -11,6 +11,7 @@ using TAtomic = std::atomic<T>;
 
 using FConditionVariable = std::condition_variable;
 using FMutex = std::mutex;
+using FScopedLock = std::scoped_lock;
 using FBinarySemaphore = std::binary_semaphore;
 
 template <std::ptrdiff_t MaxValue = PTRDIFF_MAX>
