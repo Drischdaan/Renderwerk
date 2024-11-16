@@ -29,6 +29,7 @@ public:
 
 	void SwapContainers()
 	{
+		PROFILE_FUNCTION();
 		FScopedLock Lock(Mutex);
 		ActiveBufferIndex = (ActiveBufferIndex + 1) % BufferCount;
 	}

@@ -57,7 +57,7 @@ FString GetResultString(const HRESULT Result)
 	else
 	{
 		const _com_error Error(Result);
-		ResultString = ConvertToNarrowString(Error.ErrorMessage());
+		ResultString = Error.ErrorMessage();
 	}
 	return ResultString;
 }

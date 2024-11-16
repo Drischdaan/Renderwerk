@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/Threading/SyncPoint.h"
 #include "Renderwerk/Platform/Threading/ThreadTypes.h"
 
@@ -37,10 +38,14 @@ private:
 
 	void RenderThread_Main();
 	void RenderThread_Initialize();
+	void RenderThread_HandleEvents() const;
 	void RenderThread_Tick();
 	void RenderThread_Shutdown();
 
 private:
+	WNDCLASSEXA WindowClass = {};
+	FWindow* Window = nullptr;
+
 	TAtomic<bool8> bStopThreads = false;
 	FEngineThread UpdateThread = {};
 	FEngineThread RenderThread = {};
