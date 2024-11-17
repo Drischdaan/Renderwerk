@@ -1,78 +1,65 @@
 ﻿#pragma once
 
-#include "SystemManager.h"
-
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Platform/Threading/Mutex.h"
+#include "Renderwerk/Platform/Window.h"
+#include "Renderwerk/Platform/Threading/SyncPoint.h"
+#include "Renderwerk/Platform/Threading/ThreadTypes.h"
 
-class ISystem;
-
-DECLARE_LOG_CATEGORY(LogEngine, Trace);
-
-DECLARE_DELEGATE(SignalReceived, uint32);
-DECLARE_MULTICAST_DELEGATE(Tick, float64);
-
-class RENDERWERK_API FEngine
+class ENGINE_API FEngine
 {
+private:
+	struct FEngineThread
+	{
+		FThread Thread;
+		FSyncPoint SyncPoint;
+	};
+
 public:
-	FEngine();
-	~FEngine();
+	FEngine() = default;
+	~FEngine() = default;
 
 	DELETE_COPY_AND_MOVE(FEngine);
 
 public:
 	void RequestExit();
 
-public:
-	NODISCARD TSharedPtr<FSystemManger> GetSystemManager() const { return SystemManager; }
-
-public:
-	static FTickDelegate& GetTickDelegate() { return OnTick; }
-
 private:
-	void Run();
-
 	void Initialize();
-	void Loop() const;
+	void RunLoop();
 	void Shutdown();
 
-	void SignalHandler(int32 Signal);
+private:
+	void MainThread_Tick();
+
+	void UpdateThread_Main();
+	void UpdateThread_Initialize();
+	void UpdateThread_Tick();
+	void UpdateThread_Shutdown();
+
+	void RenderThread_Main();
+	void RenderThread_Initialize();
+	void RenderThread_HandleEvents() const;
+	void RenderThread_Tick();
+	void RenderThread_Shutdown();
 
 private:
-	static void RegisterInterruptSignals();
+	TSharedPtr<FWindow> Window = nullptr;
 
-private:
-	static FSignalReceivedDelegate OnSignalReceived;
-	static FTickDelegate OnTick;
+	TAtomic<bool8> bStopThreads = false;
+	FEngineThread UpdateThread = {};
+	FEngineThread RenderThread = {};
 
-private:
-	FMutex RunningMutex;
-	bool8 bIsRunning = true;
-
-	TSharedPtr<FSystemManger> SystemManager;
-
-	friend void GuardedMain();
+	friend void RunEngine();
 };
 
 /**
- * Global engine pointer. You should use GetEngine() to safely access this pointer.
- * Please check the validity of the pointer before using it.
+ * Global engine pointer.
+ * @note You should use GetEngine() instead of this global pointer or check if it is valid yourself
  */
-RENDERWERK_API extern TSharedPtr<FEngine> GEngine;
+ENGINE_API extern TSharedPtr<FEngine> GEngine;
 
 /**
- * Checks the validity of the global engine pointer and returns it.
- * @return The global engine pointer.
+ * Get the global engine pointer. This function will assert if the global engine pointer is not valid.
+ * @return The global engine pointer
  */
-RENDERWERK_API TSharedPtr<FEngine> GetEngine();
-
-/**
- * Convenience function to get a system.
- * @tparam TSystem The system type.
- * @return The system.
- */
-template <typename TSystem, typename = std::is_base_of<ISystem, TSystem>>
-RENDERWERK_API INLINE TSharedPtr<TSystem> GetSystem()
-{
-	return GetEngine()->GetSystemManager()->Get<TSystem>();
-}
+ENGINE_API TSharedPtr<FEngine> GetEngine();

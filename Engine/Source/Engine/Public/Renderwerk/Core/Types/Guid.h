@@ -1,14 +1,13 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreAPI.h"
-#include "Renderwerk/Core/Types/CoreTypes.h"
-#include "Renderwerk/Core/Types/String.h"
-#include "Renderwerk/Core/Types/StringUtils.h"
+#include "Renderwerk/Core/Types/PrimitiveTypes.h"
+#include "Renderwerk/Core/Types/StringTypes.h"
 
 #include <format>
 #include <string>
 
-class RENDERWERK_API FGuid
+class ENGINE_API FGuid
 {
 public:
 	FGuid();
@@ -19,11 +18,11 @@ public:
 	DEFINE_DEFAULT_COPY_AND_MOVE(FGuid);
 
 public:
-	NODISCARD bool IsValid() const;
-	NODISCARD FString ToString() const;
+	[[nodiscard]] bool IsValid() const;
+	[[nodiscard]] FString ToString() const;
 
 public:
-	NODISCARD TVector<uint8> GetData() const { return Data; }
+	[[nodiscard]] TVector<uint8> GetData() const { return Data; }
 
 public:
 	bool operator==(const FGuid& Other) const;
@@ -37,7 +36,9 @@ private:
 	TVector<uint8> Data;
 };
 
-RENDERWERK_API FGuid NewGuid();
+ENGINE_API FGuid NewGuid();
+
+ENGINE_API FString ToString(const FGuid& Guid);
 
 template <>
 struct std::hash<FGuid>
@@ -50,13 +51,11 @@ struct std::hash<FGuid>
 };
 
 template <>
-struct std::formatter<FGuid> : std::formatter<FAnsiString>
+struct std::formatter<FGuid> : std::formatter<FString>
 {
 	template <typename FormatContext>
 	auto format(const FGuid& Guid, FormatContext& Context) const
 	{
-		return std::formatter<FAnsiString>::format(FStringUtils::ConvertToAnsiString(Guid.ToString()), Context);
+		return std::formatter<FString>::format(Guid.ToString(), Context);
 	}
 };
-
-RENDERWERK_API FString ToString(const FGuid& Guid);

@@ -70,7 +70,7 @@ FGuid::FGuid(const std::string& InString)
 		}
 		else
 		{
-			char SecondChar = Char;
+			const char SecondChar = Char;
 			Data[NextByte] = HexPairToChar(FirstChar, SecondChar);
 			NextByte++;
 			bLookingForFirst = true;
@@ -91,7 +91,7 @@ bool FGuid::IsValid() const
 
 FString FGuid::ToString() const
 {
-	FAnsiChar First[10], Second[6], Third[6], Fourth[6], Fifth[14];
+	FChar First[10], Second[6], Third[6], Fourth[6], Fifth[14];
 	int32 Written = 0;
 	Written += sprintf_s(First, "%02x%02x%02x%02x", Data[0], Data[1], Data[2], Data[3]);
 	Written += sprintf_s(Second, "%02x%02x", Data[4], Data[5]);
@@ -99,12 +99,8 @@ FString FGuid::ToString() const
 	Written += sprintf_s(Fourth, "%02x%02x", Data[8], Data[9]);
 	Written += sprintf_s(Fifth, "%02x%02x%02x%02x%02x%02x", Data[10], Data[11], Data[12], Data[13], Data[14], Data[15]);
 	assert(Written == 32);
-	FAnsiString String = FAnsiString(First) + "-" + FAnsiString(Second) + "-" + FAnsiString(Third) + "-" + FAnsiString(Fourth) + "-" + FAnsiString(Fifth);
-#ifdef RW_USE_ANSI_STRINGS
+	FString String = FString(First) + "-" + FString(Second) + "-" + FString(Third) + "-" + FString(Fourth) + "-" + FString(Fifth);
 	return String;
-#else
-	return FStringUtils::ConvertToWideString(String);
-#endif
 }
 
 bool FGuid::operator==(const FGuid& Other) const
@@ -138,7 +134,7 @@ FGuid NewGuid()
 	GUID Guid;
 	CoCreateGuid(&Guid);
 
-	TVector<uint8> Bytes =
+	const TVector<uint8> Bytes =
 	{
 		static_cast<uint8>((Guid.Data1 >> 24) & 0xFF),
 		static_cast<uint8>((Guid.Data1 >> 16) & 0xFF),

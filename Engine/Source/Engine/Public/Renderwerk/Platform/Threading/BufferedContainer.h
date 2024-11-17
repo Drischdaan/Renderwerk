@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreMinimal.h"
-#include "Renderwerk/Platform/Threading/Mutex.h"
+#include "Renderwerk/Platform/Threading/ThreadTypes.h"
 
-#define BUFFERED_CONTAINER_SIZE FORWARD(2)
+#define DEFAULT_BUFFERED_CONTAINER_BUFFER_COUNT FORWARD(2)
 
-template <typename TContainer, typename TItem>
+template <typename TContainer, typename TItem, size64 BufferCount = DEFAULT_BUFFERED_CONTAINER_BUFFER_COUNT>
 class TBufferedContainer
 {
 public:
@@ -29,17 +29,18 @@ public:
 
 	void SwapContainers()
 	{
+		PROFILE_FUNCTION();
 		FScopedLock Lock(Mutex);
-		ActiveBufferIndex = (ActiveBufferIndex + 1) % BUFFERED_CONTAINER_SIZE;
+		ActiveBufferIndex = (ActiveBufferIndex + 1) % BufferCount;
 	}
 
-	NODISCARD TContainer& GetBackContainer()
+	[[nodiscard]] TContainer& GetBackContainer()
 	{
-		return Buffers.at((ActiveBufferIndex + 1) % BUFFERED_CONTAINER_SIZE);
+		return Buffers.at((ActiveBufferIndex + 1) % BufferCount);
 	}
 
 private:
 	FMutex Mutex;
 	uint32 ActiveBufferIndex = 0;
-	TArray<TContainer, 2> Buffers;
+	TArray<TContainer, BufferCount> Buffers;
 };

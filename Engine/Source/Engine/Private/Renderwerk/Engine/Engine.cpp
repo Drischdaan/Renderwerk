@@ -2,118 +2,149 @@
 
 #include "Renderwerk/Engine/Engine.h"
 
-#include <csignal>
-
-#include "Renderwerk/Engine/SystemManager.h"
-#include "Renderwerk/Graphics/Windowing/Window.h"
-#include "Renderwerk/Graphics/Windowing/WindowSystem.h"
-
-DEFINE_LOG_CATEGORY(LogEngine);
+#include "Renderwerk/Platform/WindowManager.h"
 
 TSharedPtr<FEngine> GEngine = nullptr;
 
-FSignalReceivedDelegate FEngine::OnSignalReceived;
-FTickDelegate FEngine::OnTick;
-
-FEngine::FEngine()
-{
-}
-
-FEngine::~FEngine()
-{
-}
-
 void FEngine::RequestExit()
 {
-	FScopedLock Lock(RunningMutex);
-	bIsRunning = false;
-	RW_LOG(LogEngine, Warn, "Exit was requested");
-}
-
-void FEngine::Run()
-{
-	Initialize();
-	Loop();
-	Shutdown();
+	bStopThreads = true;
+	RW_LOG(LogDefault, Warn, "Engine exit requested");
 }
 
 void FEngine::Initialize()
 {
-	PROFILER_MARK_FUNCTION();
-	RegisterInterruptSignals();
-	OnSignalReceived.Bind(BIND_MEMBER_ONE(FEngine::SignalHandler));
+	FWindowManager::Initialize();
 
-	SystemManager = MakeShared<FSystemManger>();
-	SystemManager->Register<FWindowSystem>();
+	const FWindowDesc WindowDesc = {};
+	Window = FWindowManager::NewWindow(WindowDesc);
 
-	RW_LOG(LogEngine, Info, "Engine initialized");
+	RW_LOG(LogDefault, Info, "Main thread id: {}", GetCurrentThreadId());
+	PROFILER_SET_THREAD_NAME("MainThread");
+	UpdateThread.Thread = FThread(&FEngine::UpdateThread_Main, this);
+	RenderThread.Thread = FThread(&FEngine::RenderThread_Main, this);
 }
 
-void FEngine::Loop() const
+void FEngine::RunLoop()
 {
-	while (bIsRunning)
+	while (!bStopThreads)
 	{
-		PROFILER_MARK_FRAME_START();
-		{
-			PROFILER_MARK_SCOPE("OnTick");
-			OnTick.Execute(0.0f);
-		}
-		PROFILER_MARK_FRAME_START();
+		PROFILE_FRAME();
+		MainThread_Tick();
 	}
 }
 
 void FEngine::Shutdown()
 {
-	SystemManager.reset();
+	bStopThreads = true;
+	RenderThread.SyncPoint.Signal();
+	RenderThread.Thread.join();
+	UpdateThread.SyncPoint.Signal();
+	UpdateThread.Thread.join();
+
+	FWindowManager::DestroyWindow(Window->GetId());
+	FWindowManager::Shutdown();
 }
 
-void FEngine::SignalHandler(int32 Signal)
+void FEngine::MainThread_Tick()
 {
-	switch (Signal)
+	PROFILE_FUNCTION();
+	FWindowManager::Update();
+	if (Window && !Window->GetState().bIsValid)
+		RequestExit();
+}
+
+void FEngine::UpdateThread_Main()
+{
+	PROFILER_SET_THREAD_NAME("UpdateThread");
+	UpdateThread_Initialize();
+	while (!bStopThreads)
 	{
-	case SIGTERM:
-		RW_LOG(LogEngine, Warn, "Termination signal received");
-		break;
-	case SIGSEGV:
-		RW_LOG(LogEngine, Warn, "Segmentation fault signal received");
-		break;
-	case SIGINT:
-		RW_LOG(LogEngine, Warn, "External Interrupt signal received");
-		break;
-	case SIGILL:
-		RW_LOG(LogEngine, Warn, "Illegal Instruction signal received");
-		break;
-	case SIGABRT:
-		RW_LOG(LogEngine, Warn, "Abort signal received");
-		break;
-	case SIGFPE:
-		RW_LOG(LogEngine, Warn, "Erroneous arithmetic operation signal received");
-		break;
-	default:
-		RW_LOG(LogEngine, Warn, "Signal {} received", Signal);
-		break;
+		PROFILE_SECONDARY_FRAME("Update");
+		PROFILE_SCOPE("UpdateThread_Loop");
+		if (RenderThread.SyncPoint.GetState() <= ESyncPointState::Initialized)
+			continue;
+		if (!(Window && Window->GetState().bIsValid))
+			continue;
+		UpdateThread_Tick();
+		RenderThread.SyncPoint.Signal();
+		UpdateThread.SyncPoint.Wait();
 	}
-	RequestExit();
+	UpdateThread_Shutdown();
 }
 
-void FEngine::RegisterInterruptSignals()
+void FEngine::UpdateThread_Initialize()
 {
-	_crt_signal_t SignalHandlerFunc = [](const int Signal)
+	RW_LOG(LogDefault, Info, "Update thread id: {}", GetCurrentThreadId());
+	UpdateThread.SyncPoint.SetInitializedState();
+}
+
+void FEngine::UpdateThread_Tick()
+{
+	PROFILE_FUNCTION();
+}
+
+void FEngine::UpdateThread_Shutdown()
+{
+	UpdateThread.SyncPoint.SetShutdownState();
+}
+
+void FEngine::RenderThread_Main()
+{
+	PROFILER_SET_THREAD_NAME("RenderThread");
+	RenderThread_Initialize();
+	while (!bStopThreads)
 	{
-		if (OnSignalReceived.IsBound())
-			OnSignalReceived.Execute(Signal);
-	};
-	signal(SIGTERM, SignalHandlerFunc);
-	signal(SIGSEGV, SignalHandlerFunc);
-	signal(SIGINT, SignalHandlerFunc);
-	signal(SIGILL, SignalHandlerFunc);
-	signal(SIGABRT, SignalHandlerFunc);
-	signal(SIGFPE, SignalHandlerFunc);
-	RW_LOG(LogEngine, Info, "Signal handlers registered");
+		PROFILE_SECONDARY_FRAME("Render");
+		PROFILE_SCOPE("RenderThread_Loop");
+		RenderThread.SyncPoint.Wait();
+		if (!(Window && Window->GetState().bIsValid))
+			continue;
+		RenderThread_HandleEvents();
+		RenderThread_Tick();
+		UpdateThread.SyncPoint.Signal();
+	}
+	RenderThread_Shutdown();
+}
+
+void FEngine::RenderThread_Initialize()
+{
+	RW_LOG(LogDefault, Info, "Render thread id: {}", GetCurrentThreadId());
+	RenderThread.SyncPoint.SetInitializedState();
+}
+
+void FEngine::RenderThread_HandleEvents() const
+{
+	PROFILE_FUNCTION();
+	Window->GetEventQueue().SwapContainers();
+	TQueue<FEventPtr>& EventQueue = Window->GetEventQueue().GetBackContainer();
+	FEventPtr Event = nullptr;
+	while (!EventQueue.empty())
+	{
+		Event = std::move(EventQueue.front());
+		EventQueue.pop();
+
+		switch (Event->Type)
+		{
+		case EWindowEventType::None:
+		default:
+			break;
+		}
+	}
+}
+
+void FEngine::RenderThread_Tick()
+{
+	PROFILE_FUNCTION();
+}
+
+void FEngine::RenderThread_Shutdown()
+{
+	RenderThread.SyncPoint.SetShutdownState();
 }
 
 TSharedPtr<FEngine> GetEngine()
 {
-	DEBUG_ASSERTM(GEngine != nullptr, "Global engine pointer is invalid.");
+	ASSERT_MSG(GEngine != nullptr, "GEngine is not valid");
 	return GEngine;
 }
