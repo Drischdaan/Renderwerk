@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Platform/Window.h"
 
+#include "Renderwerk/Platform/WindowManager.h"
+
 FWindow::FWindow(const FGuid& InId, const FWindowDesc& InDescription)
 	: Id(InId), Description(InDescription)
 {
@@ -22,14 +24,14 @@ FWindow::FWindow(const FGuid& InId, const FWindowDesc& InDescription)
 	if (Description.ParentWindow)
 		ParentHandle = Description.ParentWindow->GetHandle();
 	WindowHandle = CreateWindowExA(ExStyle,
-	                               "RenderwerkWindowClass",
+	                               FWindowManager::GetWindowClass().lpszClassName,
 	                               Description.Title.c_str(),
 	                               Style,
 	                               CW_USEDEFAULT, CW_USEDEFAULT,
 	                               Description.Width, Description.Height,
 	                               ParentHandle,
 	                               nullptr,
-	                               GetModuleHandle(nullptr),
+	                               FWindowManager::GetWindowClass().hInstance,
 	                               this);
 	ASSERT_MSG(WindowHandle, "Failed to create window");
 }

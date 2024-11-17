@@ -43,8 +43,7 @@ private:
 	void RenderThread_Shutdown();
 
 private:
-	WNDCLASSEXA WindowClass = {};
-	FWindow* Window = nullptr;
+	TSharedPtr<FWindow> Window = nullptr;
 
 	TAtomic<bool8> bStopThreads = false;
 	FEngineThread UpdateThread = {};
@@ -57,10 +56,10 @@ private:
  * Global engine pointer.
  * @note You should use GetEngine() instead of this global pointer or check if it is valid yourself
  */
-ENGINE_API extern FEngine* GEngine;
+ENGINE_API extern TSharedPtr<FEngine> GEngine;
 
 /**
  * Get the global engine pointer. This function will assert if the global engine pointer is not valid.
  * @return The global engine pointer
  */
-ENGINE_API FEngine* GetEngine();
+ENGINE_API TSharedPtr<FEngine> GetEngine();

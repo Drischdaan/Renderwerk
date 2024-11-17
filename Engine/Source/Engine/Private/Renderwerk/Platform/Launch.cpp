@@ -13,11 +13,11 @@ void StartCoreServices()
 
 void RunEngine()
 {
-	GEngine = new FEngine();
+	GEngine = MakeShared<FEngine>();
 	GEngine->Initialize();
 	GEngine->RunLoop();
 	GEngine->Shutdown();
-	delete GEngine;
+	GEngine.reset();
 }
 
 void ShutdownCoreServices()
