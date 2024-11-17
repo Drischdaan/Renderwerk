@@ -252,28 +252,14 @@ function rw_copy_assets()
 	})
 end
 
-function rw_link_d3d12()
-  includedirs({
-		rw_make_third_party_location(path.join('AgilitySDK', 'include')),
-  })
-
-  links({
-    'd3d12.lib',
-    'dxgi.lib',
-    'dxguid.lib',
-  })
-
-  libdirs({
-		rw_make_third_party_location(path.join('AgilitySDK', 'bin', 'x64')),
-  })
-end
-
-function rw_copy_d3d12_binaries()
-	prebuildcommands ({
-		('{MKDIR} "' .. path.join(project_build_output_path, '%{prj.name}', 'D3D12') .. '"')
+function rw_link_vulkan()
+	includedirs({
+		path.join(vulkan_sdk_path, 'Include'),
 	})
-
-  postbuildcommands ({
-		('{COPY} ' .. rw_make_third_party_location(path.join('AgilitySDK', 'bin', 'x64')) .. ' "' .. path.join(project_build_output_path, '%{prj.name}', 'D3D12') .. '"'),
+	libdirs({
+		path.join(vulkan_sdk_path, 'Lib'),
+	})
+	defines({
+		'VK_USE_PLATFORM_WIN32_KHR=1',
 	})
 end
