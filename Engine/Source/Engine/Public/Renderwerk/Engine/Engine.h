@@ -4,6 +4,7 @@
 #include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/Threading/SyncPoint.h"
 #include "Renderwerk/Platform/Threading/ThreadTypes.h"
+#include "Renderwerk/Renderer/Renderer.h"
 
 class ENGINE_API FEngine
 {
@@ -48,6 +49,8 @@ private:
 	TAtomic<bool8> bStopThreads = false;
 	FEngineThread UpdateThread = {};
 	FEngineThread RenderThread = {};
+
+	TSharedPtr<FRenderer> Renderer = nullptr;
 
 	friend void RunEngine();
 };

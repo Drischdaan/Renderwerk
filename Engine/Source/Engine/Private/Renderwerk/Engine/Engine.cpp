@@ -110,6 +110,11 @@ void FEngine::RenderThread_Main()
 void FEngine::RenderThread_Initialize()
 {
 	RW_LOG(LogDefault, Info, "Render thread id: {}", GetCurrentThreadId());
+
+	FRendererDesc RendererDesc = {};
+	RendererDesc.Window = Window;
+	Renderer = MakeShared<FRenderer>(RendererDesc);
+
 	RenderThread.SyncPoint.SetInitializedState();
 }
 
@@ -141,6 +146,7 @@ void FEngine::RenderThread_Tick()
 void FEngine::RenderThread_Shutdown()
 {
 	RenderThread.SyncPoint.SetShutdownState();
+	Renderer.reset();
 }
 
 TSharedPtr<FEngine> GetEngine()
