@@ -18,17 +18,26 @@
 
 </div>
 
-## 🎨 Features
+## 🛣️ Roadmap
 
-- **Performance Profiling with [tracy](https://github.com/wolfpld/tracy)**
-- **Job System**
-- **Memory Tracking (with support for stl structures)**
-- **Logging based on [spdlog](https://github.com/gabime/spdlog)**
+The roadmap is a rough outline of the features that are planned to be implemented in the engine. The list is not exhaustive and will be updated as the project progresses. The features are not listed in any particular order.
 
-## 🔮 Future Plans
+### 🚗 Engine
 
-- [ ] DirectX 12 Rendering
+- [ ] Job System
+- [ ] Memory Allocators
+- [ ] Memory Tracking (with support for stl structures)
+- [ ] Channel based logging using [spdlog](https://github.com/gabime/spdlog)
+- [ ] Performance Profiling with [tracy](https://github.com/wolfpld/tracy)
+- [ ] DirectX12 Rendering
 - [ ] Mesh Shading Pipeline
+- [ ] Custom container structures (Vector, Map, etc.)
+- [ ] String hashing for fast string comparisons and lookups (Unreal Engines [`FName`](https://dev.epicgames.com/documentation/en-us/unreal-engine/fname-in-unreal-engine) as an example)
+
+### ✏️ Editor
+
+- [ ] Node based Editors for Materials, Shaders, Renderpasses, etc.
+- [ ] Debugging tools
 
 ## 🚀 Getting Started
 
@@ -39,7 +48,6 @@
   - Desktop development with C++
   - MSVC v143
   - Windows 11 SDK (10.0.26100.0 or above recommended, not tested with older versions)
-- [tracy v0.11.1](https://github.com/wolfpld/tracy/releases/tag/v0.11.1) (If you want to profile the engine)
 
 ### 🛠️ Setting up the workspace
 
@@ -47,7 +55,7 @@ After cloning the repository, run the following commands in the root directory (
 
 ```bash
 # Windows
-.\Setup.bat
+.\CLI.bat setup
 ```
 
 This command will install the necessary dependencies and tools required to build the project. It will also generate the Visual Studio solution file.
@@ -58,15 +66,10 @@ If you encounter any issues with the build system, you can clean the workspace w
 
 ```bash
 # Windows
-.\Clean.bat
+.\CLI.bat clean
 ```
 
 This will remove all build artifacts, intermediate files, manually downloaded dependencies and tools. You need to run the setup script again to restore the workspace to a working state.
-
-### ⌚ Profiling
-
-If you want to profile the engine, you need to download the [tracy](https://github.com/wolfpld/tracy) profiler software (Look into the [prerequisites](#-prerequisites) section for the specific version). In order to start profiling, you first need to run the downloaded tracy executable and press "Connect". This will start listening for incoming connections. After that, you can start the engine and the profiler will automatically connect to the engine.
-Doing this will allow you to also profile the engine initialization process. Closing the engine, while the profiler is still connected, will also allow you to profile the shutdown process. Attaching the profiler while the engine is running is also possible, but it will not allow you to profile the initialization process.
 
 ## 📜 License
 
