@@ -12,4 +12,6 @@ if command == 'setup':
 	Setup.Execute()
 elif command == 'clean':
 	Clean.Execute()
-
+else:
+	print("Unknown command: " + command)
+	sys.exit(1)
