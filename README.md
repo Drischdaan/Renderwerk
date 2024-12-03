@@ -33,6 +33,7 @@ The roadmap is a rough outline of the features that are planned to be implemente
 - [ ] Mesh Shading Pipeline
 - [ ] Custom container structures (Vector, Map, etc.)
 - [ ] String hashing for fast string comparisons and lookups (Unreal Engines [`FName`](https://dev.epicgames.com/documentation/en-us/unreal-engine/fname-in-unreal-engine) as an example)
+- [ ] [Slang](https://github.com/shader-slang/slang) Support
 
 ### ✏️ Editor
 
