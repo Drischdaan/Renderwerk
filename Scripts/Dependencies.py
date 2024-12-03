@@ -1,2 +1,2 @@
 def Install():
-	print("Installing Dependencies")
+	print("Installing Dependencies...")

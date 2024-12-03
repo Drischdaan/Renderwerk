@@ -12,6 +12,7 @@ def Execute():
 		exit(1)
 
 	# Pull the LFS files and update the submodules
+	print('Updating submodules...')
 	subprocess.call(["git", "lfs", "pull"])
 	subprocess.call(["git", "submodule", "update", "--init", "--recursive"])
 
@@ -24,4 +25,5 @@ def Execute():
 	Premake.PreprocessProperties()
 
 	# Generate the project files
+	print('Generating project files...')
 	Premake.ExecutePremakeCommand('vs2022', '--file=Scripts/Config/premake5.lua')

@@ -13,6 +13,7 @@ def IsInstalled():
 	return Utils.DoesFileExist(PREMAKE_BINARY_FILE_PATH)
 
 def Install():
+	print('Installing Premake...')
 	zip_file_path = f'{PREMAKE_BINARY_FOLDER_PATH}/premake.zip'
 
 	Utils.CreateDirectoryIfNotExists(PREMAKE_BINARY_FOLDER_PATH)
@@ -24,6 +25,7 @@ def ExecutePremakeCommand(*args):
 	subprocess.call([PREMAKE_BINARY_FILE_PATH] + list(args))
 
 def PreprocessProperties():
+	print('Preprocessing properties.lua...')
 	properties_file_path = f'{PREMAKE_CONFIG_FOLDER_PATH}/properties.lua'
 	properties_file_content = ''
 
