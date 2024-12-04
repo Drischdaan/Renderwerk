@@ -40,8 +40,6 @@ public:
 	template <typename T>
 	static void DeleteArray(T* Array, size64 Count);
 
-	static size64 Usage;
-
 private:
 	static HANDLE ProcessHeap;
 };
