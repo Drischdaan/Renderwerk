@@ -6,4 +6,5 @@
 #include "Renderwerk/Core/Memory/Allocators.h"
 #include "Renderwerk/Core/Memory/Memory.h"
 #include "Renderwerk/Core/Types/Containers.h"
+#include "Renderwerk/Core/Types/Guid.h"
 #include "Renderwerk/Core/Types/String.h"
