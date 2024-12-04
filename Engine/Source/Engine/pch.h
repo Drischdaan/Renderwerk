@@ -18,3 +18,7 @@
 #include <utility>
 #include <vector>
 #include <xutility>
+
+#include <Windows.h>
+
+#include "Renderwerk/Core/CoreMinimal.h"
