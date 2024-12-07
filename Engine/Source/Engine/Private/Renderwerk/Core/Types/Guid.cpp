@@ -2,38 +2,32 @@
 
 #include "Renderwerk/Core/Types/Guid.h"
 
-#include <objbase.h>
+#include <random>
 
-FGuid NewGuid()
+enum
 {
-	GUID Guid;
-	CoCreateGuid(&Guid);
-	return Guid;
+	INVALID_GUID_ID = 0
+};
+
+static std::random_device GRandomDevice;
+static std::mt19937_64 GRandomEngine(GRandomDevice());
+static std::uniform_int_distribution<uint64> GRandomDistribution;
+
+const FGuid InvalidGuid = FGuid(INVALID_GUID_ID);
+
+FGuid::FGuid()
+	: Id(GRandomDistribution(GRandomEngine))
+{
 }
 
-FGuid NewGuid(FString String)
+FGuid::FGuid(const uint64 InId)
+	: Id(InId)
 {
-	FString Temp = std::move(String);
-	if (!Temp.starts_with(TEXT("{")))
-		Temp.insert(0, TEXT("{"));
-	if (!Temp.ends_with(TEXT("}")))
-		Temp.append(TEXT("}"));
-	printf("Temp: %ls\n", Temp.c_str());
-	FGuid Guid;
-	CLSIDFromString(Temp.data(), &Guid); // TODO: Error handling
-	return Guid;
 }
 
-bool8 IsValid(const FGuid& Guid)
-{
-	return ToString(Guid) != TEXT("CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"); // hacky, but it works
-}
+FGuid::~FGuid() = default;
 
-FString ToString(const FGuid& Guid)
+bool8 FGuid::IsValid() const
 {
-	OLECHAR* GuidString;
-	StringFromCLSID(Guid, &GuidString); // TODO: Error handling
-	const FString String = GuidString;
-	CoTaskMemFree(GuidString);
-	return String.substr(1, String.size() - 2); // remove curly braces
+	return Id != INVALID_GUID_ID;
 }
