@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Core/CoreTypes.h"
 #include "Renderwerk/Core/Types/String.h"
+#include "Renderwerk/Core/Utility/Hasher.h"
 
 /**
  * A compile-time hashed name that can be used to identify objects.
