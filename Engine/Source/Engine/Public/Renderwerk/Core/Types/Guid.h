@@ -25,10 +25,8 @@ public:
 public:
 	operator uint64() const { return Id; }
 	operator const uint64() const { return Id; }
-
 	operator uint64&() { return Id; }
 	operator const uint64&() const { return Id; }
-
 	operator uint64*() { return &Id; }
 	operator const uint64*() const { return &Id; }
 
