@@ -39,6 +39,8 @@ public:
 
 	constexpr bool8 operator==(const FGuid& Other) const { return Id == Other.Id; }
 	constexpr bool8 operator!=(const FGuid& Other) const { return Id != Other.Id; }
+	constexpr bool8 operator<(const FGuid& Other) const { return Id < Other.Id; }
+	constexpr bool8 operator>(const FGuid& Other) const { return Id > Other.Id; }
 
 	constexpr operator uint64() const { return Id; }
 	constexpr operator const uint64() const { return Id; }
@@ -64,6 +66,16 @@ struct std::hash<FGuid>
 		return std::hash<uint64>()(Guid);
 	}
 };
+
+template <>
+struct std::less<FGuid>
+{
+	bool8 operator()(const FGuid& Lhs, const FGuid& Rhs) const noexcept
+	{
+		return Lhs < Rhs;
+	}
+};
+
 
 template <>
 struct std::formatter<FGuid, FAnsiChar> : std::formatter<FAnsiStringView>

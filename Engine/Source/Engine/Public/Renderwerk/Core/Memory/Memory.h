@@ -23,7 +23,7 @@ public:
 
 public:
 	template <typename T, typename... TArguments>
-	[[nodiscard]] static T* NewAligned(size64 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
+	[[nodiscard]] static T* NewAligned(uint8 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
 
 	template <typename T, typename... TArguments>
 	[[nodiscard]] static T* New(TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
@@ -32,7 +32,7 @@ public:
 	static void Delete(T* Object);
 
 	template <typename T, typename... TArguments>
-	[[nodiscard]] static T* NewArrayAligned(size64 Count, size64 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
+	[[nodiscard]] static T* NewArrayAligned(size64 Count, uint8 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
 
 	template <typename T, typename... TArguments>
 	[[nodiscard]] static T* NewArray(size64 Count, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>);
@@ -45,7 +45,7 @@ private:
 };
 
 template <typename T, typename... TArguments>
-T* FMemory::NewAligned(const size64 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>)
+T* FMemory::NewAligned(const uint8 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>)
 {
 	void* Memory = Allocate(sizeof(T), Alignment);
 	return new(Memory) T(std::forward<TArguments>(Arguments)...);
@@ -65,7 +65,7 @@ void FMemory::Delete(T* Object)
 }
 
 template <typename T, typename... TArguments>
-T* FMemory::NewArrayAligned(const size64 Count, const size64 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>)
+T* FMemory::NewArrayAligned(const size64 Count, const uint8 Alignment, TArguments&&... Arguments) requires (std::is_constructible_v<T, TArguments...>)
 {
 	const size64 Size = sizeof(T) * Count;
 	void* Memory = Allocate(Size, Alignment);

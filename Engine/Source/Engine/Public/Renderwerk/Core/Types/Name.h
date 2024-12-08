@@ -26,8 +26,13 @@ public:
 	DEFINE_DEFAULT_COPY_AND_MOVE(FName);
 
 public:
+	[[nodiscard]] constexpr bool8 IsValid() const { return Hash != 0; }
+
+public:
 	constexpr bool8 operator==(const FName& Other) const { return Hash == Other.Hash; }
 	constexpr bool8 operator!=(const FName& Other) const { return Hash != Other.Hash; }
+	constexpr bool8 operator<(const FName& Other) const { return Hash < Other.Hash; }
+	constexpr bool8 operator>(const FName& Other) const { return Hash > Other.Hash; }
 
 	constexpr operator uint32() const { return Hash; }
 	constexpr operator const uint32() const { return Hash; }
@@ -49,6 +54,15 @@ struct std::hash<FName>
 	size64 operator()(const FName& InName) const noexcept
 	{
 		return std::hash<uint32>()(InName);
+	}
+};
+
+template <>
+struct std::less<FName>
+{
+	bool8 operator()(const FName& Lhs, const FName& Rhs) const noexcept
+	{
+		return Lhs < Rhs;
 	}
 };
 
