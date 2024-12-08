@@ -14,4 +14,4 @@ rw_project('Engine')
 	rw_copy_output_to_directory(path.join(project_build_output_path, 'Editor'))
 
 	-- Dependencies
-
+	rw_include_project('magic_enum', rw_make_third_party_location(path.join('magic_enum', 'include')))

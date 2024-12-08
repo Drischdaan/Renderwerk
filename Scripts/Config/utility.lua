@@ -233,6 +233,15 @@ function rw_link_project(name, include_path)
 	})
 end
 
+function rw_include_project(name, include_path)
+	if not include_path then
+		include_path = source_folder_path .. '/' .. name .. '/Public'
+	end
+	includedirs ({
+		include_path,
+	})
+end
+
 function rw_copy_output_to_directory(directory)
 	prebuildcommands ({
 		('{MKDIR} "' .. directory .. '"')
