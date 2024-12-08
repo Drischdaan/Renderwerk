@@ -25,6 +25,7 @@ void FEngine::Run()
 
 void FEngine::Initialize()
 {
+	bIsRunning = false;
 }
 
 void FEngine::RunLoop()

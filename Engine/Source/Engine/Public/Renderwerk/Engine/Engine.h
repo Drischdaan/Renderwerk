@@ -4,6 +4,7 @@
 
 #include "Renderwerk/Core/CoreAPI.h"
 #include "Renderwerk/Core/Memory/SmartPointers.h"
+#include "Renderwerk/Threading/ThreadTypes.h"
 
 /**
  * Main component that glues everything together
@@ -36,7 +37,7 @@ public:
 private:
 	FArgumentParser ArgumentParser;
 
-	bool8 bIsRunning = true;
+	TAtomic<bool8> bIsRunning = true;
 
 	friend void GuardedMain(const struct FLaunchParameters& Parameters);
 };
