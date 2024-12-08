@@ -4,30 +4,16 @@
 
 #include <random>
 
-enum
+namespace
 {
-	INVALID_GUID_ID = 0
-};
-
-static std::random_device GRandomDevice;
-static std::mt19937_64 GRandomEngine(GRandomDevice());
-static std::uniform_int_distribution<uint64> GRandomDistribution;
+	std::random_device GRandomDevice;
+	std::mt19937_64 GRandomEngine(GRandomDevice());
+	std::uniform_int_distribution<uint64> GRandomDistribution;
+}
 
 const FGuid InvalidGuid = FGuid(INVALID_GUID_ID);
 
 FGuid::FGuid()
 	: Id(GRandomDistribution(GRandomEngine))
 {
-}
-
-FGuid::FGuid(const uint64 InId)
-	: Id(InId)
-{
-}
-
-FGuid::~FGuid() = default;
-
-bool8 FGuid::IsValid() const
-{
-	return Id != INVALID_GUID_ID;
 }

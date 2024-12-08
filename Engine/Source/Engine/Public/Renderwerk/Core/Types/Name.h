@@ -38,6 +38,9 @@ public:
 
 private:
 	uint32 Hash = 0;
+
+	friend struct std::formatter<FName>;
+	friend struct std::formatter<FName, FWideChar>;
 };
 
 template <>
@@ -46,5 +49,32 @@ struct std::hash<FName>
 	size64 operator()(const FName& InName) const noexcept
 	{
 		return std::hash<uint32>()(InName);
+	}
+};
+
+template <>
+struct std::formatter<FName, FAnsiChar> : std::formatter<FAnsiStringView>
+{
+	template <typename FormatContext>
+	auto format(const FName& Name, FormatContext& Context) const
+	{
+		return std::formatter<FAnsiStringView>::format(std::to_string(Name.Hash), Context);
+	}
+};
+
+template <>
+struct std::formatter<FName, FWideChar>
+{
+	template <class TParseContext>
+	static constexpr auto parse(TParseContext& Context)
+	{
+		return Context.begin();
+	}
+
+
+	template <typename TFormatContext>
+	auto format(const FName& Name, TFormatContext& Context) const
+	{
+		return format_to(Context.out(), L"{0}", std::to_wstring(Name.Hash));
 	}
 };

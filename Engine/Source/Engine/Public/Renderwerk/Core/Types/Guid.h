@@ -2,10 +2,14 @@
 
 #include "Renderwerk/Core/CoreAPI.h"
 #include "Renderwerk/Core/CoreTypes.h"
+#include "Renderwerk/Core/Types/String.h"
 
 #include <format>
 
-#include "String.h"
+enum
+{
+	INVALID_GUID_ID = 0
+};
 
 /**
  * A 64-bit unique identifier. This is a simple wrapper around a 64-bit integer, that is randomly generated.
@@ -14,26 +18,40 @@ struct ENGINE_API FGuid
 {
 public:
 	FGuid();
-	FGuid(uint64 InId);
-	~FGuid();
+
+	constexpr FGuid(const uint64 InId)
+		: Id(InId)
+	{
+	}
+
+	constexpr ~FGuid() = default;
 
 	DEFINE_DEFAULT_COPY_AND_MOVE(FGuid);
 
 public:
-	[[nodiscard]] bool8 IsValid() const;
+	[[nodiscard]] constexpr bool8 IsValid() const
+	{
+		return Id != INVALID_GUID_ID;
+	}
 
 public:
-	operator uint64() const { return Id; }
-	operator const uint64() const { return Id; }
-	operator uint64&() { return Id; }
-	operator const uint64&() const { return Id; }
-	operator uint64*() { return &Id; }
-	operator const uint64*() const { return &Id; }
+	constexpr operator bool8() const { return IsValid(); }
 
-	operator bool8() const { return IsValid(); }
+	constexpr bool8 operator==(const FGuid& Other) const { return Id == Other.Id; }
+	constexpr bool8 operator!=(const FGuid& Other) const { return Id != Other.Id; }
+
+	constexpr operator uint64() const { return Id; }
+	constexpr operator const uint64() const { return Id; }
+	constexpr operator uint64&() { return Id; }
+	constexpr operator const uint64&() const { return Id; }
+	constexpr operator uint64*() { return &Id; }
+	constexpr operator const uint64*() const { return &Id; }
 
 private:
 	uint64 Id;
+
+	friend struct std::formatter<FGuid>;
+	friend struct std::formatter<FGuid, FWideChar>;
 };
 
 ENGINE_API extern const FGuid InvalidGuid;
@@ -48,17 +66,17 @@ struct std::hash<FGuid>
 };
 
 template <>
-struct std::formatter<FGuid, char> : std::formatter<FAnsiStringView>
+struct std::formatter<FGuid, FAnsiChar> : std::formatter<FAnsiStringView>
 {
 	template <typename FormatContext>
 	auto format(const FGuid& Guid, FormatContext& Context) const
 	{
-		return std::formatter<FAnsiStringView>::format(std::to_string(Guid), Context);
+		return std::formatter<FAnsiStringView>::format(std::to_string(Guid.Id), Context);
 	}
 };
 
 template <>
-struct std::formatter<FGuid, wchar_t>
+struct std::formatter<FGuid, FWideChar>
 {
 	template <class TParseContext>
 	static constexpr auto parse(TParseContext& Context)
@@ -70,6 +88,6 @@ struct std::formatter<FGuid, wchar_t>
 	template <typename TFormatContext>
 	auto format(const FGuid& Guid, TFormatContext& Context) const
 	{
-		return format_to(Context.out(), L"{0}", std::to_wstring(Guid));
+		return format_to(Context.out(), L"{0}", std::to_wstring(Guid.Id));
 	}
 };
