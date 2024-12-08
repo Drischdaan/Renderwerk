@@ -19,4 +19,6 @@
 #include <vector>
 #include <xutility>
 
-#include "Renderwerk.h"
+#include <Windows.h>
+
+#include "Renderwerk/Core/CoreMinimal.h"

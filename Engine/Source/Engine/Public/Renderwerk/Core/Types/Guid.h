@@ -1,61 +1,93 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreAPI.h"
-#include "Renderwerk/Core/Types/PrimitiveTypes.h"
-#include "Renderwerk/Core/Types/StringTypes.h"
+#include "Renderwerk/Core/CoreTypes.h"
+#include "Renderwerk/Core/Types/String.h"
 
 #include <format>
-#include <string>
 
-class ENGINE_API FGuid
+enum : uint8
+{
+	INVALID_GUID_ID = 0
+};
+
+/**
+ * A 64-bit unique identifier. This is a simple wrapper around a 64-bit integer, that is randomly generated.
+ */
+struct ENGINE_API FGuid
 {
 public:
 	FGuid();
-	FGuid(const TVector<uint8>& InData);
-	FGuid(const std::string& InDataString);
-	~FGuid() = default;
+
+	constexpr FGuid(const uint64 InId)
+		: Id(InId)
+	{
+	}
+
+	constexpr ~FGuid() = default;
 
 	DEFINE_DEFAULT_COPY_AND_MOVE(FGuid);
 
 public:
-	[[nodiscard]] bool IsValid() const;
-	[[nodiscard]] FString ToString() const;
+	[[nodiscard]] constexpr bool8 IsValid() const
+	{
+		return Id != INVALID_GUID_ID;
+	}
 
 public:
-	[[nodiscard]] TVector<uint8> GetData() const { return Data; }
+	constexpr operator bool8() const { return IsValid(); }
 
-public:
-	bool operator==(const FGuid& Other) const;
-	bool operator!=(const FGuid& Other) const;
-	bool operator<(const FGuid& Other) const;
-	bool operator>(const FGuid& Other) const;
+	constexpr bool8 operator==(const FGuid& Other) const { return Id == Other.Id; }
+	constexpr bool8 operator!=(const FGuid& Other) const { return Id != Other.Id; }
 
-	operator FString() const;
+	constexpr operator uint64() const { return Id; }
+	constexpr operator const uint64() const { return Id; }
+	constexpr operator uint64&() { return Id; }
+	constexpr operator const uint64&() const { return Id; }
+	constexpr operator uint64*() { return &Id; }
+	constexpr operator const uint64*() const { return &Id; }
 
 private:
-	TVector<uint8> Data;
+	uint64 Id;
+
+	friend struct std::formatter<FGuid>;
+	friend struct std::formatter<FGuid, FWideChar>;
 };
 
-ENGINE_API FGuid NewGuid();
-
-ENGINE_API FString ToString(const FGuid& Guid);
+ENGINE_API extern const FGuid InvalidGuid;
 
 template <>
 struct std::hash<FGuid>
 {
-	size_t operator()(const FGuid& Guid) const noexcept
+	size64 operator()(const FGuid& Guid) const noexcept
 	{
-		const uint64* Data = reinterpret_cast<const uint64*>(Guid.GetData().data());
-		return std::hash<uint64>{}(Data[0]) ^ std::hash<uint64>{}(Data[1]);
+		return std::hash<uint64>()(Guid);
 	}
 };
 
 template <>
-struct std::formatter<FGuid> : std::formatter<FString>
+struct std::formatter<FGuid, FAnsiChar> : std::formatter<FAnsiStringView>
 {
 	template <typename FormatContext>
 	auto format(const FGuid& Guid, FormatContext& Context) const
 	{
-		return std::formatter<FString>::format(Guid.ToString(), Context);
+		return std::formatter<FAnsiStringView>::format(std::to_string(Guid.Id), Context);
+	}
+};
+
+template <>
+struct std::formatter<FGuid, FWideChar>
+{
+	template <class TParseContext>
+	static constexpr auto parse(TParseContext& Context)
+	{
+		return Context.begin();
+	}
+
+
+	template <typename TFormatContext>
+	auto format(const FGuid& Guid, TFormatContext& Context) const
+	{
+		return format_to(Context.out(), L"{0}", std::to_wstring(Guid.Id));
 	}
 };

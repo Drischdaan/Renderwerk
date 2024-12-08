@@ -28,39 +28,19 @@ workspace(project_name)
 		'RW_ENGINE_FULL_VERSION="' .. project_version_string .. '"',
 		'RW_ENGINE_AUTHOR="' .. project_author .. '"',
 		'RW_LIBRARY_SHARED=1',
-		'SPDLOG_USE_STD_FORMAT=1',
-		'SPDLOG_WCHAR_TO_UTF8_SUPPORT=1',
-		'TRACY_DELAYED_INIT=1',
-		'TRACY_MANUAL_LIFETIME=1',
 	})
 
 	rw_filter_configuration_debug()
 		defines({
-			'RW_ENABLE_MEMORY_TRACKING=1',
-			'RW_ENABLE_PROFILING=1',
-			'RW_ENABLE_GPU_DEBUGGING=1',
-			'TRACY_ENABLE=1',
-			'TRACY_CALLSTACK=10',
-			'SPDLOG_ACTIVE_LEVEL=0',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_development()
 		defines({
-			'RW_ENABLE_MEMORY_TRACKING=1',
-			'RW_ENABLE_PROFILING=1',
-			'RW_ENABLE_GPU_DEBUGGING=1',
-			'TRACY_ENABLE=1',
-			'SPDLOG_ACTIVE_LEVEL=1',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_shipping()
 		defines({
-			'RW_ENABLE_MEMORY_TRACKING=0',
-			'RW_ENABLE_PROFILING=0',
-			'RW_ENABLE_GPU_DEBUGGING=0',
-			'TRACY_ENABLE=0',
-			'SPDLOG_ACTIVE_LEVEL=3',
 		})
 	rw_filter_end()

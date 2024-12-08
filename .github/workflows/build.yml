@@ -26,7 +26,7 @@ jobs:
           msbuild-architecture: x64
       - name: Setup
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: .\Setup.bat
+        run: .\CLI.bat setup
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: msbuild Renderwerk.sln /m /p:Configuration=${{matrix.build-configuration}} -fl -flp:logfile=Logs/Build-${{matrix.build-configuration}}.log

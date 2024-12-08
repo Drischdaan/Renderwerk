@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-// Used to suppress warnings about macros that should be enums
-#define FORWARD(...) __VA_ARGS__
-
 #define INNER_CONCAT(ValueA, ValueB) ValueA##ValueB
 #define CONCAT(ValueA, ValueB) INNER_CONCAT(ValueA, ValueB)
 
@@ -37,5 +34,5 @@
 	DEFINE_DEFAULT_MOVE_CONSTRUCTOR(Type); \
 	DEFINE_DEFAULT_MOVE_ASSIGNMENT(Type)
 
-// Used to define case statements for ToString functions of enums
-#define DEFINE_ENUM_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue
+// Defines a case statement for an enum value that returns the string representation of the enum value
+#define ENUM_STRING_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue

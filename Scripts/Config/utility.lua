@@ -39,7 +39,7 @@ function rw_enable_multi_processor_compilation()
 end
 
 function rw_default_compiler_flags()
-	characterset('MBCS')
+	characterset('Unicode')
 	callingconvention('FastCall')
 	floatingpoint('Fast') -- If issues arise, change this
 	staticruntime('Off')
@@ -249,20 +249,5 @@ function rw_copy_assets()
 
 	postbuildcommands ({
 		('{COPY} ' .. path.join(root_path, 'Assets') .. ' "' .. path.join(source_folder_path, '%{prj.name}', 'Assets') .. '"')
-	})
-end
-
-function rw_link_vulkan()
-	includedirs({
-		path.join(vulkan_sdk_path, 'Include'),
-	})
-	libdirs({
-		path.join(vulkan_sdk_path, 'Lib'),
-	})
-	defines({
-		'VK_USE_PLATFORM_WIN32_KHR=1',
-	})
-	links({
-		'vulkan-1',
 	})
 end
