@@ -6,7 +6,7 @@
 
 #include <format>
 
-enum
+enum : uint8
 {
 	INVALID_GUID_ID = 0
 };

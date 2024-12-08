@@ -44,5 +44,3 @@ static_assert(sizeof(byte) == 1, "byte size is not 1 byte");
 
 template <typename T>
 using TFunction = std::function<T>;
-
-using FSourceLocation = std::source_location;
