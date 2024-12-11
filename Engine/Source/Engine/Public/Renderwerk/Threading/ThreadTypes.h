@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <semaphore>
 #include <thread>
@@ -19,3 +20,9 @@ using FCountingSemaphore = std::counting_semaphore<TMaxValue>;
 
 using FBinarySemaphore = std::binary_semaphore;
 using FThread = std::thread;
+
+template <typename T>
+using TFuture = std::future<T>;
+
+template <typename T>
+using TPackagedTask = std::packaged_task<T>;
