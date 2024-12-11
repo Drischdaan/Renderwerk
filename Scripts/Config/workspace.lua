@@ -36,17 +36,20 @@ workspace(project_name)
 		defines({
 			'TRACY_ENABLE=1',
 			'TRACY_CALLSTACK=10',
+			macro_prefix .. 'ENABLE_PROFILING=1',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_development()
 		defines({
 			'TRACY_ENABLE=1',
+			macro_prefix .. 'ENABLE_PROFILING=1',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_shipping()
 		defines({
 			'TRACY_ENABLE=0',
+			macro_prefix .. 'ENABLE_PROFILING=0',
 		})
 	rw_filter_end()
