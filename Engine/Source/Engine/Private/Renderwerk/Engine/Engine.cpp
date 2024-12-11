@@ -25,6 +25,8 @@ void FEngine::Run()
 
 void FEngine::Initialize()
 {
+	PROFILER_SET_THREAD_NAME("MainThread");
+
 	WindowManager = MakeShared<FWindowManager>();
 	const FWindowDesc MainWindowDesc = {};
 	MainWindowGuid = WindowManager->Create(MainWindowDesc);
@@ -34,6 +36,7 @@ void FEngine::RunLoop()
 {
 	while (bIsRunning)
 	{
+		PROFILE_FRAME();
 		WindowManager->ProcessMessages();
 		if (!WindowManager->IsRegistered(MainWindowGuid))
 		{

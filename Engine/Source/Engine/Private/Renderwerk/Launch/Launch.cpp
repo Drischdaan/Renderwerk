@@ -16,6 +16,7 @@ void GuardedMain(const FLaunchParameters& Parameters)
 
 int32 LaunchEngine(const FLaunchParameters& Parameters)
 {
+	START_PROFILER();
 	__try
 	{
 		GuardedMain(Parameters);
@@ -24,5 +25,6 @@ int32 LaunchEngine(const FLaunchParameters& Parameters)
 	{
 		return EXIT_FAILURE;
 	}
+	SHUTDOWN_PROFILER();
 	return EXIT_SUCCESS;
 }

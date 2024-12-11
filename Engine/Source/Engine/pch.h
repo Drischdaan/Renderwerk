@@ -22,6 +22,7 @@
 #include <Windows.h>
 
 #include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Debug/Profiling.h"
 #include "Renderwerk/Engine/Engine.h"
 #include "Renderwerk/Launch/FlowControl.h"
 #include "Renderwerk/Threading/BufferedContainer.h"

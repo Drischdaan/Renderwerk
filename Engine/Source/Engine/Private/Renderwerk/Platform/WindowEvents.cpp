@@ -13,6 +13,7 @@ TDeque<FWindowEvent> ProcessWindowEvents(const TDeque<FWindowEvent>& Events)
 	// It's a pretty allocation heavy operation. Could be optimized by using preallocated
 	// memory blocks and custom allocator for these containers. Should be optimized in the future.
 	// TODO: Optimize allocations in this function
+	PROFILE_FUNCTION();
 	TVector<FWindowEvent> WindowEvents(Events.begin(), Events.end());
 	std::ranges::reverse(WindowEvents);
 

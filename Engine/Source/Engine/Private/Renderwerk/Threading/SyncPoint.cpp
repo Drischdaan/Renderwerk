@@ -13,6 +13,7 @@ FSyncPoint::~FSyncPoint()
 
 void FSyncPoint::Wait()
 {
+	PROFILE_FUNCTION();
 	bState = ESyncPointState::Waiting;
 	Semaphore.acquire();
 	++TickCount;
@@ -20,6 +21,7 @@ void FSyncPoint::Wait()
 
 void FSyncPoint::Signal()
 {
+	PROFILE_FUNCTION();
 	Semaphore.release();
 	bState = ESyncPointState::Signaled;
 }

@@ -82,6 +82,7 @@ void FWindowManager::Destroy(const TSharedPtr<FWindow>& Window)
 
 void FWindowManager::ProcessMessages()
 {
+	PROFILE_FUNCTION();
 	ProcessInvalidWindows();
 
 	MSG Message;
@@ -94,6 +95,7 @@ void FWindowManager::ProcessMessages()
 
 void FWindowManager::ProcessInvalidWindows()
 {
+	PROFILE_FUNCTION();
 	for (const TSharedPtr<FWindow>& Window : Windows | std::views::values)
 	{
 		if (!Window->IsValid())
