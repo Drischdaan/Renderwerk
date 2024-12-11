@@ -5,7 +5,7 @@
     <img src="https://raw.githubusercontent.com/Backyard-Studios/Branding/24006b7753330c3193ae399bb792a810304aea37/Logo/Logo.svg" alt="Logo" width="320" height="120">
   </a>
   <h3 align="center">Renderwerk</h3>
-  <p>DirectX 12 powered Game/Rendering Engine</p>
+  <p>Game/Rendering Engine</p>
   <p align="center">
     <a href="https://github.com/Drischdaan/Research/blob/main/Projects/Renderwerk/README.md"><strong>Explore my Notes »</strong></a>
   </p>
@@ -28,7 +28,8 @@ The roadmap is a rough outline of the features that are planned to be implemente
 - [ ] Memory Allocators
 - [ ] Memory Tracking (with support for stl structures)
 - [ ] Channel based logging using [spdlog](https://github.com/gabime/spdlog)
-- [ ] Performance Profiling with [tracy](https://github.com/wolfpld/tracy)
+- [x] Performance Profiling with [tracy](https://github.com/wolfpld/tracy)
+- [ ] Vulkan Rendering
 - [ ] DirectX12 Rendering
 - [ ] Mesh Shading Pipeline
 - [ ] Custom container structures (Vector, Map, etc.)
