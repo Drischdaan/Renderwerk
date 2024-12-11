@@ -8,7 +8,7 @@ rw_project('Engine')
 	rw_precompiled_header()
 
 	defines({
-		'RW_COMPILE_LIBRARY=1',
+		macro_prefix .. 'COMPILE_LIBRARY=1',
 	})
 
 	rw_copy_output_to_directory(path.join(project_build_output_path, 'Editor'))

@@ -19,15 +19,15 @@ workspace(project_name)
 	rw_filter_end()
 
 	defines({
-		'RW_ENGINE_NAME="' .. project_name .. '"',
-		'RW_ENGINE_VERSION="' .. project_version .. '"',
-		'RW_ENGINE_VERSION_MAJOR=' .. project_version_major,
-		'RW_ENGINE_VERSION_MINOR=' .. project_version_minor,
-		'RW_ENGINE_VERSION_PATCH=' .. project_version_patch,
-		'RW_ENGINE_VERSION_SUFFIX="' .. project_version_suffix .. '"',
-		'RW_ENGINE_FULL_VERSION="' .. project_version_string .. '"',
-		'RW_ENGINE_AUTHOR="' .. project_author .. '"',
-		'RW_LIBRARY_SHARED=1',
+		macro_prefix .. 'ENGINE_NAME="' .. project_name .. '"',
+		macro_prefix .. 'ENGINE_VERSION="' .. project_version .. '"',
+		macro_prefix .. 'ENGINE_VERSION_MAJOR=' .. project_version_major,
+		macro_prefix .. 'ENGINE_VERSION_MINOR=' .. project_version_minor,
+		macro_prefix .. 'ENGINE_VERSION_PATCH=' .. project_version_patch,
+		macro_prefix .. 'ENGINE_VERSION_SUFFIX="' .. project_version_suffix .. '"',
+		macro_prefix .. 'ENGINE_FULL_VERSION="' .. project_version_string .. '"',
+		macro_prefix .. 'ENGINE_AUTHOR="' .. project_author .. '"',
+		macro_prefix .. 'LIBRARY_SHARED=1',
 		'TRACY_DELAYED_INIT=1',
 		'TRACY_MANUAL_LIFETIME=1',
 	})
