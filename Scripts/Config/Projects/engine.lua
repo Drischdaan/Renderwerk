@@ -15,3 +15,4 @@ rw_project('Engine')
 
 	-- Dependencies
 	rw_include_project('magic_enum', rw_make_third_party_location(path.join('magic_enum', 'include')))
+	rw_link_project('tracy', rw_make_third_party_location(path.join('tracy', 'public')))

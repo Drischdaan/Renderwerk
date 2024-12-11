@@ -28,19 +28,25 @@ workspace(project_name)
 		'RW_ENGINE_FULL_VERSION="' .. project_version_string .. '"',
 		'RW_ENGINE_AUTHOR="' .. project_author .. '"',
 		'RW_LIBRARY_SHARED=1',
+		'TRACY_DELAYED_INIT=1',
+		'TRACY_MANUAL_LIFETIME=1',
 	})
 
 	rw_filter_configuration_debug()
 		defines({
+			'TRACY_ENABLE=1',
+			'TRACY_CALLSTACK=10',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_development()
 		defines({
+			'TRACY_ENABLE=1',
 		})
 	rw_filter_end()
 	
 	rw_filter_configuration_shipping()
 		defines({
+			'TRACY_ENABLE=0',
 		})
 	rw_filter_end()

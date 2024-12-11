@@ -11,3 +11,4 @@ group('Applications')
 
 group('ThirdParty')
 	include('Projects/ThirdParty/magic_enum.lua')
+	include('Projects/ThirdParty/tracy.lua')
