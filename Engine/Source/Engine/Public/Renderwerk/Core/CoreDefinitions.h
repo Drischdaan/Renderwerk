@@ -36,3 +36,5 @@
 
 // Defines a case statement for an enum value that returns the string representation of the enum value
 #define ENUM_STRING_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue
+
+#define BIT(Value) (1 << Value)
