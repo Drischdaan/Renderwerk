@@ -2,14 +2,14 @@
 
 #include "Renderwerk/Engine/Engine.h"
 
+#include "Renderwerk/Platform/Window.h"
+#include "Renderwerk/Platform/WindowManager.h"
+
 TSharedPtr<FEngine> GEngine = nullptr; // NOLINT(misc-use-internal-linkage)
 
 FEngine::FEngine(TVector<FString>&& InArguments) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
 	ArgumentParser = FArgumentParser(std::move(InArguments));
-	if (const FArgument& Argument = ArgumentParser.GetArgument(FName(TEXT("test"))))
-		printf("Test Argument: %ls\n", Argument.Value.c_str());
-	// TODO: Feed into cvar system
 }
 
 FEngine::~FEngine()
@@ -25,20 +25,28 @@ void FEngine::Run()
 
 void FEngine::Initialize()
 {
-	bIsRunning = false;
+	WindowManager = MakeShared<FWindowManager>();
+	const FWindowDesc MainWindowDesc = {};
+	MainWindowGuid = WindowManager->Create(MainWindowDesc);
 }
 
 void FEngine::RunLoop()
 {
 	while (bIsRunning)
 	{
-		if (GetAsyncKeyState(VK_ESCAPE) & 1)
+		WindowManager->ProcessMessages();
+		if (!WindowManager->IsRegistered(MainWindowGuid))
+		{
 			RequestShutdown();
+			// ReSharper disable once CppRedundantControlFlowJump
+			continue;
+		}
 	}
 }
 
 void FEngine::Shutdown()
 {
+	WindowManager.reset();
 }
 
 void FEngine::RequestShutdown()

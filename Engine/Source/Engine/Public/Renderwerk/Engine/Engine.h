@@ -6,6 +6,8 @@
 #include "Renderwerk/Core/Memory/SmartPointers.h"
 #include "Renderwerk/Threading/ThreadTypes.h"
 
+class FWindow;
+class FWindowManager;
 /**
  * Main component that glues everything together
  */
@@ -34,10 +36,15 @@ public:
 public:
 	[[nodiscard]] FArgumentParser& GetArgumentParser() { return ArgumentParser; }
 
+	[[nodiscard]] TSharedPtr<FWindowManager> GetWindowManager() const { return WindowManager; }
+
 private:
 	FArgumentParser ArgumentParser;
 
 	TAtomic<bool8> bIsRunning = true;
+
+	TSharedPtr<FWindowManager> WindowManager;
+	FGuid MainWindowGuid = INVALID_GUID_ID;
 
 	friend void GuardedMain(const struct FLaunchParameters& Parameters);
 };
