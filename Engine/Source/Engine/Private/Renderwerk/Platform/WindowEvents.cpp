@@ -9,6 +9,10 @@ IWindowEvent::IWindowEvent(const EWindowEventType InType)
 
 TDeque<FWindowEvent> ProcessWindowEvents(const TDeque<FWindowEvent>& Events)
 {
+	// This function is executed every frame, so it's important to keep it as fast as possible.
+	// It's a pretty allocation heavy operation. Could be optimized by using preallocated
+	// memory blocks and custom allocator for these containers. Should be optimized in the future.
+	// TODO: Optimize allocations in this function
 	TVector<FWindowEvent> WindowEvents(Events.begin(), Events.end());
 	std::ranges::reverse(WindowEvents);
 
