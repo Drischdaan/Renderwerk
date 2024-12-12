@@ -12,9 +12,7 @@ FEngine::FEngine(TVector<FString>&& InArguments) // NOLINT(cppcoreguidelines-rva
 	ArgumentParser = FArgumentParser(std::move(InArguments));
 }
 
-FEngine::~FEngine()
-{
-}
+FEngine::~FEngine() = default;
 
 void FEngine::Run()
 {
@@ -30,6 +28,9 @@ void FEngine::Initialize()
 	WindowManager = MakeShared<FWindowManager>();
 	const FWindowDesc MainWindowDesc = {};
 	MainWindowGuid = WindowManager->Create(MainWindowDesc);
+
+	RenderThread = MakeShared<FRenderThread>(&bIsRunning);
+	UpdateThread = MakeShared<FUpdateThread>(&bIsRunning);
 }
 
 void FEngine::RunLoop()
@@ -49,6 +50,10 @@ void FEngine::RunLoop()
 
 void FEngine::Shutdown()
 {
+	UpdateThread->Signal();
+	RenderThread->Signal();
+	UpdateThread.reset();
+	RenderThread.reset();
 	WindowManager.reset();
 }
 

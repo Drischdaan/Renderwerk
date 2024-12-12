@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "ArgumentParser.h"
+#include "EngineThreads.h"
 
-#include "Renderwerk/Core/CoreAPI.h"
-#include "Renderwerk/Core/Memory/SmartPointers.h"
+#include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Threading/ThreadTypes.h"
 
 class FWindow;
@@ -46,7 +46,12 @@ private:
 	TSharedPtr<FWindowManager> WindowManager;
 	FGuid MainWindowGuid = INVALID_GUID_ID;
 
+	TSharedPtr<FRenderThread> RenderThread;
+	TSharedPtr<FUpdateThread> UpdateThread;
+
 	friend void GuardedMain(const struct FLaunchParameters& Parameters);
+	friend class ENGINE_API FRenderThread;
+	friend class ENGINE_API FUpdateThread;
 };
 
 /**
