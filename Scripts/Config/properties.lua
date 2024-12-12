@@ -44,3 +44,4 @@ macro_prefix = '$(PROJECT_NAME_SHORTHAND)_'
 
 cpp_standard = 'C++20'
 
+vulkan_sdk_path = os.getenv('VULKAN_SDK')
