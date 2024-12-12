@@ -1,9 +1,6 @@
 <a name="readme-top"></a>
 
 <div align="center">
-  <a href="https://github.com/Backyard-Studios/Renderwerk">
-    <img src="https://raw.githubusercontent.com/Backyard-Studios/Branding/24006b7753330c3193ae399bb792a810304aea37/Logo/Logo.svg" alt="Logo" width="320" height="120">
-  </a>
   <h3 align="center">Renderwerk</h3>
   <p>Game/Rendering Engine</p>
   <p align="center">
@@ -27,13 +24,14 @@ The roadmap is a rough outline of the features that are planned to be implemente
 - [ ] Job System
 - [ ] Memory Allocators
 - [ ] Memory Tracking (with support for stl structures)
-- [ ] Channel based logging using [spdlog](https://github.com/gabime/spdlog)
+- [x] Channel based logging using [spdlog](https://github.com/gabime/spdlog)
 - [x] Performance Profiling with [tracy](https://github.com/wolfpld/tracy)
 - [ ] Vulkan Rendering
 - [ ] DirectX12 Rendering
 - [ ] Mesh Shading Pipeline
 - [ ] Custom container structures (Vector, Map, etc.)
-- [ ] String hashing for fast string comparisons and lookups (Unreal Engines [`FName`](https://dev.epicgames.com/documentation/en-us/unreal-engine/fname-in-unreal-engine) as an example)
+- [x] String hashing for fast string comparisons and lookups (Unreal Engines [`FName`](https://dev.epicgames.com/documentation/en-us/unreal-engine/fname-in-unreal-engine) as an example)
+  - [ ] String lookup table
 - [ ] [Slang](https://github.com/shader-slang/slang) Support
 
 ### ✏️ Editor
@@ -82,12 +80,6 @@ See [LICENSE](./LICENSE) for more information.
 [![Github][github]][github-url]
 [![Discord][discord]][discord-url]
 [![Twitter][twitter]][twitter-url]
-
-<div>
-    <a href="https://www.buymeacoffee.com/Drischdaan">
-      <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=Drischdaan&button_colour=BD5FFF&font_colour=ffffff&font_family=Lato&outline_colour=000000&coffee_colour=FFDD00" />
-    </a>
-</div>
 
 <!-- Variables -->
 
