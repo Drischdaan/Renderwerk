@@ -30,12 +30,16 @@ workspace(project_name)
 		macro_prefix .. 'LIBRARY_SHARED=1',
 		'TRACY_DELAYED_INIT=1',
 		'TRACY_MANUAL_LIFETIME=1',
+		'SPDLOG_USE_STD_FORMAT=1',
+		'SPDLOG_WCHAR_FILENAMES=1',
+		'SPDLOG_WCHAR_TO_UTF8_SUPPORT=1',
 	})
 
 	rw_filter_configuration_debug()
 		defines({
 			'TRACY_ENABLE=1',
 			'TRACY_CALLSTACK=10',
+			'SPDLOG_ACTIVE_LEVEL=0',
 			macro_prefix .. 'ENABLE_PROFILING=1',
 		})
 	rw_filter_end()
@@ -43,6 +47,7 @@ workspace(project_name)
 	rw_filter_configuration_development()
 		defines({
 			'TRACY_ENABLE=1',
+			'SPDLOG_ACTIVE_LEVEL=1',
 			macro_prefix .. 'ENABLE_PROFILING=1',
 		})
 	rw_filter_end()
@@ -50,6 +55,7 @@ workspace(project_name)
 	rw_filter_configuration_shipping()
 		defines({
 			'TRACY_ENABLE=0',
+			'SPDLOG_ACTIVE_LEVEL=3',
 			macro_prefix .. 'ENABLE_PROFILING=0',
 		})
 	rw_filter_end()
