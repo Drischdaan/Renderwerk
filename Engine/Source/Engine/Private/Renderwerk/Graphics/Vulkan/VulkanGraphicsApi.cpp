@@ -61,6 +61,9 @@ void FVulkanGraphicsApi::CreateInstance()
 	VERIFY(VK_API_VERSION_MAJOR(InstanceVersion) >= VK_API_VERSION_MAJOR(REQUIRED_VULKAN_INSTANCE_VERSION), "Vulkan instance version is too low");
 	VERIFY(VK_API_VERSION_MINOR(InstanceVersion) >= VK_API_VERSION_MINOR(REQUIRED_VULKAN_INSTANCE_VERSION), "Vulkan instance version is too low");
 
+	RW_LOG(LogVulkan, Info, "Using Vulkan version {}.{}.{}", VK_API_VERSION_MAJOR(InstanceVersion), VK_API_VERSION_MINOR(InstanceVersion),
+	       VK_API_VERSION_PATCH(InstanceVersion));
+
 	VkApplicationInfo ApplicationInfo = {};
 	ApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	ApplicationInfo.pApplicationName = RW_ENGINE_NAME;

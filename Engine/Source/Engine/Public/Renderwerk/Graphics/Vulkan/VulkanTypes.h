@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+DECLARE_LOG_CHANNEL(LogVulkan);
+
 using FVulkanExtensionId = const FAnsiChar*;
 using FVulkanLayerId = const FAnsiChar*;
 

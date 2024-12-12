@@ -17,6 +17,7 @@ void GuardedMain(const FLaunchParameters& Parameters)
 int32 LaunchEngine(const FLaunchParameters& Parameters)
 {
 	START_PROFILER();
+	FLogManager::Initialize();
 	SetUnhandledExceptionFilter(ExceptionHandler);
 	__try
 	{
@@ -26,6 +27,7 @@ int32 LaunchEngine(const FLaunchParameters& Parameters)
 	{
 		return EXIT_FAILURE;
 	}
+	FLogManager::Shutdown();
 	SHUTDOWN_PROFILER();
 	return EXIT_SUCCESS;
 }

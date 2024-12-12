@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+DEFINE_LOG_CHANNEL(LogVulkan);
+
 TVector<FVulkanExtensionId> MapFeatureTypesToExtensionsId(const TVector<EGraphicsFeatureType>& FeatureTypes)
 {
 	TVector<FVulkanExtensionId> FeatureIds;
@@ -49,5 +51,5 @@ bool8 FVulkanResult::IsError() const
 
 FString FVulkanResult::ToString() const
 {
-	return FString(magic_enum::enum_name(Result));
+	return FString(GetEnumValueName(Result));
 }

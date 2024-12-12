@@ -4,6 +4,8 @@
 
 #include "Renderwerk/Graphics/GraphicsFwd.h"
 
+DECLARE_LOG_CHANNEL(LogRenderer);
+
 struct ENGINE_API FRendererDesc
 {
 	EGraphicsApiType GraphicsApiType;
