@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <future>
 #include <map>

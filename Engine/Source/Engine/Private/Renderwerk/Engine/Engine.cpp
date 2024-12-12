@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Engine/Engine.h"
 
+#include "Renderwerk/Platform/Filesystem.h"
 #include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/WindowManager.h"
 
