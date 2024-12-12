@@ -62,8 +62,8 @@ void FEngine::RequestShutdown()
 	bIsRunning = false;
 }
 
-TSharedPtr<FEngine> GetEngine()
+TSharedPtr<FEngine> GetEngine() // NOLINT(misc-use-internal-linkage)
 {
-	VERIFY(GEngine != nullptr, "trying to access invalid engine instance pointer");
+	VERIFY(GEngine != nullptr, "Trying to access invalid engine instance pointer");
 	return GEngine;
 }

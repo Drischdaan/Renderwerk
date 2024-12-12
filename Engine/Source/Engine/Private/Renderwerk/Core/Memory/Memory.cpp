@@ -4,7 +4,7 @@
 
 HANDLE FMemory::ProcessHeap = GetProcessHeap();
 
-void* FMemory::Allocate(const size64 Size, const uint8 Alignment)
+void* FMemory::Allocate(const size64 Size, const size64 Alignment)
 {
 	VERIFY(Size > 0, "Size must be greater than 0");
 	VERIFY(Alignment % 2 == 0, "Alignment must be a multiple of 2");
@@ -12,7 +12,7 @@ void* FMemory::Allocate(const size64 Size, const uint8 Alignment)
 	return HeapAlloc(ProcessHeap, 0, AlignedSize);
 }
 
-void* FMemory::Reallocate(void* Pointer, const size64 Size, const uint8 Alignment)
+void* FMemory::Reallocate(void* Pointer, const size64 Size, const size64 Alignment)
 {
 	VERIFY(Pointer != nullptr, "Pointer must not be nullptr");
 	VERIFY(Size > 0, "Size must be greater than 0");
@@ -34,7 +34,7 @@ void FMemory::Free(void* Pointer)
 	HeapFree(ProcessHeap, 0, Pointer);
 }
 
-size64 FMemory::CalculateAlignedSize(const size64 Size, const uint8 Alignment)
+size64 FMemory::CalculateAlignedSize(const size64 Size, const size64 Alignment)
 {
 	VERIFY(Size > 0, "Size must be greater than 0");
 	VERIFY(Alignment % 2 == 0, "Alignment must be a multiple of 2");

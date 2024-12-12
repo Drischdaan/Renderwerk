@@ -1,0 +1,24 @@
+﻿#pragma once
+
+#include "Renderwerk/Core/CoreMinimal.h"
+
+#include "Renderwerk/Graphics/GraphicsFwd.h"
+
+struct ENGINE_API FRendererDesc
+{
+	EGraphicsApiType GraphicsApiType;
+};
+
+class ENGINE_API FRenderer
+{
+public:
+	FRenderer(const FRendererDesc& InDescription);
+	~FRenderer();
+
+	DELETE_COPY_AND_MOVE(FRenderer);
+
+private:
+	FRendererDesc Description;
+
+	TUniquePtr<IGraphicsApi> GraphicsApi;
+};

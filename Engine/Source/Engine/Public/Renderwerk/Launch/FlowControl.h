@@ -30,7 +30,7 @@ ENGINE_API void HandleInterruption(HRESULT Code, const FInterruptionContext& Con
 ENGINE_API void HandleFailedVerify(const FInterruptionContext& Context);
 ENGINE_API void HandleFailedAssertion(const FInterruptionContext& Context);
 
-ENGINE_API LONG ExceptionHandler(const EXCEPTION_POINTERS* Pointers);
+ENGINE_API LONG ExceptionHandler(EXCEPTION_POINTERS* Pointers);
 
 #define INTERRUPT(Code, Message, ...) HandleInterruption(Code, FInterruptionContext(std::format(TEXT(Message), __VA_ARGS__).c_str(), CURRENT_SOURCE_LOCATION))
 

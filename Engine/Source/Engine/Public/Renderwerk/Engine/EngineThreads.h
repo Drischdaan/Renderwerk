@@ -4,10 +4,11 @@
 #include "Renderwerk/Threading/SyncPoint.h"
 #include "Renderwerk/Threading/ThreadTypes.h"
 
+class FRenderer;
+
 class ENGINE_API IEngineThread
 {
 public:
-	IEngineThread() = default;
 	IEngineThread(TAtomic<bool8>* InIsRunning, const FAnsiString& InProfilerName = "UnnamedThread");
 	virtual ~IEngineThread();
 
@@ -40,23 +41,25 @@ protected:
 class ENGINE_API FRenderThread : public IEngineThread
 {
 public:
-	FRenderThread() = default;
 	FRenderThread(TAtomic<bool8>* bIsRunning);
 	~FRenderThread() override;
 
 	DELETE_COPY_AND_MOVE(FRenderThread);
 
 private:
+	void Initialize() override;
+	void Shutdown() override;
+
 	bool8 PreTick() override;
 	void PostTick() override;
 
 private:
+	TSharedPtr<FRenderer> Renderer;
 };
 
 class ENGINE_API FUpdateThread : public IEngineThread
 {
 public:
-	FUpdateThread() = default;
 	FUpdateThread(TAtomic<bool8>* bIsRunning);
 	~FUpdateThread() override;
 

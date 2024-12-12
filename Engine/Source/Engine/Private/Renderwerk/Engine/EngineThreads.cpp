@@ -2,7 +2,9 @@
 
 #include "Renderwerk/Engine/EngineThreads.h"
 
+#include "Renderwerk/Graphics/GraphicsApi.h"
 #include "Renderwerk/Platform/WindowManager.h"
+#include "Renderwerk/Renderer/Renderer.h"
 
 IEngineThread::IEngineThread(TAtomic<bool8>* InIsRunning, const FAnsiString& InProfilerName)
 	: bIsRunning(InIsRunning), ProfilerName(InProfilerName)
@@ -67,6 +69,19 @@ FRenderThread::FRenderThread(TAtomic<bool8>* bIsRunning)
 }
 
 FRenderThread::~FRenderThread() = default;
+
+void FRenderThread::Initialize()
+{
+	constexpr FRendererDesc RendererDesc = {EGraphicsApiType::Vulkan};
+	Renderer = MakeShared<FRenderer>(RendererDesc);
+	IEngineThread::Initialize();
+}
+
+void FRenderThread::Shutdown()
+{
+	IEngineThread::Shutdown();
+	Renderer.reset();
+}
 
 bool8 FRenderThread::PreTick()
 {

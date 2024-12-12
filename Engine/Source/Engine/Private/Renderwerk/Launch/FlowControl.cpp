@@ -30,7 +30,8 @@ void HandleFailedAssertion(const FInterruptionContext& Context)
 	HandleInterruption(IR_ASSERT, Context);
 }
 
-LONG ExceptionHandler(const EXCEPTION_POINTERS* Pointers)
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+LONG ExceptionHandler(EXCEPTION_POINTERS* Pointers)
 {
 	const HRESULT ErrorCode = Pointers->ExceptionRecord->ExceptionCode;
 	// TODO: Implement a proper error handling system that generates a crash report

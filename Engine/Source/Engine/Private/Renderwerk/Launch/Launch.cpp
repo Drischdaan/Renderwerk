@@ -17,6 +17,7 @@ void GuardedMain(const FLaunchParameters& Parameters)
 int32 LaunchEngine(const FLaunchParameters& Parameters)
 {
 	START_PROFILER();
+	SetUnhandledExceptionFilter(ExceptionHandler);
 	__try
 	{
 		GuardedMain(Parameters);
