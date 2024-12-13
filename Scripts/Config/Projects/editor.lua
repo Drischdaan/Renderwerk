@@ -21,5 +21,6 @@ rw_project('Editor')
 	-- Dependencies
 	rw_link_project('Engine')
 	rw_include_project('magic_enum', rw_make_third_party_location(path.join('magic_enum', 'include')))
+	rw_include_project('json', rw_make_third_party_location(path.join('json', 'include')))
 	rw_link_project('tracy', rw_make_third_party_location(path.join('tracy', 'public')))
 	rw_link_project('spdlog', rw_make_third_party_location(path.join('spdlog', 'include')))
