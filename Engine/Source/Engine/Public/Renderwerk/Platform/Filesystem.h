@@ -19,8 +19,11 @@ public:
 
 	void CreateIfNotExists() const;
 
-	[[nodiscard]] FString Read() const;
-	void Write(const FStringView& Buffer) const;
+	[[nodiscard]] FAnsiString ReadAnsi() const;
+	[[nodiscard]] FWideString ReadWide() const;
+
+	void Write(const FWideStringView& Buffer) const;
+	void Write(const FAnsiStringView& Buffer) const;
 
 public:
 	[[nodiscard]] FPath GetPath() const { return Path; }

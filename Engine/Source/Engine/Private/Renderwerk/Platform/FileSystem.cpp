@@ -25,20 +25,38 @@ void FFile::CreateIfNotExists() const
 	File.close();
 }
 
-FString FFile::Read() const
+FAnsiString FFile::ReadAnsi() const
+{
+	std::ifstream File(Path, std::ios::binary | std::ios::ate);
+	const std::streamsize Size = File.tellg();
+	File.seekg(0, std::ios::beg);
+	TVector<FAnsiChar> Buffer(Size);
+	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.c_str());
+	File.close();
+	return FAnsiString(Buffer.data(), Size);
+}
+
+FWideString FFile::ReadWide() const
 {
 	std::wifstream File(Path, std::ios::binary | std::ios::ate);
 	const std::streamsize Size = File.tellg();
 	File.seekg(0, std::ios::beg);
-	TVector<FChar> Buffer(Size);
+	TVector<FWideChar> Buffer(Size);
 	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.c_str());
 	File.close();
-	return FString(Buffer.data(), Size);
+	return FWideString(Buffer.data(), Size);
 }
 
-void FFile::Write(const FStringView& Buffer) const
+void FFile::Write(const FWideStringView& Buffer) const
 {
 	std::wofstream File(Path);
+	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.c_str());
+	File.close();
+}
+
+void FFile::Write(const FAnsiStringView& Buffer) const
+{
+	std::ofstream File(Path);
 	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.c_str());
 	File.close();
 }

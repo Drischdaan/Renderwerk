@@ -2,12 +2,12 @@
 
 #include "ArgumentParser.h"
 #include "EngineThreads.h"
-
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Threading/ThreadTypes.h"
 
 class FWindow;
 class FWindowManager;
+
 /**
  * Main component that glues everything together
  */

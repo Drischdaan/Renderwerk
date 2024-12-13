@@ -3,8 +3,23 @@
 #include "Renderwerk/Engine/Engine.h"
 
 #include "Renderwerk/Platform/Filesystem.h"
+#include "Renderwerk/Platform/JSON.h"
 #include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/WindowManager.h"
+
+struct FTest2
+{
+	FAnsiString Hello = "World";
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(FTest2, Hello)
+};
+
+struct FTest
+{
+	uint32 Value;
+	bool8 Value2;
+	FTest2 Test2 = {};
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(FTest, Value, Value2, Test2)
+};
 
 TSharedPtr<FEngine> GEngine = nullptr; // NOLINT(misc-use-internal-linkage)
 
