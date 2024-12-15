@@ -27,6 +27,42 @@ void FVulkanGraphicsSwapchain::Resize()
 	AcquireBackBuffers();
 }
 
+bool8 FVulkanGraphicsSwapchain::AcquireImageIndex(const VkSemaphore SignalSemaphore)
+{
+	const FVulkanResult Result = vkAcquireNextImageKHR(Context.GraphicsDevice->Device, Swapchain, UINT64_MAX, SignalSemaphore, VK_NULL_HANDLE, &CurrentImageIndex);
+	if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
+		return false;
+	VERIFY(Result == VK_SUCCESS, "Failed to acquire image index");
+	return true;
+}
+
+bool8 FVulkanGraphicsSwapchain::Present(const VkSemaphore WaitSemaphore) const
+{
+	VkPresentInfoKHR PresentInfo = {};
+	PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	PresentInfo.pNext = nullptr;
+	PresentInfo.waitSemaphoreCount = 1;
+	PresentInfo.pWaitSemaphores = &WaitSemaphore;
+	PresentInfo.swapchainCount = 1;
+	PresentInfo.pSwapchains = &Swapchain;
+	PresentInfo.pImageIndices = &CurrentImageIndex;
+	const FVulkanResult Result = vkQueuePresentKHR(Context.GraphicsDevice->GetPresentQueue(), &PresentInfo);
+	if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
+		return false;
+	VERIFY(Result == VK_SUCCESS, "Failed to present image");
+	return true;
+}
+
+VkImage FVulkanGraphicsSwapchain::GetBackBuffer(const uint32 Index) const
+{
+	return BackBuffers.at(Index);
+}
+
+VkImageView FVulkanGraphicsSwapchain::GetBackBufferView(const uint32 Index) const
+{
+	return BackBufferViews.at(Index);
+}
+
 void FVulkanGraphicsSwapchain::CreateSwapchain()
 {
 	const FVulkanSurfaceProperties SurfaceProperties = Context.GraphicsDevice->GetAdapter()->GetSurfaceProperties(Context.Surface);
@@ -41,7 +77,7 @@ void FVulkanGraphicsSwapchain::CreateSwapchain()
 	SwapchainCreateInfo.imageColorSpace = Description.ColorSpace;
 	SwapchainCreateInfo.imageExtent = SurfaceProperties.Capabilities.currentExtent;
 	SwapchainCreateInfo.imageArrayLayers = 1;
-	SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	SwapchainCreateInfo.preTransform = SurfaceProperties.Capabilities.currentTransform;
 	SwapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;

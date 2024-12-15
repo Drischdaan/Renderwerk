@@ -68,6 +68,8 @@ public:
 	void Show() const;
 	void Hide() const;
 
+	void SignalCloseCondition();
+
 public:
 	[[nodiscard]] HWND GetHandle() const { return WindowHandle; }
 	[[nodiscard]] FGuid GetId() const { return Id; }
@@ -98,6 +100,9 @@ private:
 	HWND WindowHandle = nullptr;
 
 	FWindowEventQueue EventQueue;
+
+	FMutex CloseMutex;
+	FConditionVariable CloseCondition;
 
 	uint32 SizeMoveStartWidth = 0;
 	uint32 SizeMoveStartHeight = 0;

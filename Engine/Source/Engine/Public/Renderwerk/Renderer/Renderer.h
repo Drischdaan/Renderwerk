@@ -22,6 +22,9 @@ public:
 public:
 	void Resize() const;
 
+	void BeginFrame() const;
+	void EndFrame() const;
+
 private:
 	FRendererDesc Description;
 

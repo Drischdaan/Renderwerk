@@ -2,8 +2,8 @@
 
 #include "Renderwerk/Renderer/Renderer.h"
 
-#include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanGraphicsApi.h"
+#include "Renderwerk/Platform/Window.h"
 
 DEFINE_LOG_CHANNEL(LogRenderer);
 
@@ -23,4 +23,14 @@ FRenderer::~FRenderer()
 void FRenderer::Resize() const
 {
 	GraphicsApi->Resize();
+}
+
+void FRenderer::BeginFrame() const
+{
+	GraphicsApi->BeginFrame();
+}
+
+void FRenderer::EndFrame() const
+{
+	GraphicsApi->EndFrame();
 }

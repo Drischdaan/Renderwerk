@@ -37,5 +37,6 @@ private:
 	VkQueue TransferQueue;
 	VkQueue PresentQueue;
 
+	friend class ENGINE_API FVulkanGraphicsApi;
 	friend class ENGINE_API FVulkanGraphicsSwapchain;
 };

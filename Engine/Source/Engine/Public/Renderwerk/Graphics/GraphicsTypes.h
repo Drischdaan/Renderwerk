@@ -46,3 +46,12 @@ private:
 };
 
 using FGraphicsFrameId = uint64;
+
+struct ENGINE_API FGraphicsFrame
+{
+	VkCommandPool CommandPool = VK_NULL_HANDLE;
+	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+	VkSemaphore ImageAvailableSemaphore = VK_NULL_HANDLE;
+	VkSemaphore RenderFinishedSemaphore = VK_NULL_HANDLE;
+	VkFence InFlightFence = VK_NULL_HANDLE;
+};

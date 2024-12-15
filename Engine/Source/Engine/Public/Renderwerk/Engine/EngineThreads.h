@@ -52,6 +52,7 @@ private:
 	void Shutdown() override;
 
 	bool8 PreTick() override;
+	bool8 Tick() override;
 	void PostTick() override;
 
 private:

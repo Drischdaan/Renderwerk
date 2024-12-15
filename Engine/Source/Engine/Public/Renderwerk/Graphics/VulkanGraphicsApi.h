@@ -27,6 +27,9 @@ public:
 
 	void Resize() const;
 
+	void BeginFrame() const;
+	void EndFrame();
+
 private:
 	void AcquireApiVersion();
 	void CreateAllocator();
@@ -39,6 +42,9 @@ private:
 	void CreateSurface();
 	void CreateDevice();
 	void CreateSwapchain();
+	void CreateFrames();
+
+	void TransitionImage(VkImage Image, VkImageLayout CurrentLayout, VkImageLayout NewLayout) const;
 
 private:
 	static void CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions);
@@ -59,4 +65,6 @@ private:
 #endif
 
 	TSharedPtr<FVulkanGraphicsSwapchain> Swapchain;
+	FGraphicsFrameId CurrentFrameId = 0;
+	TArray<FGraphicsFrame, 3> Frames;
 };

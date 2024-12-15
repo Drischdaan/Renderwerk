@@ -51,6 +51,11 @@ void FWindow::Hide() const
 	ShowWindow(WindowHandle, SW_HIDE);
 }
 
+void FWindow::SignalCloseCondition()
+{
+	CloseCondition.notify_all();
+}
+
 LRESULT FWindow::WindowProc(const HWND InWindowHandle, const UINT Message, const WPARAM WParam, const LPARAM LParam)
 {
 	switch (Message)
@@ -80,6 +85,8 @@ LRESULT FWindow::WindowProc(const HWND InWindowHandle, const UINT Message, const
 
 int64 FWindow::OnCloseMessage(const HWND InWindowHandle)
 {
+	FUniqueLock Lock(CloseMutex);
+	CloseCondition.wait(Lock);
 	State.Visibility = EWindowVisibility::Closed;
 	DestroyWindow(InWindowHandle);
 	return 0;

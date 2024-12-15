@@ -90,9 +90,19 @@ bool8 FRenderThread::PreTick()
 {
 	if (!IEngineThread::PreTick())
 		return false;
-	if (!GetEngine()->GetWindowManager()->IsRegistered(GetEngine()->MainWindowGuid))
+	if (!Window->IsValid())
 		return false;
 	ProcessWindowEvents();
+	return true;
+}
+
+bool8 FRenderThread::Tick()
+{
+	Renderer->BeginFrame();
+	{
+	}
+	Renderer->EndFrame();
+	Window->SignalCloseCondition();
 	return true;
 }
 

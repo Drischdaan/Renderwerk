@@ -43,12 +43,21 @@ FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescripti
 	CreateSurface();
 	CreateDevice();
 	CreateSwapchain();
+	CreateFrames();
 }
 
 FVulkanGraphicsApi::~FVulkanGraphicsApi()
 {
 	Context.GraphicsDevice->WaitForIdle();
 
+	for (const FGraphicsFrame& Frame : Frames)
+	{
+		vkDestroyFence(Context.GraphicsDevice->Device, Frame.InFlightFence, Context.Allocator);
+		vkDestroySemaphore(Context.GraphicsDevice->Device, Frame.RenderFinishedSemaphore, Context.Allocator);
+		vkDestroySemaphore(Context.GraphicsDevice->Device, Frame.ImageAvailableSemaphore, Context.Allocator);
+		vkFreeCommandBuffers(Context.GraphicsDevice->Device, Frame.CommandPool, 1, &Frame.CommandBuffer);
+		vkDestroyCommandPool(Context.GraphicsDevice->Device, Frame.CommandPool, Context.Allocator);
+	}
 	Swapchain.reset();
 	Context.GraphicsDevice.reset();
 	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
@@ -96,6 +105,110 @@ void FVulkanGraphicsApi::Resize() const
 {
 	Context.GraphicsDevice->WaitForIdle();
 	Swapchain->Resize();
+}
+
+void FVulkanGraphicsApi::BeginFrame() const
+{
+	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+
+	FVulkanResult Result = vkWaitForFences(Context.GraphicsDevice->Device, 1, &Frame.InFlightFence, VK_TRUE, UINT64_MAX);
+	VERIFY(Result == VK_SUCCESS, "Failed to wait for in-flight fence");
+	Result = vkResetFences(Context.GraphicsDevice->Device, 1, &Frame.InFlightFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to reset in-flight fence");
+
+	if (!Swapchain->AcquireImageIndex(Frame.ImageAvailableSemaphore))
+	{
+		if (Description.Window->IsValid())
+			Resize();
+		return;
+	}
+
+	Result = vkResetCommandBuffer(Frame.CommandBuffer, 0);
+	VERIFY(Result == VK_SUCCESS, "Failed to reset command buffer");
+
+	VkCommandBufferBeginInfo CommandBufferBeginInfo;
+	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	CommandBufferBeginInfo.pNext = nullptr;
+	CommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	CommandBufferBeginInfo.pInheritanceInfo = nullptr;
+	Result = vkBeginCommandBuffer(Frame.CommandBuffer, &CommandBufferBeginInfo);
+	VERIFY(Result == VK_SUCCESS, "Failed to begin command buffer");
+
+	const PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
+		vkGetDeviceProcAddr(Context.GraphicsDevice->Device, "vkCmdBeginDebugUtilsLabelEXT"));
+
+	VkDebugUtilsLabelEXT Label = {};
+	Label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	Label.pNext = nullptr;
+	Label.pLabelName = "Clear Screen";
+	Label.color[0] = 1.0f;
+	Label.color[1] = 1.0f;
+	Label.color[2] = 1.0f;
+	Label.color[3] = 1.0f;
+	vkCmdBeginDebugUtilsLabelEXT(Frame.CommandBuffer, &Label);
+	TransitionImage(Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+	constexpr VkClearColorValue ClearValue = {0.0f, 0.0f, 0.0f, 1.0f};
+	VkImageSubresourceRange ClearRange;
+	ClearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	ClearRange.baseMipLevel = 0;
+	ClearRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ClearRange.baseArrayLayer = 0;
+	ClearRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	vkCmdClearColorImage(Frame.CommandBuffer, Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_GENERAL, &ClearValue, 1, &ClearRange);
+}
+
+void FVulkanGraphicsApi::EndFrame()
+{
+	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+
+	TransitionImage(Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	const PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
+		vkGetDeviceProcAddr(Context.GraphicsDevice->Device, "vkCmdEndDebugUtilsLabelEXT"));
+	vkCmdEndDebugUtilsLabelEXT(Frame.CommandBuffer);
+
+	FVulkanResult Result = vkEndCommandBuffer(Frame.CommandBuffer);
+	VERIFY(Result == VK_SUCCESS, "Failed to end command buffer");
+
+	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
+	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	CommandBufferSubmitInfo.pNext = nullptr;
+	CommandBufferSubmitInfo.commandBuffer = Frame.CommandBuffer;
+
+	VkSemaphoreSubmitInfo ImageAvailableSemaphoreSubmitInfo = {};
+	ImageAvailableSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	ImageAvailableSemaphoreSubmitInfo.pNext = nullptr;
+	ImageAvailableSemaphoreSubmitInfo.semaphore = Frame.ImageAvailableSemaphore;
+	ImageAvailableSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
+	ImageAvailableSemaphoreSubmitInfo.value = 0;
+
+	VkSemaphoreSubmitInfo RenderFinishedSemaphoreSubmitInfo = {};
+	RenderFinishedSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	RenderFinishedSemaphoreSubmitInfo.pNext = nullptr;
+	RenderFinishedSemaphoreSubmitInfo.semaphore = Frame.RenderFinishedSemaphore;
+	RenderFinishedSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	RenderFinishedSemaphoreSubmitInfo.value = 0;
+
+	VkSubmitInfo2 SubmitInfo = {};
+	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	SubmitInfo.pNext = nullptr;
+	SubmitInfo.waitSemaphoreInfoCount = 1;
+	SubmitInfo.pWaitSemaphoreInfos = &ImageAvailableSemaphoreSubmitInfo;
+	SubmitInfo.signalSemaphoreInfoCount = 1;
+	SubmitInfo.pSignalSemaphoreInfos = &RenderFinishedSemaphoreSubmitInfo;
+	SubmitInfo.commandBufferInfoCount = 1;
+	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
+	Result = vkQueueSubmit2(Context.GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, Frame.InFlightFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
+
+	if (!Swapchain->Present(Frame.RenderFinishedSemaphore))
+	{
+		if (Description.Window->IsValid())
+			Resize();
+		return;
+	}
+	CurrentFrameId = (CurrentFrameId + 1) % Frames.size();
 }
 
 void FVulkanGraphicsApi::AcquireApiVersion()
@@ -147,9 +260,9 @@ void FVulkanGraphicsApi::CreateInstance()
 	CheckExtensionAvailability(RequiredExtensions);
 
 	const TVector<const char*> RequiredInstanceLayers = {
-		// #ifdef RW_ENABLE_GRAPHICS_VALIDATION
-		// 		"VK_LAYER_KHRONOS_validation",
-		// #endif
+#ifdef RW_ENABLE_GRAPHICS_VALIDATION
+		"VK_LAYER_KHRONOS_validation",
+#endif
 	};
 	CheckLayerAvailability(RequiredInstanceLayers);
 
@@ -217,6 +330,77 @@ void FVulkanGraphicsApi::CreateSwapchain()
 {
 	FVulkanSwapchainDesc SwapchainDesc = {};
 	Swapchain = MakeShared<FVulkanGraphicsSwapchain>(Context, SwapchainDesc);
+}
+
+void FVulkanGraphicsApi::CreateFrames()
+{
+	for (FGraphicsFrame& Frame : Frames)
+	{
+		VkCommandPoolCreateInfo CommandPoolCreateInfo = {};
+		CommandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		CommandPoolCreateInfo.pNext = nullptr;
+		CommandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		CommandPoolCreateInfo.queueFamilyIndex = Context.GraphicsDevice->GetAdapter()->GetQueueMetadata().GraphicsIndex;
+		FVulkanResult Result = vkCreateCommandPool(Context.GraphicsDevice->Device, &CommandPoolCreateInfo, Context.Allocator, &Frame.CommandPool);
+		VERIFY(Result == VK_SUCCESS, "Failed to create command pool");
+
+		VkCommandBufferAllocateInfo CommandBufferAllocateInfo = {};
+		CommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		CommandBufferAllocateInfo.pNext = nullptr;
+		CommandBufferAllocateInfo.commandPool = Frame.CommandPool;
+		CommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		CommandBufferAllocateInfo.commandBufferCount = 1;
+		Result = vkAllocateCommandBuffers(Context.GraphicsDevice->Device, &CommandBufferAllocateInfo, &Frame.CommandBuffer);
+
+		VkSemaphoreCreateInfo SemaphoreCreateInfo = {};
+		SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		SemaphoreCreateInfo.pNext = nullptr;
+		SemaphoreCreateInfo.flags = 0;
+
+		Result = vkCreateSemaphore(Context.GraphicsDevice->Device, &SemaphoreCreateInfo, Context.Allocator, &Frame.ImageAvailableSemaphore);
+		VERIFY(Result == VK_SUCCESS, "Failed to create image available semaphore");
+
+		Result = vkCreateSemaphore(Context.GraphicsDevice->Device, &SemaphoreCreateInfo, Context.Allocator, &Frame.RenderFinishedSemaphore);
+		VERIFY(Result == VK_SUCCESS, "Failed to create render finished semaphore");
+
+		VkFenceCreateInfo FenceCreateInfo = {};
+		FenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		FenceCreateInfo.pNext = nullptr;
+		FenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		Result = vkCreateFence(Context.GraphicsDevice->Device, &FenceCreateInfo, Context.Allocator, &Frame.InFlightFence);
+		VERIFY(Result == VK_SUCCESS, "Failed to create in-flight fence");
+	}
+}
+
+void FVulkanGraphicsApi::TransitionImage(const VkImage Image, const VkImageLayout CurrentLayout, const VkImageLayout NewLayout) const
+{
+	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+
+	VkImageSubresourceRange SubImage;
+	SubImage.aspectMask = (NewLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	SubImage.baseMipLevel = 0;
+	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
+	SubImage.baseArrayLayer = 0;
+	SubImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	VkImageMemoryBarrier2 ImageBarrier = {};
+	ImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	ImageBarrier.pNext = nullptr;
+	ImageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	ImageBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+	ImageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	ImageBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+	ImageBarrier.oldLayout = CurrentLayout;
+	ImageBarrier.newLayout = NewLayout;
+	ImageBarrier.subresourceRange = SubImage;
+	ImageBarrier.image = Image;
+
+	VkDependencyInfo DependencyInfo = {};
+	DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	DependencyInfo.pNext = nullptr;
+	DependencyInfo.imageMemoryBarrierCount = 1;
+	DependencyInfo.pImageMemoryBarriers = &ImageBarrier;
+	vkCmdPipelineBarrier2(Frame.CommandBuffer, &DependencyInfo);
 }
 
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)

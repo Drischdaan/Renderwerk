@@ -23,6 +23,15 @@ public:
 public:
 	void Resize();
 
+	bool8 AcquireImageIndex(VkSemaphore SignalSemaphore);
+	bool8 Present(VkSemaphore WaitSemaphore) const;
+
+	[[nodiscard]] VkImage GetBackBuffer(uint32 Index) const;
+	[[nodiscard]] VkImageView GetBackBufferView(uint32 Index) const;
+
+public:
+	[[nodiscard]] uint32 GetCurrentImageIndex() const { return CurrentImageIndex; }
+
 private:
 	void CreateSwapchain();
 	void DestroySwapchain() const;
@@ -39,4 +48,6 @@ private:
 	TVector<VkImage> BackBuffers;
 	TVector<VkImageView> BackBufferViews;
 	VkExtent2D Extent;
+
+	uint32 CurrentImageIndex = 0;
 };
