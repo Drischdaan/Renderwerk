@@ -31,7 +31,7 @@ FAnsiString FFile::ReadAnsi() const
 	const std::streamsize Size = File.tellg();
 	File.seekg(0, std::ios::beg);
 	TVector<FAnsiChar> Buffer(Size);
-	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.c_str());
+	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.string());
 	File.close();
 	return FAnsiString(Buffer.data(), Size);
 }
@@ -42,7 +42,7 @@ FWideString FFile::ReadWide() const
 	const std::streamsize Size = File.tellg();
 	File.seekg(0, std::ios::beg);
 	TVector<FWideChar> Buffer(Size);
-	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.c_str());
+	VERIFY(File.read(Buffer.data(), Size), "Failed to read file: {}", Path.string());
 	File.close();
 	return FWideString(Buffer.data(), Size);
 }
@@ -50,14 +50,14 @@ FWideString FFile::ReadWide() const
 void FFile::Write(const FWideStringView& Buffer) const
 {
 	std::wofstream File(Path);
-	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.c_str());
+	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.string());
 	File.close();
 }
 
 void FFile::Write(const FAnsiStringView& Buffer) const
 {
 	std::ofstream File(Path);
-	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.c_str());
+	VERIFY(File.write(Buffer.data(), Buffer.size()), "Failed to write file: {}", Path.string());
 	File.close();
 }
 

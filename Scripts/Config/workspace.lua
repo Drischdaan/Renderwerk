@@ -41,6 +41,7 @@ workspace(project_name)
 			'TRACY_CALLSTACK=10',
 			'SPDLOG_ACTIVE_LEVEL=0',
 			macro_prefix .. 'ENABLE_PROFILING=1',
+			macro_prefix .. 'ENABLE_GRAPHICS_VALIDATION=1',
 		})
 	rw_filter_end()
 	
@@ -49,6 +50,7 @@ workspace(project_name)
 			'TRACY_ENABLE=1',
 			'SPDLOG_ACTIVE_LEVEL=1',
 			macro_prefix .. 'ENABLE_PROFILING=1',
+			macro_prefix .. 'ENABLE_GRAPHICS_VALIDATION=0',
 		})
 	rw_filter_end()
 	
@@ -57,5 +59,6 @@ workspace(project_name)
 			'TRACY_ENABLE=0',
 			'SPDLOG_ACTIVE_LEVEL=3',
 			macro_prefix .. 'ENABLE_PROFILING=0',
+			macro_prefix .. 'ENABLE_GRAPHICS_VALIDATION=0',
 		})
 	rw_filter_end()

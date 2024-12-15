@@ -85,24 +85,6 @@ constexpr TFlags<TEnum> operator^(TEnum Value, const TFlags<TEnum>& Flags) noexc
 }
 
 template <typename TEnum> requires std::is_enum_v<TEnum>
-constexpr TFlags<TEnum> operator&(TEnum First, TEnum Second) noexcept
-{
-	return TFlags<TEnum>(First) & Second;
-}
-
-template <typename TEnum> requires std::is_enum_v<TEnum>
-constexpr TFlags<TEnum> operator|(TEnum First, TEnum Second) noexcept
-{
-	return TFlags<TEnum>(First) | Second;
-}
-
-template <typename TEnum> requires std::is_enum_v<TEnum>
-constexpr TFlags<TEnum> operator^(TEnum First, TEnum Second) noexcept
-{
-	return TFlags<TEnum>(First) ^ Second;
-}
-
-template <typename TEnum> requires std::is_enum_v<TEnum>
 constexpr TFlags<TEnum> operator~(TEnum Value) noexcept
 {
 	return ~(TFlags<TEnum>(Value));

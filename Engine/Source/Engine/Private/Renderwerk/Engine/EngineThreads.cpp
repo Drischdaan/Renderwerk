@@ -2,7 +2,6 @@
 
 #include "Renderwerk/Engine/EngineThreads.h"
 
-#include "Renderwerk/Graphics/GraphicsApi.h"
 #include "Renderwerk/Platform/WindowManager.h"
 #include "Renderwerk/Renderer/Renderer.h"
 
@@ -72,7 +71,7 @@ FRenderThread::~FRenderThread() = default;
 
 void FRenderThread::Initialize()
 {
-	constexpr FRendererDesc RendererDesc = {EGraphicsApiType::Vulkan};
+	constexpr FRendererDesc RendererDesc = {};
 	Renderer = MakeShared<FRenderer>(RendererDesc);
 	IEngineThread::Initialize();
 }

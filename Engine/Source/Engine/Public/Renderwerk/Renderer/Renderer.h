@@ -8,7 +8,6 @@ DECLARE_LOG_CHANNEL(LogRenderer);
 
 struct ENGINE_API FRendererDesc
 {
-	EGraphicsApiType GraphicsApiType;
 };
 
 class ENGINE_API FRenderer
@@ -22,5 +21,5 @@ public:
 private:
 	FRendererDesc Description;
 
-	TUniquePtr<IGraphicsApi> GraphicsApi;
+	TUniquePtr<FVulkanGraphicsApi> GraphicsApi;
 };

@@ -26,4 +26,4 @@ struct FSourceLocation
 	}
 };
 
-#define CURRENT_SOURCE_LOCATION FSourceLocation(__FILEW__, __LINE__, __FUNCTIONW__)
+#define CURRENT_SOURCE_LOCATION FSourceLocation(__FILE__, __LINE__, __FUNCTION__)

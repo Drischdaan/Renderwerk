@@ -4,6 +4,7 @@
 #	include <tracy/Tracy.hpp>
 #	define START_PROFILER() tracy::StartupProfiler(); while (!tracy::IsProfilerStarted()) {} TracySetProgramName(RW_ENGINE_NAME)
 #	define SHUTDOWN_PROFILER() tracy::ShutdownProfiler()
+#	define IS_PROFILER_STARTED() tracy::IsProfilerStarted()
 #	define PROFILE_SCOPE(Name) ZoneScopedN(Name)
 #	define PROFILE_FUNCTION() ZoneScoped
 #	define PROFILE_FRAME() FrameMark
@@ -14,6 +15,7 @@
 #else
 #	define START_PROFILER()
 #	define SHUTDOWN_PROFILER()
+#	define IS_PROFILER_STARTED() false
 #	define PROFILE_SCOPE(Name)
 #	define PROFILE_FUNCTION()
 #	define PROFILE_FRAME()

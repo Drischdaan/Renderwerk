@@ -39,7 +39,7 @@ function rw_enable_multi_processor_compilation()
 end
 
 function rw_default_compiler_flags()
-	characterset('Unicode')
+	characterset('MBCS')
 	callingconvention('FastCall')
 	floatingpoint('Fast') -- If issues arise, change this
 	staticruntime('Off')
