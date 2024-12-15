@@ -2,19 +2,30 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+#include "Renderwerk/Graphics/GraphicsFwd.h"
+#include "Renderwerk/Graphics/VulkanContext.h"
+
 #include <vulkan/vulkan_core.h>
 
 #define REQUIRED_VULKAN_INSTANCE_VERSION VK_API_VERSION_1_3
 
 DECLARE_LOG_CHANNEL(LogVulkan);
 
+struct ENGINE_API FVulkanGraphicsApiDesc
+{
+	TSharedPtr<FWindow> Window;
+};
+
 class ENGINE_API FVulkanGraphicsApi
 {
 public:
-	FVulkanGraphicsApi();
+	FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescription);
 	~FVulkanGraphicsApi();
 
 	DELETE_COPY_AND_MOVE(FVulkanGraphicsApi);
+
+public:
+	[[nodiscard]] TVector<TSharedPtr<FVulkanGraphicsAdapter>> AcquireAdapters() const;
 
 private:
 	void AcquireApiVersion();
@@ -25,6 +36,8 @@ private:
 	void CreateDebugMessenger();
 #endif
 
+	void CreateSurface();
+
 private:
 	static void CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions);
 	[[nodiscard]] static bool8 IsExtensionSupported(const char* ExtensionName, const TVector<VkExtensionProperties>& AvailableExtensions);
@@ -34,10 +47,10 @@ private:
 	[[nodiscard]] static bool8 IsLayerSupported(const char* LayerName, const TVector<VkLayerProperties>& AvailableLayers);
 
 private:
-	VkAllocationCallbacks* Allocator;
+	FVulkanGraphicsApiDesc Description;
+	FVulkanContext Context;
 
 	uint32 ApiVersion;
-	VkInstance Instance;
 
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	VkDebugUtilsMessengerEXT DebugMessenger;

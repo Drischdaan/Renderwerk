@@ -71,7 +71,8 @@ FRenderThread::~FRenderThread() = default;
 
 void FRenderThread::Initialize()
 {
-	constexpr FRendererDesc RendererDesc = {};
+	FRendererDesc RendererDesc = {};
+	RendererDesc.Window = GetEngine()->GetWindowManager()->Get(GetEngine()->MainWindowGuid);
 	Renderer = MakeShared<FRenderer>(RendererDesc);
 	IEngineThread::Initialize();
 }

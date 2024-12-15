@@ -2,7 +2,11 @@
 
 #include "Renderwerk/Graphics/VulkanGraphicsApi.h"
 
+#include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
+
 #include <vulkan/vulkan_win32.h>
+
+#include "Renderwerk/Platform/Window.h"
 
 namespace
 {
@@ -25,27 +29,45 @@ namespace
 #endif
 }
 
-FVulkanGraphicsApi::FVulkanGraphicsApi()
+FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescription)
+	: Description(InDescription)
 {
+	Context = FVulkanContext();
 	AcquireApiVersion();
 	CreateAllocator();
 	CreateInstance();
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	CreateDebugMessenger();
 #endif
+	CreateSurface();
 }
 
 FVulkanGraphicsApi::~FVulkanGraphicsApi()
 {
+	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	const PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-		vkGetInstanceProcAddr(Instance, "vkDestroyDebugUtilsMessengerEXT"));
+		vkGetInstanceProcAddr(Context.Instance, "vkDestroyDebugUtilsMessengerEXT"));
 	VERIFY(vkDestroyDebugUtilsMessengerEXT != nullptr, "Failed to get vkDestroyDebugUtilsMessengerEXT function");
-
-	vkDestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, Allocator);
+	vkDestroyDebugUtilsMessengerEXT(Context.Instance, DebugMessenger, Context.Allocator);
 #endif
-	vkDestroyInstance(Instance, Allocator);
-	FMemory::Delete(Allocator);
+	vkDestroyInstance(Context.Instance, Context.Allocator);
+	FMemory::Delete(Context.Allocator);
+}
+
+TVector<TSharedPtr<FVulkanGraphicsAdapter>> FVulkanGraphicsApi::AcquireAdapters() const
+{
+	uint32 PhysicalDeviceCount = 0;
+	VkResult Result = vkEnumeratePhysicalDevices(Context.Instance, &PhysicalDeviceCount, nullptr);
+	VERIFY(Result == VK_SUCCESS, "Failed to enumerate Vulkan physical devices");
+	TVector<VkPhysicalDevice> PhysicalDevices(PhysicalDeviceCount);
+	Result = vkEnumeratePhysicalDevices(Context.Instance, &PhysicalDeviceCount, PhysicalDevices.data());
+	VERIFY(Result == VK_SUCCESS, "Failed to enumerate Vulkan physical devices");
+	TVector<TSharedPtr<FVulkanGraphicsAdapter>> Adapters;
+	Adapters.reserve(PhysicalDeviceCount);
+	for (const VkPhysicalDevice& PhysicalDevice : PhysicalDevices)
+		Adapters.push_back(MakeShared<FVulkanGraphicsAdapter>(Context, PhysicalDevice));
+	return Adapters;
 }
 
 void FVulkanGraphicsApi::AcquireApiVersion()
@@ -59,17 +81,18 @@ void FVulkanGraphicsApi::AcquireApiVersion()
 
 void FVulkanGraphicsApi::CreateAllocator()
 {
-	Allocator = FMemory::New<VkAllocationCallbacks>();
-	Allocator->pfnAllocation = [](void* UserData, const size64 Size, const size64 Alignment, VkSystemAllocationScope AllocationScope) -> void* {
+	Context.Allocator = FMemory::New<VkAllocationCallbacks>();
+	Context.Allocator->pfnAllocation = [](void* UserData, const size64 Size, const size64 Alignment, VkSystemAllocationScope AllocationScope) -> void* {
 		return FMemory::Allocate(Size, Alignment);
 	};
-	Allocator->pfnFree = [](void* UserData, void* Pointer) -> void
+	Context.Allocator->pfnFree = [](void* UserData, void* Pointer) -> void
 	{
 		if (Pointer == nullptr)
 			return;
 		FMemory::Free(Pointer);
 	};
-	Allocator->pfnReallocation = [](void* UserData, void* OriginalPointer, const size64 Size, const size64 Alignment, VkSystemAllocationScope AllocationScope) -> void* {
+	Context.Allocator->pfnReallocation = [](void* UserData, void* OriginalPointer, const size64 Size, const size64 Alignment,
+	                                        VkSystemAllocationScope AllocationScope) -> void* {
 		return FMemory::Reallocate(OriginalPointer, Size, Alignment);
 	};
 }
@@ -111,7 +134,7 @@ void FVulkanGraphicsApi::CreateInstance()
 	InstanceCreateInfo.enabledExtensionCount = static_cast<uint32>(RequiredExtensions.size());
 	InstanceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 
-	const VkResult Result = vkCreateInstance(&InstanceCreateInfo, Allocator, &Instance);
+	const VkResult Result = vkCreateInstance(&InstanceCreateInfo, Context.Allocator, &Context.Instance);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan instance");
 }
 
@@ -119,7 +142,7 @@ void FVulkanGraphicsApi::CreateInstance()
 void FVulkanGraphicsApi::CreateDebugMessenger()
 {
 	const PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-		vkGetInstanceProcAddr(Instance, "vkCreateDebugUtilsMessengerEXT"));
+		vkGetInstanceProcAddr(Context.Instance, "vkCreateDebugUtilsMessengerEXT"));
 	VERIFY(vkCreateDebugUtilsMessengerEXT != nullptr, "Failed to get vkCreateDebugUtilsMessengerEXT function");
 
 	VkDebugUtilsMessengerCreateInfoEXT DebugMessengerCreateInfo = {};
@@ -131,10 +154,23 @@ void FVulkanGraphicsApi::CreateDebugMessenger()
 	DebugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	DebugMessengerCreateInfo.pfnUserCallback = ValidationCallback;
-	const VkResult Result = vkCreateDebugUtilsMessengerEXT(Instance, &DebugMessengerCreateInfo, Allocator, &DebugMessenger);
+	const VkResult Result = vkCreateDebugUtilsMessengerEXT(Context.Instance, &DebugMessengerCreateInfo, Context.Allocator, &DebugMessenger);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan debug messenger");
 }
 #endif
+
+
+void FVulkanGraphicsApi::CreateSurface()
+{
+	VkWin32SurfaceCreateInfoKHR SurfaceCreateInfo;
+	SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	SurfaceCreateInfo.pNext = nullptr;
+	SurfaceCreateInfo.flags = 0;
+	SurfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+	SurfaceCreateInfo.hwnd = Description.Window->GetHandle();
+	const VkResult Result = vkCreateWin32SurfaceKHR(Context.Instance, &SurfaceCreateInfo, Context.Allocator, &Context.Surface);
+	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan surface");
+}
 
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)
 {

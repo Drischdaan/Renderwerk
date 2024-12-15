@@ -37,6 +37,7 @@ public:
 	[[nodiscard]] FArgumentParser& GetArgumentParser() { return ArgumentParser; }
 
 	[[nodiscard]] TSharedPtr<FWindowManager> GetWindowManager() const { return WindowManager; }
+	[[nodiscard]] FGuid GetMainWindowGuid() const { return MainWindowGuid; }
 
 private:
 	FArgumentParser ArgumentParser;

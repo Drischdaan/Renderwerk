@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+#include "Renderwerk/Threading/ThreadTypes.h"
+
 class FWindow;
 struct FWindowDesc;
 
@@ -24,14 +26,13 @@ public:
 	void Destroy(const TSharedPtr<FWindow>& Window);
 
 	void ProcessMessages();
+	void ProcessInvalidWindows();
 
 public:
 	[[nodiscard]] WNDCLASSEX GetWindowClass() const { return WindowClass; }
 
 private:
-	void ProcessInvalidWindows();
-
-private:
+	FMutex Mutex;
 	TMap<FGuid, TSharedPtr<FWindow>> Windows;
 	WNDCLASSEX WindowClass;
 

@@ -8,6 +8,7 @@ DECLARE_LOG_CHANNEL(LogRenderer);
 
 struct ENGINE_API FRendererDesc
 {
+	TSharedPtr<FWindow> Window;
 };
 
 class ENGINE_API FRenderer

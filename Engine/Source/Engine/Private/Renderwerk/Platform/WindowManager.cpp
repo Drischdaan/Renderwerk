@@ -46,6 +46,7 @@ FWindowManager::~FWindowManager()
 
 FGuid FWindowManager::Create(const FWindowDesc& Description)
 {
+	FScopedLock Lock(Mutex);
 	FGuid Id;
 	Windows.insert_or_assign(Id, MakeShared<FWindow>(Id, Description));
 	return Id;
@@ -53,6 +54,7 @@ FGuid FWindowManager::Create(const FWindowDesc& Description)
 
 TSharedPtr<FWindow> FWindowManager::CreateAndGet(const FWindowDesc& Description)
 {
+	FScopedLock Lock(Mutex);
 	FGuid Id;
 	TSharedPtr<FWindow> Window = MakeShared<FWindow>(Id, Description);
 	Windows.insert_or_assign(Id, Window);
@@ -66,17 +68,20 @@ bool8 FWindowManager::IsRegistered(const FGuid& Id) const
 
 TSharedPtr<FWindow> FWindowManager::Get(const FGuid& Id)
 {
+	FScopedLock Lock(Mutex);
 	VERIFY(IsRegistered(Id), "window not registered");
 	return Windows.at(Id);
 }
 
 void FWindowManager::Destroy(const FGuid& Id)
 {
+	FScopedLock Lock(Mutex);
 	InvalidWindowQueue.push(Id);
 }
 
 void FWindowManager::Destroy(const TSharedPtr<FWindow>& Window)
 {
+	FScopedLock Lock(Mutex);
 	InvalidWindowQueue.push(Window->GetId());
 }
 
@@ -96,6 +101,7 @@ void FWindowManager::ProcessMessages()
 void FWindowManager::ProcessInvalidWindows()
 {
 	PROFILE_FUNCTION();
+	FScopedLock Lock(Mutex);
 	for (const TSharedPtr<FWindow>& Window : Windows | std::views::values)
 	{
 		if (!Window->IsValid())
@@ -107,6 +113,8 @@ void FWindowManager::ProcessInvalidWindows()
 	{
 		FGuid Id = InvalidWindowQueue.front();
 		InvalidWindowQueue.pop();
+		TSharedPtr<FWindow>& Window = Windows.at(Id);
+		Window.reset();
 		Windows.erase(Id);
 	}
 }

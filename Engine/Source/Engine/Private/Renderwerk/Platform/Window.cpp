@@ -58,7 +58,8 @@ LRESULT FWindow::WindowProc(const HWND InWindowHandle, const UINT Message, const
 	case WM_CLOSE:
 		return OnCloseMessage(InWindowHandle);
 	case WM_DESTROY:
-		return OnDestroyMessage();
+		OnDestroyMessage();
+		break;
 	case WM_SIZE:
 		return OnSizeMessage(InWindowHandle, WParam, LParam);
 	case WM_MOVE:
@@ -84,10 +85,9 @@ int64 FWindow::OnCloseMessage(const HWND InWindowHandle)
 	return 0;
 }
 
-int64 FWindow::OnDestroyMessage()
+void FWindow::OnDestroyMessage()
 {
 	WindowHandle = nullptr;
-	return 0;
 }
 
 int64 FWindow::OnSizeMessage(const HWND InWindowHandle, const WPARAM WParam, const LPARAM LParam)

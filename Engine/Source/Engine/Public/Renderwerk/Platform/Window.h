@@ -79,7 +79,7 @@ private:
 	[[nodiscard]] LRESULT WindowProc(HWND InWindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
 
 	int64 OnCloseMessage(HWND InWindowHandle);
-	int64 OnDestroyMessage();
+	void OnDestroyMessage();
 	int64 OnSizeMessage(HWND InWindowHandle, WPARAM WParam, LPARAM LParam);
 	int64 OnMoveMessage(LPARAM LParam);
 	int64 OnEnterSizeMoveMessage();
