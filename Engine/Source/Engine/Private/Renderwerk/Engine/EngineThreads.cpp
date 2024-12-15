@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Engine/EngineThreads.h"
 
+#include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/WindowManager.h"
 #include "Renderwerk/Renderer/Renderer.h"
 
@@ -71,6 +72,8 @@ FRenderThread::~FRenderThread() = default;
 
 void FRenderThread::Initialize()
 {
+	Window = GetEngine()->GetWindowManager()->Get(GetEngine()->MainWindowGuid);
+
 	FRendererDesc RendererDesc = {};
 	RendererDesc.Window = GetEngine()->GetWindowManager()->Get(GetEngine()->MainWindowGuid);
 	Renderer = MakeShared<FRenderer>(RendererDesc);
@@ -89,12 +92,35 @@ bool8 FRenderThread::PreTick()
 		return false;
 	if (!GetEngine()->GetWindowManager()->IsRegistered(GetEngine()->MainWindowGuid))
 		return false;
+	ProcessWindowEvents();
 	return true;
 }
 
 void FRenderThread::PostTick()
 {
 	GetEngine()->UpdateThread->Signal();
+}
+
+void FRenderThread::ProcessWindowEvents() const
+{
+	PROFILE_FUNCTION();
+	Window->GetEventQueue().SwapContainers();
+	TDeque<FWindowEvent> EventQueue = ProcessWindowEventQueue(Window->GetEventQueue().GetBackContainer());
+	while (!EventQueue.empty())
+	{
+		const TSharedPtr<IWindowEvent> Event = EventQueue.front();
+		EventQueue.pop_front();
+		switch (Event->Type)
+		{
+		case EWindowEventType::ClientResize:
+			{
+				Renderer->Resize();
+				break;
+			}
+		default:
+			break;
+		}
+	}
 }
 
 FUpdateThread::FUpdateThread(TAtomic<bool8>* bIsRunning)

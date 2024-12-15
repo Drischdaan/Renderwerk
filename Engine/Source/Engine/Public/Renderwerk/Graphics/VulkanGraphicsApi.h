@@ -28,6 +28,8 @@ public:
 	[[nodiscard]] TVector<TSharedPtr<FVulkanGraphicsAdapter>> AcquireAdapters() const;
 	[[nodiscard]] TSharedPtr<FVulkanGraphicsAdapter> GetSuitableAdapter() const;
 
+	void Resize() const;
+
 private:
 	void AcquireApiVersion();
 	void CreateAllocator();
@@ -38,8 +40,8 @@ private:
 #endif
 
 	void CreateSurface();
-
 	void CreateDevice();
+	void CreateSwapchain();
 
 private:
 	static void CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions);
@@ -59,5 +61,5 @@ private:
 	VkDebugUtilsMessengerEXT DebugMessenger;
 #endif
 
-	TSharedPtr<FVulkanGraphicsDevice> GraphicsDevice;
+	TSharedPtr<FVulkanGraphicsSwapchain> Swapchain;
 };

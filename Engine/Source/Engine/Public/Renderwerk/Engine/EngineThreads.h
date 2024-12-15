@@ -4,6 +4,7 @@
 #include "Renderwerk/Threading/SyncPoint.h"
 #include "Renderwerk/Threading/ThreadTypes.h"
 
+class FWindow;
 class FRenderer;
 
 class ENGINE_API IEngineThread
@@ -54,6 +55,10 @@ private:
 	void PostTick() override;
 
 private:
+	void ProcessWindowEvents() const;
+
+private:
+	TSharedPtr<FWindow> Window;
 	TSharedPtr<FRenderer> Renderer;
 };
 

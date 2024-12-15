@@ -40,7 +40,7 @@ ENGINE_API TSharedPtr<T> CastEvent(const TSharedPtr<IWindowEvent>& Event)
  * @param Events The events to process
  * @return The processed events
  */
-[[nodiscard]] ENGINE_API TDeque<FWindowEvent> ProcessWindowEvents(const TDeque<FWindowEvent>& Events);
+[[nodiscard]] ENGINE_API TDeque<FWindowEvent> ProcessWindowEventQueue(const TDeque<FWindowEvent>& Events);
 
 struct ENGINE_API FWindowResizeEvent : IWindowEvent
 {

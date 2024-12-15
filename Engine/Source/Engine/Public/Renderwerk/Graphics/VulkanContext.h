@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+#include "Renderwerk/Graphics/GraphicsFwd.h"
+
 #include <vulkan/vulkan_core.h>
 
 struct ENGINE_API FVulkanContext
@@ -16,4 +18,5 @@ public:
 	VkAllocationCallbacks* Allocator = nullptr;
 	VkInstance Instance = VK_NULL_HANDLE;
 	VkSurfaceKHR Surface = VK_NULL_HANDLE;
+	TSharedPtr<FVulkanGraphicsDevice> GraphicsDevice = nullptr;
 };

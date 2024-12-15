@@ -19,6 +19,9 @@ public:
 
 	DELETE_COPY_AND_MOVE(FRenderer);
 
+public:
+	void Resize() const;
+
 private:
 	FRendererDesc Description;
 

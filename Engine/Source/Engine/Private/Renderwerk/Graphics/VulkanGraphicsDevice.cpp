@@ -17,6 +17,11 @@ FVulkanGraphicsDevice::~FVulkanGraphicsDevice()
 	Adapter.reset();
 }
 
+void FVulkanGraphicsDevice::WaitForIdle() const
+{
+	vkDeviceWaitIdle(Device);
+}
+
 void FVulkanGraphicsDevice::CreateDevice()
 {
 	VERIFY(Adapter->GetSupported13Features().dynamicRendering, "Adapter does not support dynamic rendering");
@@ -48,6 +53,7 @@ void FVulkanGraphicsDevice::CreateDevice()
 	}
 
 	const TVector<const char*> RequiredExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,

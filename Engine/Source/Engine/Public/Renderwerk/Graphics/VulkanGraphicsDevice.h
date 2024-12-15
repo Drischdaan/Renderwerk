@@ -16,6 +16,11 @@ public:
 	DELETE_COPY_AND_MOVE(FVulkanGraphicsDevice);
 
 public:
+	void WaitForIdle() const;
+
+public:
+	[[nodiscard]] TSharedPtr<FVulkanGraphicsAdapter> GetAdapter() const { return Adapter; }
+
 	[[nodiscard]] VkQueue GetGraphicsQueue() const { return GraphicsQueue; }
 	[[nodiscard]] VkQueue GetComputeQueue() const { return ComputeQueue; }
 	[[nodiscard]] VkQueue GetTransferQueue() const { return TransferQueue; }
@@ -34,4 +39,6 @@ private:
 	VkQueue ComputeQueue;
 	VkQueue TransferQueue;
 	VkQueue PresentQueue;
+
+	friend class ENGINE_API FVulkanGraphicsSwapchain;
 };

@@ -19,3 +19,8 @@ FRenderer::~FRenderer()
 {
 	GraphicsApi.reset();
 }
+
+void FRenderer::Resize() const
+{
+	GraphicsApi->Resize();
+}

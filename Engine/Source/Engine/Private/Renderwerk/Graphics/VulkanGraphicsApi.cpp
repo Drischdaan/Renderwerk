@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan_win32.h>
 
+#include "Renderwerk/Graphics/VulkanGraphicsSwapchain.h"
 #include "Renderwerk/Platform/Window.h"
 
 DEFINE_LOG_CHANNEL(LogVulkan);
@@ -42,11 +43,15 @@ FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescripti
 #endif
 	CreateSurface();
 	CreateDevice();
+	CreateSwapchain();
 }
 
 FVulkanGraphicsApi::~FVulkanGraphicsApi()
 {
-	GraphicsDevice.reset();
+	Context.GraphicsDevice->WaitForIdle();
+
+	Swapchain.reset();
+	Context.GraphicsDevice.reset();
 	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	const PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
@@ -88,6 +93,12 @@ TSharedPtr<FVulkanGraphicsAdapter> FVulkanGraphicsApi::GetSuitableAdapter() cons
 	return SuitableAdapter;
 }
 
+void FVulkanGraphicsApi::Resize() const
+{
+	Context.GraphicsDevice->WaitForIdle();
+	Swapchain->Resize();
+}
+
 void FVulkanGraphicsApi::AcquireApiVersion()
 {
 	const VkResult Result = vkEnumerateInstanceVersion(&ApiVersion);
@@ -95,6 +106,7 @@ void FVulkanGraphicsApi::AcquireApiVersion()
 
 	VERIFY(VK_VERSION_MAJOR(ApiVersion) >= VK_VERSION_MAJOR(REQUIRED_VULKAN_INSTANCE_VERSION), "Vulkan API version is too low");
 	VERIFY(VK_VERSION_MINOR(ApiVersion) >= VK_VERSION_MINOR(REQUIRED_VULKAN_INSTANCE_VERSION), "Vulkan API version is too low");
+	RW_LOG(LogVulkan, Info, "Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(ApiVersion), VK_VERSION_MINOR(ApiVersion), VK_VERSION_PATCH(ApiVersion));
 }
 
 void FVulkanGraphicsApi::CreateAllocator()
@@ -124,7 +136,7 @@ void FVulkanGraphicsApi::CreateInstance()
 	ApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	ApplicationInfo.pEngineName = "Renderwerk";
 	ApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	ApplicationInfo.apiVersion = ApiVersion;
+	ApplicationInfo.apiVersion = VK_MAKE_VERSION(VK_VERSION_MAJOR(ApiVersion), VK_VERSION_MINOR(ApiVersion), 0);
 
 	const TVector<const char*> RequiredExtensions = {
 		VK_KHR_SURFACE_EXTENSION_NAME,
@@ -136,9 +148,9 @@ void FVulkanGraphicsApi::CreateInstance()
 	CheckExtensionAvailability(RequiredExtensions);
 
 	const TVector<const char*> RequiredInstanceLayers = {
-#ifdef RW_ENABLE_GRAPHICS_VALIDATION
-		"VK_LAYER_KHRONOS_validation",
-#endif
+		// #ifdef RW_ENABLE_GRAPHICS_VALIDATION
+		// 		"VK_LAYER_KHRONOS_validation",
+		// #endif
 	};
 	CheckLayerAvailability(RequiredInstanceLayers);
 
@@ -197,7 +209,15 @@ void FVulkanGraphicsApi::CreateDevice()
 	RW_LOG(LogVulkan, Info, "\t- Name: {}", Adapter->GetProperties().deviceName);
 	RW_LOG(LogVulkan, Info, "\t- API version: {}.{}.{}", VK_VERSION_MAJOR(Adapter->GetProperties().apiVersion), VK_VERSION_MINOR(Adapter->GetProperties().apiVersion),
 	       VK_VERSION_PATCH(Adapter->GetProperties().apiVersion));
-	GraphicsDevice = MakeShared<FVulkanGraphicsDevice>(Context, Adapter);
+	const uint32 Version = Adapter->GetProperties().driverVersion;
+	RW_LOG(LogVulkan, Info, "\t- Driver version: {}.{}.{}.{}", (Version >> 22) & 0x3ff, (Version >> 14) & 0x0ff, (Version >> 6) & 0x0ff, Version & 0x003f);
+	Context.GraphicsDevice = MakeShared<FVulkanGraphicsDevice>(Context, Adapter);
+}
+
+void FVulkanGraphicsApi::CreateSwapchain()
+{
+	FVulkanSwapchainDesc SwapchainDesc = {};
+	Swapchain = MakeShared<FVulkanGraphicsSwapchain>(Context, SwapchainDesc);
 }
 
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)

@@ -7,7 +7,7 @@ IWindowEvent::IWindowEvent(const EWindowEventType InType)
 {
 }
 
-TDeque<FWindowEvent> ProcessWindowEvents(const TDeque<FWindowEvent>& Events)
+TDeque<FWindowEvent> ProcessWindowEventQueue(const TDeque<FWindowEvent>& Events)
 {
 	// This function is executed every frame, so it's important to keep it as fast as possible.
 	// It's a pretty allocation heavy operation. Could be optimized by using preallocated
