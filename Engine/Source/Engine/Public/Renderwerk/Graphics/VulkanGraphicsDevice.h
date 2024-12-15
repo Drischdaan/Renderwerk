@@ -39,4 +39,5 @@ private:
 
 	friend class ENGINE_API FVulkanGraphicsApi;
 	friend class ENGINE_API FVulkanGraphicsSwapchain;
+	friend class ENGINE_API FVulkanCommandBuffer;
 };

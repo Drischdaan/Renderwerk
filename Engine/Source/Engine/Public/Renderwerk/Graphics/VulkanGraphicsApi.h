@@ -44,7 +44,7 @@ private:
 	void CreateSwapchain();
 	void CreateFrames();
 
-	void TransitionImage(VkImage Image, VkImageLayout CurrentLayout, VkImageLayout NewLayout) const;
+	void SubmitQueue(const FGraphicsFrame& Frame) const;
 
 private:
 	static void CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions);

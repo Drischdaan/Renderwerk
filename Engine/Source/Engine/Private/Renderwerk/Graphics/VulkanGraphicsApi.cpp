@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Graphics/VulkanGraphicsApi.h"
 
+#include "Renderwerk/Graphics/VulkanCommandBuffer.h"
 #include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanGraphicsDevice.h"
 #include "Renderwerk/Graphics/VulkanGraphicsSwapchain.h"
@@ -50,12 +51,13 @@ FVulkanGraphicsApi::~FVulkanGraphicsApi()
 {
 	Context.GraphicsDevice->WaitForIdle();
 
-	for (const FGraphicsFrame& Frame : Frames)
+	for (FGraphicsFrame& Frame : Frames)
 	{
 		vkDestroyFence(Context.GraphicsDevice->Device, Frame.InFlightFence, Context.Allocator);
 		vkDestroySemaphore(Context.GraphicsDevice->Device, Frame.RenderFinishedSemaphore, Context.Allocator);
 		vkDestroySemaphore(Context.GraphicsDevice->Device, Frame.ImageAvailableSemaphore, Context.Allocator);
-		vkFreeCommandBuffers(Context.GraphicsDevice->Device, Frame.CommandPool, 1, &Frame.CommandBuffer);
+		vkFreeCommandBuffers(Context.GraphicsDevice->Device, Frame.CommandPool, 1, &Frame.CommandBuffer->CommandBuffer);
+		Frame.CommandBuffer.reset();
 		vkDestroyCommandPool(Context.GraphicsDevice->Device, Frame.CommandPool, Context.Allocator);
 	}
 	Swapchain.reset();
@@ -110,6 +112,7 @@ void FVulkanGraphicsApi::Resize() const
 void FVulkanGraphicsApi::BeginFrame() const
 {
 	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+	const TSharedPtr<FVulkanCommandBuffer> CommandBuffer = Frame.CommandBuffer;
 
 	FVulkanResult Result = vkWaitForFences(Context.GraphicsDevice->Device, 1, &Frame.InFlightFence, VK_TRUE, UINT64_MAX);
 	VERIFY(Result == VK_SUCCESS, "Failed to wait for in-flight fence");
@@ -122,85 +125,28 @@ void FVulkanGraphicsApi::BeginFrame() const
 			Resize();
 		return;
 	}
+	const VkImage BackBuffer = Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex());
 
-	Result = vkResetCommandBuffer(Frame.CommandBuffer, 0);
-	VERIFY(Result == VK_SUCCESS, "Failed to reset command buffer");
+	CommandBuffer->Reset();
+	CommandBuffer->Begin();
 
-	VkCommandBufferBeginInfo CommandBufferBeginInfo;
-	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	CommandBufferBeginInfo.pNext = nullptr;
-	CommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	CommandBufferBeginInfo.pInheritanceInfo = nullptr;
-	Result = vkBeginCommandBuffer(Frame.CommandBuffer, &CommandBufferBeginInfo);
-	VERIFY(Result == VK_SUCCESS, "Failed to begin command buffer");
+	CommandBuffer->TransitionImage(BackBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-	const PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
-		vkGetDeviceProcAddr(Context.GraphicsDevice->Device, "vkCmdBeginDebugUtilsLabelEXT"));
-
-	VkDebugUtilsLabelEXT Label = {};
-	Label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-	Label.pNext = nullptr;
-	Label.pLabelName = "Clear Screen";
-	Label.color[0] = 1.0f;
-	Label.color[1] = 1.0f;
-	Label.color[2] = 1.0f;
-	Label.color[3] = 1.0f;
-	vkCmdBeginDebugUtilsLabelEXT(Frame.CommandBuffer, &Label);
-	TransitionImage(Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-
-	constexpr VkClearColorValue ClearValue = {0.0f, 0.0f, 0.0f, 1.0f};
-	VkImageSubresourceRange ClearRange;
-	ClearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	ClearRange.baseMipLevel = 0;
-	ClearRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ClearRange.baseArrayLayer = 0;
-	ClearRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	vkCmdClearColorImage(Frame.CommandBuffer, Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_GENERAL, &ClearValue, 1, &ClearRange);
+	CommandBuffer->BeginDebugLabel("ClearBackBuffer");
+	CommandBuffer->ClearImage(BackBuffer, VK_IMAGE_LAYOUT_GENERAL, {0.0f, 0.0f, 0.0f, 1.0f});
+	CommandBuffer->EndDebugLabel();
 }
 
 void FVulkanGraphicsApi::EndFrame()
 {
 	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+	const TSharedPtr<FVulkanCommandBuffer> CommandBuffer = Frame.CommandBuffer;
 
-	TransitionImage(Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	CommandBuffer->TransitionImage(Swapchain->GetBackBuffer(Swapchain->GetCurrentImageIndex()), VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	const PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
-		vkGetDeviceProcAddr(Context.GraphicsDevice->Device, "vkCmdEndDebugUtilsLabelEXT"));
-	vkCmdEndDebugUtilsLabelEXT(Frame.CommandBuffer);
+	CommandBuffer->End();
 
-	FVulkanResult Result = vkEndCommandBuffer(Frame.CommandBuffer);
-	VERIFY(Result == VK_SUCCESS, "Failed to end command buffer");
-
-	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
-	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-	CommandBufferSubmitInfo.pNext = nullptr;
-	CommandBufferSubmitInfo.commandBuffer = Frame.CommandBuffer;
-
-	VkSemaphoreSubmitInfo ImageAvailableSemaphoreSubmitInfo = {};
-	ImageAvailableSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	ImageAvailableSemaphoreSubmitInfo.pNext = nullptr;
-	ImageAvailableSemaphoreSubmitInfo.semaphore = Frame.ImageAvailableSemaphore;
-	ImageAvailableSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-	ImageAvailableSemaphoreSubmitInfo.value = 0;
-
-	VkSemaphoreSubmitInfo RenderFinishedSemaphoreSubmitInfo = {};
-	RenderFinishedSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	RenderFinishedSemaphoreSubmitInfo.pNext = nullptr;
-	RenderFinishedSemaphoreSubmitInfo.semaphore = Frame.RenderFinishedSemaphore;
-	RenderFinishedSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-	RenderFinishedSemaphoreSubmitInfo.value = 0;
-
-	VkSubmitInfo2 SubmitInfo = {};
-	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-	SubmitInfo.pNext = nullptr;
-	SubmitInfo.waitSemaphoreInfoCount = 1;
-	SubmitInfo.pWaitSemaphoreInfos = &ImageAvailableSemaphoreSubmitInfo;
-	SubmitInfo.signalSemaphoreInfoCount = 1;
-	SubmitInfo.pSignalSemaphoreInfos = &RenderFinishedSemaphoreSubmitInfo;
-	SubmitInfo.commandBufferInfoCount = 1;
-	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
-	Result = vkQueueSubmit2(Context.GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, Frame.InFlightFence);
-	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
+	SubmitQueue(Frame);
 
 	if (!Swapchain->Present(Frame.RenderFinishedSemaphore))
 	{
@@ -350,7 +296,9 @@ void FVulkanGraphicsApi::CreateFrames()
 		CommandBufferAllocateInfo.commandPool = Frame.CommandPool;
 		CommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		CommandBufferAllocateInfo.commandBufferCount = 1;
-		Result = vkAllocateCommandBuffers(Context.GraphicsDevice->Device, &CommandBufferAllocateInfo, &Frame.CommandBuffer);
+		VkCommandBuffer CommandBuffer;
+		Result = vkAllocateCommandBuffers(Context.GraphicsDevice->Device, &CommandBufferAllocateInfo, &CommandBuffer);
+		Frame.CommandBuffer = MakeShared<FVulkanCommandBuffer>(Context.GraphicsDevice, CommandBuffer);
 
 		VkSemaphoreCreateInfo SemaphoreCreateInfo = {};
 		SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -372,35 +320,38 @@ void FVulkanGraphicsApi::CreateFrames()
 	}
 }
 
-void FVulkanGraphicsApi::TransitionImage(const VkImage Image, const VkImageLayout CurrentLayout, const VkImageLayout NewLayout) const
+void FVulkanGraphicsApi::SubmitQueue(const FGraphicsFrame& Frame) const
 {
-	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
+	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
+	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	CommandBufferSubmitInfo.pNext = nullptr;
+	CommandBufferSubmitInfo.commandBuffer = Frame.CommandBuffer->CommandBuffer;
 
-	VkImageSubresourceRange SubImage;
-	SubImage.aspectMask = (NewLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-	SubImage.baseMipLevel = 0;
-	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
-	SubImage.baseArrayLayer = 0;
-	SubImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	VkSemaphoreSubmitInfo ImageAvailableSemaphoreSubmitInfo = {};
+	ImageAvailableSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	ImageAvailableSemaphoreSubmitInfo.pNext = nullptr;
+	ImageAvailableSemaphoreSubmitInfo.semaphore = Frame.ImageAvailableSemaphore;
+	ImageAvailableSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
+	ImageAvailableSemaphoreSubmitInfo.value = 0;
 
-	VkImageMemoryBarrier2 ImageBarrier = {};
-	ImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	ImageBarrier.pNext = nullptr;
-	ImageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-	ImageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
-	ImageBarrier.oldLayout = CurrentLayout;
-	ImageBarrier.newLayout = NewLayout;
-	ImageBarrier.subresourceRange = SubImage;
-	ImageBarrier.image = Image;
+	VkSemaphoreSubmitInfo RenderFinishedSemaphoreSubmitInfo = {};
+	RenderFinishedSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	RenderFinishedSemaphoreSubmitInfo.pNext = nullptr;
+	RenderFinishedSemaphoreSubmitInfo.semaphore = Frame.RenderFinishedSemaphore;
+	RenderFinishedSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	RenderFinishedSemaphoreSubmitInfo.value = 0;
 
-	VkDependencyInfo DependencyInfo = {};
-	DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-	DependencyInfo.pNext = nullptr;
-	DependencyInfo.imageMemoryBarrierCount = 1;
-	DependencyInfo.pImageMemoryBarriers = &ImageBarrier;
-	vkCmdPipelineBarrier2(Frame.CommandBuffer, &DependencyInfo);
+	VkSubmitInfo2 SubmitInfo = {};
+	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	SubmitInfo.pNext = nullptr;
+	SubmitInfo.waitSemaphoreInfoCount = 1;
+	SubmitInfo.pWaitSemaphoreInfos = &ImageAvailableSemaphoreSubmitInfo;
+	SubmitInfo.signalSemaphoreInfoCount = 1;
+	SubmitInfo.pSignalSemaphoreInfos = &RenderFinishedSemaphoreSubmitInfo;
+	SubmitInfo.commandBufferInfoCount = 1;
+	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
+	const FVulkanResult Result = vkQueueSubmit2(Context.GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, Frame.InFlightFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
 }
 
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)
