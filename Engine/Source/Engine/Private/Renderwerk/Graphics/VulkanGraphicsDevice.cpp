@@ -100,7 +100,7 @@ void FVulkanGraphicsDevice::CreateDevice()
 	DeviceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 	DeviceCreateInfo.pEnabledFeatures = &EnabledFeatures;
 
-	const VkResult Result = vkCreateDevice(Adapter->PhysicalDevice, &DeviceCreateInfo, Context.Allocator, &Device);
+	const FVulkanResult Result = vkCreateDevice(Adapter->PhysicalDevice, &DeviceCreateInfo, Context.Allocator, &Device);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan device");
 }
 

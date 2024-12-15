@@ -35,7 +35,7 @@ bool8 FVulkanGraphicsAdapter::SupportsLayer(const char* LayerName) const
 FVulkanSurfaceProperties FVulkanGraphicsAdapter::GetSurfaceProperties(const VkSurfaceKHR& Surface) const
 {
 	FVulkanSurfaceProperties SurfaceProperties = {};
-	VkResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysicalDevice, Surface, &SurfaceProperties.Capabilities);
+	FVulkanResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysicalDevice, Surface, &SurfaceProperties.Capabilities);
 	VERIFY(Result == VK_SUCCESS, "Failed to get surface capabilities.");
 
 	uint32 FormatCount = 0;
@@ -57,7 +57,7 @@ FVulkanSurfaceProperties FVulkanGraphicsAdapter::GetSurfaceProperties(const VkSu
 void FVulkanGraphicsAdapter::AcquireExtensionsAndLayers()
 {
 	uint32 ExtensionCount = 0;
-	VkResult Result = vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, nullptr);
+	FVulkanResult Result = vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, nullptr);
 	VERIFY(Result == VK_SUCCESS, "Failed to get extension count.");
 	SupportedExtensions.resize(ExtensionCount);
 	Result = vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, SupportedExtensions.data());

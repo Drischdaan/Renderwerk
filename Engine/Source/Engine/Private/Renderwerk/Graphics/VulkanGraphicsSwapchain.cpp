@@ -52,7 +52,7 @@ void FVulkanGraphicsSwapchain::CreateSwapchain()
 	SwapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 	Extent = SwapchainCreateInfo.imageExtent;
 
-	const VkResult Result = vkCreateSwapchainKHR(Context.GraphicsDevice->Device, &SwapchainCreateInfo, Context.Allocator, &Swapchain);
+	const FVulkanResult Result = vkCreateSwapchainKHR(Context.GraphicsDevice->Device, &SwapchainCreateInfo, Context.Allocator, &Swapchain);
 	VERIFY(Result == VK_SUCCESS, "Failed to create swapchain");
 }
 
@@ -64,7 +64,7 @@ void FVulkanGraphicsSwapchain::DestroySwapchain() const
 void FVulkanGraphicsSwapchain::AcquireBackBuffers()
 {
 	uint32 BackBufferCount = 0;
-	VkResult Result = vkGetSwapchainImagesKHR(Context.GraphicsDevice->Device, Swapchain, &BackBufferCount, nullptr);
+	FVulkanResult Result = vkGetSwapchainImagesKHR(Context.GraphicsDevice->Device, Swapchain, &BackBufferCount, nullptr);
 	VERIFY(Result == VK_SUCCESS, "Failed to get swapchain images");
 	BackBuffers.resize(BackBufferCount);
 	Result = vkGetSwapchainImagesKHR(Context.GraphicsDevice->Device, Swapchain, &BackBufferCount, BackBuffers.data());

@@ -1,10 +1,6 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/CoreMinimal.h"
-
-#include "Renderwerk/Graphics/GraphicsFwd.h"
-
-#include <vulkan/vulkan_core.h>
+#include "Renderwerk/Graphics/GraphicsCommon.h"
 
 struct ENGINE_API FVulkanContext
 {

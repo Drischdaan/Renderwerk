@@ -98,7 +98,8 @@ bool8 FRenderThread::PreTick()
 
 void FRenderThread::PostTick()
 {
-	GetEngine()->UpdateThread->Signal();
+	if (GetEngine()->UpdateThread)
+		GetEngine()->UpdateThread->Signal();
 }
 
 void FRenderThread::ProcessWindowEvents() const

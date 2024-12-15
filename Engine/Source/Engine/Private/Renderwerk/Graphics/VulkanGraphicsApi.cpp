@@ -4,11 +4,10 @@
 
 #include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanGraphicsDevice.h"
-
-#include <vulkan/vulkan_win32.h>
-
 #include "Renderwerk/Graphics/VulkanGraphicsSwapchain.h"
 #include "Renderwerk/Platform/Window.h"
+
+#include <vulkan/vulkan_win32.h>
 
 DEFINE_LOG_CHANNEL(LogVulkan);
 
@@ -66,7 +65,7 @@ FVulkanGraphicsApi::~FVulkanGraphicsApi()
 TVector<TSharedPtr<FVulkanGraphicsAdapter>> FVulkanGraphicsApi::AcquireAdapters() const
 {
 	uint32 PhysicalDeviceCount = 0;
-	VkResult Result = vkEnumeratePhysicalDevices(Context.Instance, &PhysicalDeviceCount, nullptr);
+	FVulkanResult Result = vkEnumeratePhysicalDevices(Context.Instance, &PhysicalDeviceCount, nullptr);
 	VERIFY(Result == VK_SUCCESS, "Failed to enumerate Vulkan physical devices");
 	TVector<VkPhysicalDevice> PhysicalDevices(PhysicalDeviceCount);
 	Result = vkEnumeratePhysicalDevices(Context.Instance, &PhysicalDeviceCount, PhysicalDevices.data());
@@ -101,7 +100,7 @@ void FVulkanGraphicsApi::Resize() const
 
 void FVulkanGraphicsApi::AcquireApiVersion()
 {
-	const VkResult Result = vkEnumerateInstanceVersion(&ApiVersion);
+	const FVulkanResult Result = vkEnumerateInstanceVersion(&ApiVersion);
 	VERIFY(Result == VK_SUCCESS, "Failed to acquire Vulkan API version");
 
 	VERIFY(VK_VERSION_MAJOR(ApiVersion) >= VK_VERSION_MAJOR(REQUIRED_VULKAN_INSTANCE_VERSION), "Vulkan API version is too low");
@@ -164,7 +163,7 @@ void FVulkanGraphicsApi::CreateInstance()
 	InstanceCreateInfo.enabledExtensionCount = static_cast<uint32>(RequiredExtensions.size());
 	InstanceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 
-	const VkResult Result = vkCreateInstance(&InstanceCreateInfo, Context.Allocator, &Context.Instance);
+	const FVulkanResult Result = vkCreateInstance(&InstanceCreateInfo, Context.Allocator, &Context.Instance);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan instance");
 }
 
@@ -183,7 +182,7 @@ void FVulkanGraphicsApi::CreateDebugMessenger()
 	DebugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	DebugMessengerCreateInfo.pfnUserCallback = ValidationCallback;
-	const VkResult Result = vkCreateDebugUtilsMessengerEXT(Context.Instance, &DebugMessengerCreateInfo, Context.Allocator, &DebugMessenger);
+	const FVulkanResult Result = vkCreateDebugUtilsMessengerEXT(Context.Instance, &DebugMessengerCreateInfo, Context.Allocator, &DebugMessenger);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan debug messenger");
 }
 #endif
@@ -197,7 +196,7 @@ void FVulkanGraphicsApi::CreateSurface()
 	SurfaceCreateInfo.flags = 0;
 	SurfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
 	SurfaceCreateInfo.hwnd = Description.Window->GetHandle();
-	const VkResult Result = vkCreateWin32SurfaceKHR(Context.Instance, &SurfaceCreateInfo, Context.Allocator, &Context.Surface);
+	const FVulkanResult Result = vkCreateWin32SurfaceKHR(Context.Instance, &SurfaceCreateInfo, Context.Allocator, &Context.Surface);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan surface");
 }
 
@@ -223,7 +222,7 @@ void FVulkanGraphicsApi::CreateSwapchain()
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)
 {
 	uint32 AvailableExtensionCount = 0;
-	VkResult Result = vkEnumerateInstanceExtensionProperties(nullptr, &AvailableExtensionCount, nullptr);
+	FVulkanResult Result = vkEnumerateInstanceExtensionProperties(nullptr, &AvailableExtensionCount, nullptr);
 	VERIFY(Result == VK_SUCCESS, "Failed to enumerate Vulkan instance extensions");
 	TVector<VkExtensionProperties> AvailableExtensions(AvailableExtensionCount);
 	Result = vkEnumerateInstanceExtensionProperties(nullptr, &AvailableExtensionCount, AvailableExtensions.data());
@@ -245,7 +244,7 @@ bool8 FVulkanGraphicsApi::IsExtensionSupported(const char* ExtensionName, const 
 void FVulkanGraphicsApi::CheckLayerAvailability(const TVector<const char*>& RequiredLayers)
 {
 	uint32 AvailableLayerCount = 0;
-	VkResult Result = vkEnumerateInstanceLayerProperties(&AvailableLayerCount, nullptr);
+	FVulkanResult Result = vkEnumerateInstanceLayerProperties(&AvailableLayerCount, nullptr);
 	VERIFY(Result == VK_SUCCESS, "Failed to enumerate Vulkan instance layers");
 	TVector<VkLayerProperties> AvailableLayers(AvailableLayerCount);
 	Result = vkEnumerateInstanceLayerProperties(&AvailableLayerCount, AvailableLayers.data());

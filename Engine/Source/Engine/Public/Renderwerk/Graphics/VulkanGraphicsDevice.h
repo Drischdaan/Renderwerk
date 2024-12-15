@@ -1,11 +1,8 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Graphics/GraphicsCommon.h"
 
-#include "Renderwerk/Graphics/GraphicsFwd.h"
 #include "Renderwerk/Graphics/VulkanContext.h"
-
-#include <vulkan/vulkan_core.h>
 
 class ENGINE_API FVulkanGraphicsDevice
 {

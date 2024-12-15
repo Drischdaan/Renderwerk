@@ -1,11 +1,8 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/CoreMinimal.h"
+#include "Renderwerk/Graphics/GraphicsCommon.h"
 
-#include "Renderwerk/Graphics/GraphicsFwd.h"
 #include "Renderwerk/Graphics/VulkanContext.h"
-
-#include <vulkan/vulkan_core.h>
 
 #define REQUIRED_VULKAN_INSTANCE_VERSION VK_API_VERSION_1_3
 
