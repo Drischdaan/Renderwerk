@@ -70,4 +70,6 @@ private:
 	TVector<VkLayerProperties> SupportedLayers;
 
 	FVulkanQueueMetadata QueueMetadata;
+
+	friend class ENGINE_API FVulkanGraphicsDevice;
 };

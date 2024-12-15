@@ -3,15 +3,16 @@
 #include "Renderwerk/Graphics/VulkanGraphicsApi.h"
 
 #include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
+#include "Renderwerk/Graphics/VulkanGraphicsDevice.h"
 
 #include <vulkan/vulkan_win32.h>
 
 #include "Renderwerk/Platform/Window.h"
 
+DEFINE_LOG_CHANNEL(LogVulkan);
+
 namespace
 {
-	DEFINE_LOG_CHANNEL(LogVulkan);
-
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	VKAPI_ATTR VkBool32 VKAPI_CALL ValidationCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT Severity, VkDebugUtilsMessageTypeFlagsEXT Type,
 	                                                  const VkDebugUtilsMessengerCallbackDataEXT* CallbackData, void* UserData)
@@ -40,10 +41,12 @@ FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescripti
 	CreateDebugMessenger();
 #endif
 	CreateSurface();
+	CreateDevice();
 }
 
 FVulkanGraphicsApi::~FVulkanGraphicsApi()
 {
+	GraphicsDevice.reset();
 	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	const PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
@@ -68,6 +71,21 @@ TVector<TSharedPtr<FVulkanGraphicsAdapter>> FVulkanGraphicsApi::AcquireAdapters(
 	for (const VkPhysicalDevice& PhysicalDevice : PhysicalDevices)
 		Adapters.push_back(MakeShared<FVulkanGraphicsAdapter>(Context, PhysicalDevice));
 	return Adapters;
+}
+
+TSharedPtr<FVulkanGraphicsAdapter> FVulkanGraphicsApi::GetSuitableAdapter() const
+{
+	const TVector<TSharedPtr<FVulkanGraphicsAdapter>> Adapters = AcquireAdapters();
+	TSharedPtr<FVulkanGraphicsAdapter> SuitableAdapter = nullptr;
+	for (const TSharedPtr<FVulkanGraphicsAdapter>& Adapter : Adapters)
+	{
+		if (Adapter->GetProperties().apiVersion < REQUIRED_VULKAN_INSTANCE_VERSION)
+			continue;
+		if (Adapter->GetProperties().deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			continue;
+		SuitableAdapter = Adapter;
+	}
+	return SuitableAdapter;
 }
 
 void FVulkanGraphicsApi::AcquireApiVersion()
@@ -149,8 +167,7 @@ void FVulkanGraphicsApi::CreateDebugMessenger()
 	DebugMessengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	DebugMessengerCreateInfo.pNext = nullptr;
 	DebugMessengerCreateInfo.flags = 0;
-	DebugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	DebugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	DebugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	DebugMessengerCreateInfo.pfnUserCallback = ValidationCallback;
@@ -170,6 +187,17 @@ void FVulkanGraphicsApi::CreateSurface()
 	SurfaceCreateInfo.hwnd = Description.Window->GetHandle();
 	const VkResult Result = vkCreateWin32SurfaceKHR(Context.Instance, &SurfaceCreateInfo, Context.Allocator, &Context.Surface);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan surface");
+}
+
+void FVulkanGraphicsApi::CreateDevice()
+{
+	const TSharedPtr<FVulkanGraphicsAdapter> Adapter = GetSuitableAdapter();
+	VERIFY(Adapter, "Failed to choose suitable adapter");
+	RW_LOG(LogVulkan, Info, "Selected adapter:");
+	RW_LOG(LogVulkan, Info, "\t- Name: {}", Adapter->GetProperties().deviceName);
+	RW_LOG(LogVulkan, Info, "\t- API version: {}.{}.{}", VK_VERSION_MAJOR(Adapter->GetProperties().apiVersion), VK_VERSION_MINOR(Adapter->GetProperties().apiVersion),
+	       VK_VERSION_PATCH(Adapter->GetProperties().apiVersion));
+	GraphicsDevice = MakeShared<FVulkanGraphicsDevice>(Context, Adapter);
 }
 
 void FVulkanGraphicsApi::CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions)

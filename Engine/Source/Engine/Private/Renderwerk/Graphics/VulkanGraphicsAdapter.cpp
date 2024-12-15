@@ -117,7 +117,7 @@ void FVulkanGraphicsAdapter::QueryQueueMetadata(const VkSurfaceKHR& Surface)
 				}
 			}
 		}
-		if (QueueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && QueueMetadata.ComputeIndex == UINT32_MAX)
+		if (QueueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
 			QueueMetadata.ComputeIndex = Index;
 			++CurrentTransferScore;

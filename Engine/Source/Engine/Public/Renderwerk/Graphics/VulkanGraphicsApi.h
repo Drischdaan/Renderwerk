@@ -26,6 +26,7 @@ public:
 
 public:
 	[[nodiscard]] TVector<TSharedPtr<FVulkanGraphicsAdapter>> AcquireAdapters() const;
+	[[nodiscard]] TSharedPtr<FVulkanGraphicsAdapter> GetSuitableAdapter() const;
 
 private:
 	void AcquireApiVersion();
@@ -37,6 +38,8 @@ private:
 #endif
 
 	void CreateSurface();
+
+	void CreateDevice();
 
 private:
 	static void CheckExtensionAvailability(const TVector<const char*>& RequiredExtensions);
@@ -55,4 +58,6 @@ private:
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	VkDebugUtilsMessengerEXT DebugMessenger;
 #endif
+
+	TSharedPtr<FVulkanGraphicsDevice> GraphicsDevice;
 };

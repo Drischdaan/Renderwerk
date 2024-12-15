@@ -2,12 +2,10 @@
 
 #include "Renderwerk/Renderer/Renderer.h"
 
+#include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanGraphicsApi.h"
 
-namespace
-{
-	DEFINE_LOG_CHANNEL(LogRenderer);
-}
+DEFINE_LOG_CHANNEL(LogRenderer);
 
 FRenderer::FRenderer(const FRendererDesc& InDescription)
 	: Description(InDescription)
@@ -15,8 +13,6 @@ FRenderer::FRenderer(const FRendererDesc& InDescription)
 	FVulkanGraphicsApiDesc GraphicsApiDesc = {};
 	GraphicsApiDesc.Window = Description.Window;
 	GraphicsApi = MakeUnique<FVulkanGraphicsApi>(GraphicsApiDesc);
-
-	TVector<TSharedPtr<FVulkanGraphicsAdapter>> Adapters = GraphicsApi->AcquireAdapters();
 }
 
 FRenderer::~FRenderer()
