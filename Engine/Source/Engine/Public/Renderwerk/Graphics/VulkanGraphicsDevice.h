@@ -16,11 +16,22 @@ public:
 	DELETE_COPY_AND_MOVE(FVulkanGraphicsDevice);
 
 public:
+	[[nodiscard]] VkQueue GetGraphicsQueue() const { return GraphicsQueue; }
+	[[nodiscard]] VkQueue GetComputeQueue() const { return ComputeQueue; }
+	[[nodiscard]] VkQueue GetTransferQueue() const { return TransferQueue; }
+	[[nodiscard]] VkQueue GetPresentQueue() const { return PresentQueue; }
+
+private:
 	void CreateDevice();
+	void AcquireQueues();
 
 private:
 	FVulkanContext Context;
 	TSharedPtr<FVulkanGraphicsAdapter> Adapter;
 
 	VkDevice Device;
+	VkQueue GraphicsQueue;
+	VkQueue ComputeQueue;
+	VkQueue TransferQueue;
+	VkQueue PresentQueue;
 };

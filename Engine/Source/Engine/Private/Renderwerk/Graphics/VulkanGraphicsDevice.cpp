@@ -8,6 +8,7 @@ FVulkanGraphicsDevice::FVulkanGraphicsDevice(const FVulkanContext& InContext, co
 	: Context(InContext), Adapter(InAdapter)
 {
 	CreateDevice();
+	AcquireQueues();
 }
 
 FVulkanGraphicsDevice::~FVulkanGraphicsDevice()
@@ -95,4 +96,15 @@ void FVulkanGraphicsDevice::CreateDevice()
 
 	const VkResult Result = vkCreateDevice(Adapter->PhysicalDevice, &DeviceCreateInfo, Context.Allocator, &Device);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan device");
+}
+
+void FVulkanGraphicsDevice::AcquireQueues()
+{
+	const FVulkanQueueMetadata QueueMetadata = Adapter->GetQueueMetadata();
+	const bool8 bIsGraphicsSharingPresent = QueueMetadata.GraphicsIndex == QueueMetadata.PresentIndex;
+
+	vkGetDeviceQueue(Device, QueueMetadata.GraphicsIndex, 0, &GraphicsQueue);
+	vkGetDeviceQueue(Device, QueueMetadata.ComputeIndex, 0, &ComputeQueue);
+	vkGetDeviceQueue(Device, QueueMetadata.TransferIndex, 0, &TransferQueue);
+	vkGetDeviceQueue(Device, QueueMetadata.PresentIndex, bIsGraphicsSharingPresent ? 1 : 0, &PresentQueue);
 }
