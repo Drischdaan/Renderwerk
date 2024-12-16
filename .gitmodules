@@ -10,3 +10,6 @@
 [submodule "Engine/ThirdParty/json"]
 	path = Engine/ThirdParty/json
 	url = https://github.com/nlohmann/json
+[submodule "Engine/ThirdParty/volk"]
+	path = Engine/ThirdParty/volk
+	url = https://github.com/zeux/volk

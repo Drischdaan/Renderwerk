@@ -148,6 +148,10 @@ function rw_language_cpp()
 	cppdialect(cpp_standard)
 end
 
+function rw_language_c()
+	language('C')
+end
+
 function rw_precompiled_header()
 	files {
 	  '%{prj.location}/pch.cpp',
@@ -270,8 +274,5 @@ function rw_link_vulkan()
 	})
 	defines({
 		'VK_USE_PLATFORM_WIN32_KHR=1',
-	})
-	links({
-		'vulkan-1',
 	})
 end
