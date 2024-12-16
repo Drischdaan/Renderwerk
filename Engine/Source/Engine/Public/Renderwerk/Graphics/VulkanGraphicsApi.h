@@ -42,6 +42,7 @@ private:
 	void CreateSurface();
 	void CreateDevice();
 	void CreateSwapchain();
+	void CreateShaderCompiler();
 	void CreateFrames();
 
 	void SubmitQueue(const FGraphicsFrame& Frame) const;
@@ -63,6 +64,8 @@ private:
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 	VkDebugUtilsMessengerEXT DebugMessenger;
 #endif
+
+	TSharedPtr<FVulkanShaderCompiler> ShaderCompiler;
 
 	TSharedPtr<FVulkanGraphicsSwapchain> Swapchain;
 	FGraphicsFrameId CurrentFrameId = 0;

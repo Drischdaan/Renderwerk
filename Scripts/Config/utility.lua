@@ -275,4 +275,7 @@ function rw_link_vulkan()
 	defines({
 		'VK_USE_PLATFORM_WIN32_KHR=1',
 	})
+	links({
+		'shaderc_shared',
+	})
 end

@@ -6,6 +6,7 @@
 #include "Renderwerk/Graphics/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanGraphicsDevice.h"
 #include "Renderwerk/Graphics/VulkanGraphicsSwapchain.h"
+#include "Renderwerk/Graphics/VulkanShaderCompiler.h"
 #include "Renderwerk/Platform/Window.h"
 
 #define VOLK_IMPLEMENTATION
@@ -48,6 +49,7 @@ FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescripti
 	CreateSurface();
 	CreateDevice();
 	CreateSwapchain();
+	CreateShaderCompiler();
 	CreateFrames();
 }
 
@@ -64,6 +66,7 @@ FVulkanGraphicsApi::~FVulkanGraphicsApi()
 		Frame.CommandBuffer.reset();
 		vkDestroyCommandPool(Context.GraphicsDevice->Device, Frame.CommandPool, Context.Allocator);
 	}
+	ShaderCompiler.reset();
 	Swapchain.reset();
 	Context.GraphicsDevice.reset();
 	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
@@ -274,6 +277,11 @@ void FVulkanGraphicsApi::CreateSwapchain()
 {
 	FVulkanSwapchainDesc SwapchainDesc = {};
 	Swapchain = MakeShared<FVulkanGraphicsSwapchain>(Context, SwapchainDesc);
+}
+
+void FVulkanGraphicsApi::CreateShaderCompiler()
+{
+	ShaderCompiler = MakeShared<FVulkanShaderCompiler>();
 }
 
 void FVulkanGraphicsApi::CreateFrames()
