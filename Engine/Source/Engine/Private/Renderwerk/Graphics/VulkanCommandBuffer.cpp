@@ -6,9 +6,6 @@
 FVulkanCommandBuffer::FVulkanCommandBuffer(const TSharedPtr<FVulkanGraphicsDevice>& InDevice, const VkCommandBuffer InCommandBuffer)
 	: CommandBuffer(InCommandBuffer)
 {
-	// TODO: Move this out of here or use volk instead
-	vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(InDevice->Device, "vkCmdBeginDebugUtilsLabelEXT"));
-	vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(InDevice->Device, "vkCmdEndDebugUtilsLabelEXT"));
 }
 
 FVulkanCommandBuffer::~FVulkanCommandBuffer() = default;

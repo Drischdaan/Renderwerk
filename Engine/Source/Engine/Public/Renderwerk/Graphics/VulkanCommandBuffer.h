@@ -26,8 +26,5 @@ public:
 private:
 	VkCommandBuffer CommandBuffer;
 
-	PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
-	PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT;
-
 	friend class ENGINE_API FVulkanGraphicsApi;
 };

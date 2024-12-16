@@ -8,7 +8,8 @@
 #include "Renderwerk/Graphics/VulkanGraphicsSwapchain.h"
 #include "Renderwerk/Platform/Window.h"
 
-#include <vulkan/vulkan_win32.h>
+#define VOLK_IMPLEMENTATION
+#include <volk.h>
 
 DEFINE_LOG_CHANNEL(LogVulkan);
 
@@ -34,6 +35,9 @@ namespace
 FVulkanGraphicsApi::FVulkanGraphicsApi(const FVulkanGraphicsApiDesc& InDescription)
 	: Description(InDescription)
 {
+	const FVulkanResult Result = volkInitialize();
+	VERIFY(Result == VK_SUCCESS, "Failed to initialize Vulkan loader");
+
 	Context = FVulkanContext();
 	AcquireApiVersion();
 	CreateAllocator();
@@ -64,13 +68,11 @@ FVulkanGraphicsApi::~FVulkanGraphicsApi()
 	Context.GraphicsDevice.reset();
 	vkDestroySurfaceKHR(Context.Instance, Context.Surface, Context.Allocator);
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
-	const PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-		vkGetInstanceProcAddr(Context.Instance, "vkDestroyDebugUtilsMessengerEXT"));
-	VERIFY(vkDestroyDebugUtilsMessengerEXT != nullptr, "Failed to get vkDestroyDebugUtilsMessengerEXT function");
 	vkDestroyDebugUtilsMessengerEXT(Context.Instance, DebugMessenger, Context.Allocator);
 #endif
 	vkDestroyInstance(Context.Instance, Context.Allocator);
 	FMemory::Delete(Context.Allocator);
+	volkFinalize();
 }
 
 TVector<TSharedPtr<FVulkanGraphicsAdapter>> FVulkanGraphicsApi::AcquireAdapters() const
@@ -224,15 +226,12 @@ void FVulkanGraphicsApi::CreateInstance()
 
 	const FVulkanResult Result = vkCreateInstance(&InstanceCreateInfo, Context.Allocator, &Context.Instance);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan instance");
+	volkLoadInstance(Context.Instance);
 }
 
 #ifdef RW_ENABLE_GRAPHICS_VALIDATION
 void FVulkanGraphicsApi::CreateDebugMessenger()
 {
-	const PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-		vkGetInstanceProcAddr(Context.Instance, "vkCreateDebugUtilsMessengerEXT"));
-	VERIFY(vkCreateDebugUtilsMessengerEXT != nullptr, "Failed to get vkCreateDebugUtilsMessengerEXT function");
-
 	VkDebugUtilsMessengerCreateInfoEXT DebugMessengerCreateInfo = {};
 	DebugMessengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	DebugMessengerCreateInfo.pNext = nullptr;
@@ -245,7 +244,6 @@ void FVulkanGraphicsApi::CreateDebugMessenger()
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan debug messenger");
 }
 #endif
-
 
 void FVulkanGraphicsApi::CreateSurface()
 {
@@ -268,7 +266,7 @@ void FVulkanGraphicsApi::CreateDevice()
 	RW_LOG(LogVulkan, Info, "\t- API version: {}.{}.{}", VK_VERSION_MAJOR(Adapter->GetProperties().apiVersion), VK_VERSION_MINOR(Adapter->GetProperties().apiVersion),
 	       VK_VERSION_PATCH(Adapter->GetProperties().apiVersion));
 	const uint32 Version = Adapter->GetProperties().driverVersion;
-	RW_LOG(LogVulkan, Info, "\t- Driver version: {}.{}.{}.{}", (Version >> 22) & 0x3ff, (Version >> 14) & 0x0ff, (Version >> 6) & 0x0ff, Version & 0x003f);
+	RW_LOG(LogVulkan, Info, "\t- Driver version: {}.{}", (Version >> 22) & 0x3ff, (Version >> 14) & 0x0ff);
 	Context.GraphicsDevice = MakeShared<FVulkanGraphicsDevice>(Context, Adapter);
 }
 

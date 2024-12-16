@@ -102,6 +102,7 @@ void FVulkanGraphicsDevice::CreateDevice()
 
 	const FVulkanResult Result = vkCreateDevice(Adapter->PhysicalDevice, &DeviceCreateInfo, Context.Allocator, &Device);
 	VERIFY(Result == VK_SUCCESS, "Failed to create Vulkan device");
+	volkLoadDevice(Device);
 }
 
 void FVulkanGraphicsDevice::AcquireQueues()
