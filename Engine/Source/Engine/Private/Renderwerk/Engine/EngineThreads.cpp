@@ -76,14 +76,15 @@ void FRenderThread::Initialize()
 
 	FRendererDesc RendererDesc = {};
 	RendererDesc.Window = GetEngine()->GetWindowManager()->Get(GetEngine()->MainWindowGuid);
-	Renderer = MakeShared<FRenderer>(RendererDesc);
+	Renderer = MakeShared<FRenderer>();
+	Renderer->Initialize(RendererDesc);
 	IEngineThread::Initialize();
 }
 
 void FRenderThread::Shutdown()
 {
 	IEngineThread::Shutdown();
-	Renderer.reset();
+	Renderer->Destroy();
 }
 
 bool8 FRenderThread::PreTick()

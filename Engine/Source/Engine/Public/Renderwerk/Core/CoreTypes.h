@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <source_location>
 
 using int8 = int8_t;
@@ -44,3 +45,6 @@ static_assert(sizeof(byte) == 1, "byte size is not 1 byte");
 
 template <typename T>
 using TFunction = std::function<T>;
+
+template <typename T>
+using TOptional = std::optional<T>;

@@ -34,6 +34,13 @@
 	DEFINE_DEFAULT_MOVE_CONSTRUCTOR(Type); \
 	DEFINE_DEFAULT_MOVE_ASSIGNMENT(Type)
 
+#define DEFINE_CAST_OPERATORS(Type, Variable) \
+	operator Type() const { return Variable; } \
+	operator const Type() const { return Variable; } \
+	operator const Type&() const { return Variable; } \
+	operator Type*() { return &Variable; } \
+	operator const Type*() const { return &Variable; }
+
 // Defines a case statement for an enum value that returns the string representation of the enum value
 #define ENUM_STRING_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue
 

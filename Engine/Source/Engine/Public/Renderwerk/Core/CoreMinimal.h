@@ -7,6 +7,7 @@
 #include "Renderwerk/Core/Memory/Memory.h"
 #include "Renderwerk/Core/Memory/SmartPointers.h"
 #include "Renderwerk/Core/Types/Containers.h"
+#include "Renderwerk/Core/Types/DeletionQueue.h"
 #include "Renderwerk/Core/Types/Guid.h"
 #include "Renderwerk/Core/Types/Name.h"
 #include "Renderwerk/Core/Types/SourceLocation.h"

@@ -2,7 +2,7 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
-#include "Renderwerk/Graphics/GraphicsFwd.h"
+#include "Renderwerk/Graphics/GraphicsApi.h"
 
 DECLARE_LOG_CHANNEL(LogRenderer);
 
@@ -14,19 +14,30 @@ struct ENGINE_API FRendererDesc
 class ENGINE_API FRenderer
 {
 public:
-	FRenderer(const FRendererDesc& InDescription);
+	FRenderer();
 	~FRenderer();
 
 	DELETE_COPY_AND_MOVE(FRenderer);
 
 public:
+	void Initialize(const FRendererDesc& InDescription);
+	void Destroy() const;
+
 	void Resize() const;
 
-	void BeginFrame() const;
+	void BeginFrame();
 	void EndFrame() const;
 
 private:
-	FRendererDesc Description;
+	FRendererDesc Description = {};
 
-	TUniquePtr<FVulkanGraphicsApi> GraphicsApi;
+	TUniquePtr<FGraphicsApi> GraphicsApi;
+
+	VkSurfaceKHR Surface;
+	TSharedPtr<FGraphicsDevice> GraphicsDevice;
+
+	TSharedPtr<FGraphicsSwapchain> GraphicsSwapchain;
+
+	FGraphicsFrameId CurrentFrameId = 0;
+	TVector<FGraphicsFrame> Frames;
 };

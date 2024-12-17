@@ -45,13 +45,36 @@ private:
 	VkResult Result = VK_SUCCESS;
 };
 
+enum class ENGINE_API EGraphicsQueueType : uint8
+{
+	None = 0,
+	Graphics,
+	Present,
+	Compute,
+	Transfer,
+};
+
+struct ENGINE_API FGraphicsQueueMetadata
+{
+	uint32 FamilyIndex = 0;
+	uint32 QueueIndex = 0;
+};
+
+struct ENGINE_API FGraphicsSurfaceProperties
+{
+	VkSurfaceCapabilitiesKHR Capabilities;
+	TVector<VkSurfaceFormatKHR> Formats;
+	TVector<VkPresentModeKHR> PresentModes;
+};
+
 using FGraphicsFrameId = uint64;
 
 struct ENGINE_API FGraphicsFrame
 {
 	VkCommandPool CommandPool = VK_NULL_HANDLE;
-	TSharedPtr<FVulkanCommandBuffer> CommandBuffer = nullptr;
+	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
 	VkSemaphore ImageAvailableSemaphore = VK_NULL_HANDLE;
 	VkSemaphore RenderFinishedSemaphore = VK_NULL_HANDLE;
 	VkFence InFlightFence = VK_NULL_HANDLE;
+	uint32 ImageIndex = 0;
 };
