@@ -25,6 +25,17 @@ void FFile::CreateIfNotExists() const
 	File.close();
 }
 
+TVector<uint32> FFile::Read() const
+{
+	std::ifstream File(Path, std::ios::binary | std::ios::ate);
+	const std::streamsize Size = File.tellg();
+	File.seekg(0, std::ios::beg);
+	TVector<uint32> Buffer(Size / sizeof(uint32));
+	VERIFY(File.read(reinterpret_cast<char*>(Buffer.data()), Size), "Failed to read file: {}", Path.string());
+	File.close();
+	return Buffer;
+}
+
 FAnsiString FFile::ReadAnsi() const
 {
 	std::ifstream File(Path, std::ios::binary | std::ios::ate);

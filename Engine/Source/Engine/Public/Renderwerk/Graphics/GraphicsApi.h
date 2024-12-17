@@ -32,6 +32,8 @@ public:
 
 	void DestroySurface(const VkSurfaceKHR& Surface) const;
 
+	VkShaderModule CreateShaderModule(const TSharedPtr<FGraphicsDevice>& Device, const TVector<uint32>& SourceContent) const;
+
 public:
 	[[nodiscard]] TSharedPtr<FGraphicsContext> GetGraphicsContext() const { return GraphicsContext; }
 

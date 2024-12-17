@@ -40,4 +40,8 @@ private:
 
 	FGraphicsFrameId CurrentFrameId = 0;
 	TVector<FGraphicsFrame> Frames;
+
+	// TODO: Only temporary, remove this
+	VkPipeline TestPipeline;
+	VkPipelineLayout TestPipelineLayout;
 };

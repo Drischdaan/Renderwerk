@@ -19,6 +19,7 @@ public:
 
 	void CreateIfNotExists() const;
 
+	[[nodiscard]] TVector<uint32> Read() const;
 	[[nodiscard]] FAnsiString ReadAnsi() const;
 	[[nodiscard]] FWideString ReadWide() const;
 

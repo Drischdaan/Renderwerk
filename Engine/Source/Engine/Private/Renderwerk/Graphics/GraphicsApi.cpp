@@ -125,6 +125,20 @@ void FGraphicsApi::DestroySurface(const VkSurfaceKHR& Surface) const
 	vkDestroySurfaceKHR(GraphicsContext->GetInstance(), Surface, GraphicsContext->GetAllocator());
 }
 
+VkShaderModule FGraphicsApi::CreateShaderModule(const TSharedPtr<FGraphicsDevice>& Device, const TVector<uint32>& SourceContent) const
+{
+	VkShaderModuleCreateInfo ShaderModuleCreateInfo = {};
+	ShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	ShaderModuleCreateInfo.pNext = nullptr;
+	ShaderModuleCreateInfo.codeSize = SourceContent.size() * sizeof(uint32);
+	ShaderModuleCreateInfo.pCode = SourceContent.data();
+
+	VkShaderModule ShaderModule = VK_NULL_HANDLE;
+	const FVulkanResult Result = vkCreateShaderModule(Device->GetHandle(), &ShaderModuleCreateInfo, GraphicsContext->GetAllocator(), &ShaderModule);
+	ASSERT(Result == VK_SUCCESS, "Failed to create shader module");
+	return ShaderModule;
+}
+
 void FGraphicsApi::DeallocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, const VkCommandPool CommandPool,
                                            const TSharedPtr<FGraphicsCommandBuffer>& CommandBuffer) const
 {
