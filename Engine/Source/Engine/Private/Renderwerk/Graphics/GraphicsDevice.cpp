@@ -67,6 +67,7 @@ void FGraphicsDevice::CreateDevice()
 
 	VkPhysicalDeviceFeatures EnabledFeatures = {};
 	EnabledFeatures.samplerAnisotropy = VK_TRUE;
+	EnabledFeatures.fillModeNonSolid = VK_TRUE;
 
 	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeatures = {};
 	DynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
