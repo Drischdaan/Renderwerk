@@ -4,9 +4,6 @@
 
 #include "Renderwerk/Platform/Window.h"
 
-#define VOLK_IMPLEMENTATION
-#include <volk.h>
-
 FGraphicsApi::FGraphicsApi() = default;
 
 FGraphicsApi::~FGraphicsApi() = default;
