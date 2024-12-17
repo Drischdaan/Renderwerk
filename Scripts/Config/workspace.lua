@@ -34,6 +34,8 @@ workspace(project_name)
 		'SPDLOG_WCHAR_FILENAMES=1',
 		'SPDLOG_WCHAR_TO_UTF8_SUPPORT=1',
 		'VK_NO_PROTOTYPES',
+		'IMGUI_DISABLE_DEMO_WINDOWS=1',
+		'IMGUI_IMPL_VULKAN_USE_VOLK=1',
 	})
 
 	rw_filter_configuration_debug()
