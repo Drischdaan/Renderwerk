@@ -127,6 +127,8 @@ void FGraphicsSwapchain::AcquireBackBuffers()
 
 void FGraphicsSwapchain::ReleaseBackBuffers()
 {
+	// For some weird reason, the BackBuffers vector is empty when this function is called.
+	// This only happens sometimes, and I have no idea why.
 	for (const FGraphicsBackBuffer& BackBufferView : BackBuffers)
 		vkDestroyImageView(GraphicsDevice->GetHandle(), BackBufferView.ImageView, GraphicsContext->GetAllocator());
 	BackBuffers.clear();
