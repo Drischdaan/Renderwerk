@@ -69,7 +69,65 @@ TSharedPtr<FGraphicsSwapchain> FGraphicsApi::CreateSwapchain(const TSharedPtr<FG
 	return MakeShared<FGraphicsSwapchain>(GraphicsContext, Device);
 }
 
+TSharedPtr<FGraphicsCommandBuffer> FGraphicsApi::AllocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, const VkCommandPool CommandPool) const
+{
+	VkCommandBufferAllocateInfo CommandBufferAllocateInfo;
+	CommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	CommandBufferAllocateInfo.pNext = nullptr;
+	CommandBufferAllocateInfo.commandPool = CommandPool;
+	CommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	CommandBufferAllocateInfo.commandBufferCount = 1;
+
+	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+	const FVulkanResult Result = vkAllocateCommandBuffers(Device->GetHandle(), &CommandBufferAllocateInfo, &CommandBuffer);
+	VERIFY(Result == VK_SUCCESS, "Failed to allocate command buffer");
+
+	return MakeShared<FGraphicsCommandBuffer>(CommandBuffer);
+}
+
+void FGraphicsApi::SubmitQueue(const VkQueue Queue, const FGraphicsFrame& Frame)
+{
+	PROFILE_FUNCTION();
+	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
+	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	CommandBufferSubmitInfo.pNext = nullptr;
+	CommandBufferSubmitInfo.commandBuffer = Frame.CommandBuffer->GetHandle();
+
+	VkSemaphoreSubmitInfo ImageAvailableSemaphoreSubmitInfo = {};
+	ImageAvailableSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	ImageAvailableSemaphoreSubmitInfo.pNext = nullptr;
+	ImageAvailableSemaphoreSubmitInfo.semaphore = Frame.ImageAvailableSemaphore;
+	ImageAvailableSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
+	ImageAvailableSemaphoreSubmitInfo.value = 0;
+
+	VkSemaphoreSubmitInfo RenderFinishedSemaphoreSubmitInfo = {};
+	RenderFinishedSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	RenderFinishedSemaphoreSubmitInfo.pNext = nullptr;
+	RenderFinishedSemaphoreSubmitInfo.semaphore = Frame.RenderFinishedSemaphore;
+	RenderFinishedSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	RenderFinishedSemaphoreSubmitInfo.value = 0;
+
+	VkSubmitInfo2 SubmitInfo = {};
+	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	SubmitInfo.pNext = nullptr;
+	SubmitInfo.waitSemaphoreInfoCount = 1;
+	SubmitInfo.pWaitSemaphoreInfos = &ImageAvailableSemaphoreSubmitInfo;
+	SubmitInfo.signalSemaphoreInfoCount = 1;
+	SubmitInfo.pSignalSemaphoreInfos = &RenderFinishedSemaphoreSubmitInfo;
+	SubmitInfo.commandBufferInfoCount = 1;
+	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
+	const FVulkanResult Result = vkQueueSubmit2(Queue, 1, &SubmitInfo, Frame.InFlightFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
+}
+
 void FGraphicsApi::DestroySurface(const VkSurfaceKHR& Surface) const
 {
 	vkDestroySurfaceKHR(GraphicsContext->GetInstance(), Surface, GraphicsContext->GetAllocator());
+}
+
+void FGraphicsApi::DeallocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, const VkCommandPool CommandPool,
+                                           const TSharedPtr<FGraphicsCommandBuffer>& CommandBuffer) const
+{
+	VkCommandBuffer CommandBuffers[] = {CommandBuffer->GetHandle()};
+	vkFreeCommandBuffers(Device->GetHandle(), CommandPool, _countof(CommandBuffers), CommandBuffers);
 }

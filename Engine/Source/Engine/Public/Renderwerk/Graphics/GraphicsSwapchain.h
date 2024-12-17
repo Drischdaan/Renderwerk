@@ -11,7 +11,7 @@ struct ENGINE_API FGraphicsSwapchainDesc
 	uint32 BackBufferCount = 3;
 	VkFormat BackBufferFormat = VK_FORMAT_B8G8R8A8_UNORM;
 	VkColorSpaceKHR ColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	VkPresentModeKHR PresentMode = VK_PRESENT_MODE_FIFO_KHR;
+	VkPresentModeKHR PresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 };
 
 struct ENGINE_API FGraphicsBackBuffer

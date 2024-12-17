@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/GraphicsCommon.h"
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
+#include "Renderwerk/Graphics/GraphicsCommandBuffer.h"
 #include "Renderwerk/Graphics/GraphicsContext.h"
 #include "Renderwerk/Graphics/GraphicsDevice.h"
 #include "Renderwerk/Graphics/GraphicsSwapchain.h"
@@ -23,6 +24,11 @@ public:
 	TSharedPtr<FGraphicsAdapter> ChooseCompatibleAdapter(const VkSurfaceKHR& Surface) const;
 	TSharedPtr<FGraphicsDevice> CreateDevice(const TSharedPtr<FGraphicsAdapter>& Adapter) const;
 	TSharedPtr<FGraphicsSwapchain> CreateSwapchain(const TSharedPtr<FGraphicsDevice>& Device) const;
+
+	TSharedPtr<FGraphicsCommandBuffer> AllocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, VkCommandPool CommandPool) const;
+	void DeallocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, VkCommandPool CommandPool, const TSharedPtr<FGraphicsCommandBuffer>& CommandBuffer) const;
+
+	void SubmitQueue(VkQueue Queue, const FGraphicsFrame& Frame);
 
 	void DestroySurface(const VkSurfaceKHR& Surface) const;
 

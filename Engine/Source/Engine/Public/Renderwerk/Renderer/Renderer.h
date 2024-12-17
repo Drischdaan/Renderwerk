@@ -21,12 +21,12 @@ public:
 
 public:
 	void Initialize(const FRendererDesc& InDescription);
-	void Destroy() const;
+	void Destroy();
 
 	void Resize() const;
 
 	void BeginFrame();
-	void EndFrame() const;
+	void EndFrame();
 
 private:
 	FRendererDesc Description = {};

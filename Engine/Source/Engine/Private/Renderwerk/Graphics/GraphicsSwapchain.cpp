@@ -24,14 +24,15 @@ void FGraphicsSwapchain::Destroy()
 
 void FGraphicsSwapchain::Resize()
 {
+	PROFILE_FUNCTION();
 	ReleaseBackBuffers();
-	DestroySwapchain();
 	Swapchain = RecreateSwapchain(Swapchain);
 	AcquireBackBuffers();
 }
 
 bool8 FGraphicsSwapchain::AcquireNextImageIndex(const VkSemaphore SignalSemaphore)
 {
+	PROFILE_FUNCTION();
 	const FVulkanResult Result = vkAcquireNextImageKHR(GraphicsDevice->GetHandle(), Swapchain, UINT64_MAX, SignalSemaphore, VK_NULL_HANDLE, &CurrentImageIndex);
 	if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		return false;
@@ -41,6 +42,7 @@ bool8 FGraphicsSwapchain::AcquireNextImageIndex(const VkSemaphore SignalSemaphor
 
 bool8 FGraphicsSwapchain::Present(const VkSemaphore WaitSemaphore) const
 {
+	PROFILE_FUNCTION();
 	VkPresentInfoKHR PresentInfo = {};
 	PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	PresentInfo.pNext = nullptr;
@@ -91,6 +93,9 @@ VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwa
 	VkSwapchainKHR NewSwapchain = VK_NULL_HANDLE;
 	const FVulkanResult Result = vkCreateSwapchainKHR(GraphicsDevice->GetHandle(), &SwapchainCreateInfo, GraphicsContext->GetAllocator(), &NewSwapchain);
 	ASSERT(Result == VK_SUCCESS, "Failed to create swapchain");
+
+	if (OldSwapchain != VK_NULL_HANDLE)
+		DestroySwapchain();
 	return NewSwapchain;
 }
 

@@ -44,13 +44,7 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		                                           &Frame.CommandPool);
 		VERIFY(Result == VK_SUCCESS, "Failed to create command pool");
 
-		VkCommandBufferAllocateInfo CommandBufferAllocateInfo = {};
-		CommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		CommandBufferAllocateInfo.pNext = nullptr;
-		CommandBufferAllocateInfo.commandPool = Frame.CommandPool;
-		CommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		CommandBufferAllocateInfo.commandBufferCount = 1;
-		Result = vkAllocateCommandBuffers(GraphicsDevice->GetHandle(), &CommandBufferAllocateInfo, &Frame.CommandBuffer);
+		Frame.CommandBuffer = GraphicsApi->AllocateCommandBuffer(GraphicsDevice, Frame.CommandPool);
 
 		VkSemaphoreCreateInfo SemaphoreCreateInfo = {};
 		SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -72,16 +66,17 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 	}
 }
 
-void FRenderer::Destroy() const
+void FRenderer::Destroy()
 {
 	GraphicsDevice->WaitForIdle();
 
-	for (const FGraphicsFrame& Frame : Frames)
+	for (FGraphicsFrame& Frame : Frames)
 	{
 		vkDestroyFence(GraphicsDevice->GetHandle(), Frame.InFlightFence, GraphicsApi->GetGraphicsContext()->GetAllocator());
 		vkDestroySemaphore(GraphicsDevice->GetHandle(), Frame.RenderFinishedSemaphore, GraphicsApi->GetGraphicsContext()->GetAllocator());
 		vkDestroySemaphore(GraphicsDevice->GetHandle(), Frame.ImageAvailableSemaphore, GraphicsApi->GetGraphicsContext()->GetAllocator());
-		vkFreeCommandBuffers(GraphicsDevice->GetHandle(), Frame.CommandPool, 1, &Frame.CommandBuffer);
+		GraphicsApi->DeallocateCommandBuffer(GraphicsDevice, Frame.CommandPool, Frame.CommandBuffer);
+		Frame.CommandBuffer.reset();
 		vkDestroyCommandPool(GraphicsDevice->GetHandle(), Frame.CommandPool, GraphicsApi->GetGraphicsContext()->GetAllocator());
 	}
 	GraphicsSwapchain->Destroy();
@@ -92,6 +87,7 @@ void FRenderer::Destroy() const
 
 void FRenderer::Resize() const
 {
+	PROFILE_FUNCTION();
 	GraphicsDevice->WaitForIdle();
 
 	GraphicsSwapchain->Resize();
@@ -99,12 +95,18 @@ void FRenderer::Resize() const
 
 void FRenderer::BeginFrame()
 {
+	PROFILE_FUNCTION();
 	FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
 
-	FVulkanResult Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence, VK_TRUE, UINT64_MAX);
-	VERIFY(Result == VK_SUCCESS, "Failed to wait for in-flight fence");
-	Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence);
-	VERIFY(Result == VK_SUCCESS, "Failed to reset in-flight fence");
+	{
+		PROFILE_SCOPE("vkWaitForFences");
+		FVulkanResult Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence, VK_TRUE, UINT64_MAX);
+		VERIFY(Result == VK_SUCCESS, "Failed to wait for in-flight fence");
+		Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence);
+		VERIFY(Result == VK_SUCCESS, "Failed to reset in-flight fence");
+	}
+
+	Frame.DeletionQueue.Process();
 
 	if (!GraphicsSwapchain->AcquireNextImageIndex(Frame.ImageAvailableSemaphore))
 	{
@@ -113,110 +115,37 @@ void FRenderer::BeginFrame()
 	}
 	Frame.ImageIndex = GraphicsSwapchain->GetCurrentImageIndex();
 
-	const VkCommandBuffer CommandBuffer = Frame.CommandBuffer;
-	vkResetCommandBuffer(CommandBuffer, 0);
+	const TSharedPtr<FGraphicsCommandBuffer> CommandBuffer = Frame.CommandBuffer;
+	const FGraphicsBackBuffer BackBuffer = GraphicsSwapchain->GetBackBuffer(Frame.ImageIndex);
 
-	VkCommandBufferBeginInfo CommandBufferBeginInfo;
-	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	CommandBufferBeginInfo.pNext = nullptr;
-	CommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	CommandBufferBeginInfo.pInheritanceInfo = nullptr;
-	vkBeginCommandBuffer(CommandBuffer, &CommandBufferBeginInfo);
+	CommandBuffer->Reset();
+	CommandBuffer->Begin();
 
-	VkImageSubresourceRange SubImage;
-	SubImage.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	SubImage.baseMipLevel = 0;
-	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
-	SubImage.baseArrayLayer = 0;
-	SubImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	CommandBuffer->TransitionImageLayout(BackBuffer.Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-	VkImageMemoryBarrier2 ImageBarrier = {};
-	ImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	ImageBarrier.pNext = nullptr;
-	ImageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-	ImageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
-	ImageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	ImageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	ImageBarrier.subresourceRange = SubImage;
-	ImageBarrier.image = GraphicsSwapchain->GetBackBuffer(Frame.ImageIndex).Image;
-
-	VkDependencyInfo DependencyInfo = {};
-	DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-	DependencyInfo.pNext = nullptr;
-	DependencyInfo.imageMemoryBarrierCount = 1;
-	DependencyInfo.pImageMemoryBarriers = &ImageBarrier;
-	vkCmdPipelineBarrier2(CommandBuffer, &DependencyInfo);
+	CommandBuffer->BeginDebugLabel("ClearBackBuffer");
+	CommandBuffer->ClearImage(BackBuffer.Image, VK_IMAGE_LAYOUT_GENERAL, {0.1f, 0.1f, 0.1f, 1.0f});
+	CommandBuffer->EndDebugLabel();
 }
 
-void FRenderer::EndFrame() const
+void FRenderer::EndFrame()
 {
+	PROFILE_FUNCTION();
 	const FGraphicsFrame& Frame = Frames.at(CurrentFrameId);
-	const VkCommandBuffer CommandBuffer = Frame.CommandBuffer;
+	const TSharedPtr<FGraphicsCommandBuffer> CommandBuffer = Frame.CommandBuffer;
+	const FGraphicsBackBuffer BackBuffer = GraphicsSwapchain->GetBackBuffer(Frame.ImageIndex);
 
-	VkImageSubresourceRange SubImage;
-	SubImage.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	SubImage.baseMipLevel = 0;
-	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
-	SubImage.baseArrayLayer = 0;
-	SubImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	CommandBuffer->TransitionImageLayout(BackBuffer.Image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	VkImageMemoryBarrier2 ImageBarrier = {};
-	ImageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	ImageBarrier.pNext = nullptr;
-	ImageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-	ImageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	ImageBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
-	ImageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-	ImageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	ImageBarrier.subresourceRange = SubImage;
-	ImageBarrier.image = GraphicsSwapchain->GetBackBuffer(Frame.ImageIndex).Image;
+	CommandBuffer->End();
 
-	VkDependencyInfo DependencyInfo = {};
-	DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-	DependencyInfo.pNext = nullptr;
-	DependencyInfo.imageMemoryBarrierCount = 1;
-	DependencyInfo.pImageMemoryBarriers = &ImageBarrier;
-	vkCmdPipelineBarrier2(CommandBuffer, &DependencyInfo);
-
-	vkEndCommandBuffer(CommandBuffer);
-
-	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
-	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-	CommandBufferSubmitInfo.pNext = nullptr;
-	CommandBufferSubmitInfo.commandBuffer = Frame.CommandBuffer;
-
-	VkSemaphoreSubmitInfo ImageAvailableSemaphoreSubmitInfo = {};
-	ImageAvailableSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	ImageAvailableSemaphoreSubmitInfo.pNext = nullptr;
-	ImageAvailableSemaphoreSubmitInfo.semaphore = Frame.ImageAvailableSemaphore;
-	ImageAvailableSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-	ImageAvailableSemaphoreSubmitInfo.value = 0;
-
-	VkSemaphoreSubmitInfo RenderFinishedSemaphoreSubmitInfo = {};
-	RenderFinishedSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	RenderFinishedSemaphoreSubmitInfo.pNext = nullptr;
-	RenderFinishedSemaphoreSubmitInfo.semaphore = Frame.RenderFinishedSemaphore;
-	RenderFinishedSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-	RenderFinishedSemaphoreSubmitInfo.value = 0;
-
-	VkSubmitInfo2 SubmitInfo = {};
-	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-	SubmitInfo.pNext = nullptr;
-	SubmitInfo.waitSemaphoreInfoCount = 1;
-	SubmitInfo.pWaitSemaphoreInfos = &ImageAvailableSemaphoreSubmitInfo;
-	SubmitInfo.signalSemaphoreInfoCount = 1;
-	SubmitInfo.pSignalSemaphoreInfos = &RenderFinishedSemaphoreSubmitInfo;
-	SubmitInfo.commandBufferInfoCount = 1;
-	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
-	const FVulkanResult Result = vkQueueSubmit2(GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, Frame.InFlightFence);
-	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
+	GraphicsApi->SubmitQueue(GraphicsDevice->GetGraphicsQueue(), Frame);
 
 	if (!GraphicsSwapchain->Present(Frame.RenderFinishedSemaphore))
 	{
 		if (Description.Window->IsValid())
 			Resize();
+		return;
 	}
+	CurrentFrameId = (CurrentFrameId + 1) % Frames.size();
 }

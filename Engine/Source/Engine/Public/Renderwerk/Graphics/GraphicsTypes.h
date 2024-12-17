@@ -4,6 +4,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+class FGraphicsCommandBuffer;
+
 struct ENGINE_API FVulkanResult
 {
 public:
@@ -72,9 +74,10 @@ using FGraphicsFrameId = uint64;
 struct ENGINE_API FGraphicsFrame
 {
 	VkCommandPool CommandPool = VK_NULL_HANDLE;
-	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+	TSharedPtr<FGraphicsCommandBuffer> CommandBuffer = nullptr;
 	VkSemaphore ImageAvailableSemaphore = VK_NULL_HANDLE;
 	VkSemaphore RenderFinishedSemaphore = VK_NULL_HANDLE;
 	VkFence InFlightFence = VK_NULL_HANDLE;
 	uint32 ImageIndex = 0;
+	FDeletionQueue DeletionQueue = {};
 };
