@@ -11,6 +11,12 @@ struct ENGINE_API FRendererDesc
 	TSharedPtr<FWindow> Window;
 };
 
+enum class ENGINE_API ETestStage : uint8
+{
+	Filled,
+	Wireframe,
+};
+
 class ENGINE_API FRenderer
 {
 public:
@@ -29,6 +35,10 @@ public:
 	void EndFrame();
 
 private:
+	void InitImgui();
+	void DrawImgui(VkCommandBuffer CommandBuffer);
+
+private:
 	FRendererDesc Description = {};
 
 	TUniquePtr<FGraphicsApi> GraphicsApi;
@@ -43,5 +53,9 @@ private:
 
 	// TODO: Only temporary, remove this
 	VkPipeline TestPipeline;
+	VkPipeline TestPipelineWireframe;
 	VkPipelineLayout TestPipelineLayout;
+	VkDescriptorPool ImguiDescriptorPool;
+
+	ETestStage TestStage = ETestStage::Filled;
 };

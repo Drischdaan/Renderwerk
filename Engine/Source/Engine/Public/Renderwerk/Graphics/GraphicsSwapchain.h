@@ -42,6 +42,7 @@ public:
 public:
 	[[nodiscard]] uint32 GetCurrentImageIndex() const { return CurrentImageIndex; }
 	[[nodiscard]] VkExtent2D GetExtent() const { return Extent; }
+	[[nodiscard]] VkFormat GetFormat() const { return Description.BackBufferFormat; }
 
 private:
 	VkSwapchainKHR RecreateSwapchain(VkSwapchainKHR OldSwapchain = VK_NULL_HANDLE);

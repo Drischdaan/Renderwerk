@@ -4,8 +4,14 @@
 
 #include "Renderwerk/Platform/Window.h"
 
+#include <backends/imgui_impl_win32.h>
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
+
 LRESULT WindowProc(const HWND WindowHandle, const UINT Message, const WPARAM WParam, const LPARAM LParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(WindowHandle, Message, WParam, LParam))
+		return true;
+
 	FWindow* Window;
 	if (Message == WM_NCCREATE)
 	{

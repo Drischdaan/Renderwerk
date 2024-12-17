@@ -20,7 +20,7 @@ public:
 	void SetColorAttachmentFormat(VkFormat Format);
 	void SetDepthFormat(VkFormat Format);
 	void SetPipelineLayout(VkPipelineLayout Layout);
-	void AddShaderStage(const VkShaderStageFlagBits Stage, const VkShaderModule Module);
+	void AddShaderStage(VkShaderStageFlagBits Stage, VkShaderModule Module);
 
 	VkPipeline BuildPipeline(const TSharedPtr<FGraphicsContext>& GraphicsContext, const TSharedPtr<FGraphicsDevice>& GraphicsDevice) const;
 
