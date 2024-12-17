@@ -14,12 +14,16 @@ IEngineThread::IEngineThread(TAtomic<bool8>* InIsRunning, const FAnsiString& InP
 
 IEngineThread::~IEngineThread()
 {
-	Thread.join();
 }
 
 void IEngineThread::Signal()
 {
 	SyncPoint.Signal();
+}
+
+void IEngineThread::Destroy()
+{
+	Thread.join();
 }
 
 void IEngineThread::Initialize()

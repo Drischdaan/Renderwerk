@@ -55,6 +55,7 @@ void FGraphicsDevice::CreateDevice()
 	const TVector<const char*> RequiredExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 	};
 
 	RW_LOG(LogGraphics, Info, "Enabled device extensions:");
@@ -67,9 +68,14 @@ void FGraphicsDevice::CreateDevice()
 	VkPhysicalDeviceFeatures EnabledFeatures = {};
 	EnabledFeatures.samplerAnisotropy = VK_TRUE;
 
+	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeatures = {};
+	DynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+	DynamicRenderingFeatures.pNext = nullptr;
+	DynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
 	VkPhysicalDeviceSynchronization2Features Synchronization2Features = {};
 	Synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-	Synchronization2Features.pNext = nullptr;
+	Synchronization2Features.pNext = &DynamicRenderingFeatures;
 	Synchronization2Features.synchronization2 = VK_TRUE;
 
 	VkDeviceCreateInfo DeviceCreateInfo;

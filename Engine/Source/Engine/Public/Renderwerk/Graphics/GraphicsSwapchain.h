@@ -41,9 +41,10 @@ public:
 
 public:
 	[[nodiscard]] uint32 GetCurrentImageIndex() const { return CurrentImageIndex; }
+	[[nodiscard]] VkExtent2D GetExtent() const { return Extent; }
 
 private:
-	VkSwapchainKHR RecreateSwapchain(VkSwapchainKHR OldSwapchain = VK_NULL_HANDLE) const;
+	VkSwapchainKHR RecreateSwapchain(VkSwapchainKHR OldSwapchain = VK_NULL_HANDLE);
 	void AcquireBackBuffers();
 	void ReleaseBackBuffers();
 	void DestroySwapchain() const;
@@ -55,6 +56,7 @@ private:
 
 	VkSwapchainKHR Swapchain = VK_NULL_HANDLE;
 
+	VkExtent2D Extent = {};
 	TVector<FGraphicsBackBuffer> BackBuffers;
 
 	uint32 CurrentImageIndex = 0;

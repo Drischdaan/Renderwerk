@@ -18,6 +18,8 @@ public:
 public:
 	void Signal();
 
+	void Destroy();
+
 public:
 	[[nodiscard]] ESyncPointState GetSyncPointState() const { return SyncPoint.GetState(); }
 

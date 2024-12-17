@@ -54,7 +54,9 @@ void FEngine::Shutdown()
 {
 	UpdateThread->Signal();
 	RenderThread->Signal();
+	UpdateThread->Destroy();
 	UpdateThread.reset();
+	RenderThread->Destroy();
 	RenderThread.reset();
 	WindowManager.reset();
 }

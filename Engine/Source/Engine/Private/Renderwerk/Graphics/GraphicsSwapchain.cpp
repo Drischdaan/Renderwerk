@@ -62,7 +62,7 @@ FGraphicsBackBuffer FGraphicsSwapchain::GetBackBuffer(const uint32 Index) const
 	return BackBuffers.at(Index);
 }
 
-VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwapchain) const
+VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwapchain)
 {
 	const FGraphicsSurfaceProperties SurfaceProperties = GraphicsDevice->GetAdapter()->GetSurfaceProperties(Description.Surface);
 
@@ -85,6 +85,8 @@ VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwa
 	SwapchainCreateInfo.presentMode = Description.PresentMode;
 	SwapchainCreateInfo.clipped = VK_TRUE;
 	SwapchainCreateInfo.oldSwapchain = OldSwapchain;
+
+	Extent = SwapchainCreateInfo.imageExtent;
 
 	VkSwapchainKHR NewSwapchain = VK_NULL_HANDLE;
 	const FVulkanResult Result = vkCreateSwapchainKHR(GraphicsDevice->GetHandle(), &SwapchainCreateInfo, GraphicsContext->GetAllocator(), &NewSwapchain);
@@ -127,8 +129,6 @@ void FGraphicsSwapchain::AcquireBackBuffers()
 
 void FGraphicsSwapchain::ReleaseBackBuffers()
 {
-	// For some weird reason, the BackBuffers vector is empty when this function is called.
-	// This only happens sometimes, and I have no idea why.
 	for (const FGraphicsBackBuffer& BackBufferView : BackBuffers)
 		vkDestroyImageView(GraphicsDevice->GetHandle(), BackBufferView.ImageView, GraphicsContext->GetAllocator());
 	BackBuffers.clear();
