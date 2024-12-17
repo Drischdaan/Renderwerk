@@ -121,9 +121,12 @@ void FRenderer::Destroy()
 		vkDestroyCommandPool(GraphicsDevice->GetHandle(), Frame.CommandPool, GraphicsApi->GetGraphicsContext()->GetAllocator());
 	}
 	GraphicsSwapchain->Destroy();
+	GraphicsSwapchain.reset();
 	GraphicsDevice->Destroy();
+	GraphicsDevice.reset();
 	GraphicsApi->DestroySurface(Surface);
 	GraphicsApi->Destroy();
+	GraphicsApi.reset();
 }
 
 void FRenderer::Resize() const
@@ -181,7 +184,7 @@ void FRenderer::BeginFrame()
 
 		VkRenderingInfo RenderingInfo = {};
 		RenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-		RenderingInfo.renderArea.offset = {0, 0};
+		RenderingInfo.renderArea.offset = {.x = 0, .y = 0};
 		RenderingInfo.renderArea.extent = GraphicsSwapchain->GetExtent();
 		RenderingInfo.layerCount = 1;
 		RenderingInfo.colorAttachmentCount = 1;
@@ -190,7 +193,7 @@ void FRenderer::BeginFrame()
 
 		vkCmdBindPipeline(CommandBuffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, TestPipeline);
 
-		VkViewport Viewport = {};
+		VkViewport Viewport;
 		Viewport.x = 0;
 		Viewport.y = 0;
 		Viewport.width = static_cast<float32>(GraphicsSwapchain->GetExtent().width);
@@ -199,7 +202,7 @@ void FRenderer::BeginFrame()
 		Viewport.maxDepth = 1.f;
 		vkCmdSetViewport(CommandBuffer->GetHandle(), 0, 1, &Viewport);
 
-		VkRect2D Scissor = {};
+		VkRect2D Scissor;
 		Scissor.offset.x = 0;
 		Scissor.offset.y = 0;
 		Scissor.extent.width = GraphicsSwapchain->GetExtent().width;
