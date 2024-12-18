@@ -36,3 +36,5 @@ Engine/ThirdParty/DirectXCompiler/
 Logs/
 
 *.spv
+
+imgui.ini
