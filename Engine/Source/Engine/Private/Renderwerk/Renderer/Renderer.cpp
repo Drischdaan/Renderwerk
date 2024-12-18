@@ -177,6 +177,8 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 
 		vkDestroyShaderModule(GraphicsDevice->GetHandle(), VertexShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
 		vkDestroyShaderModule(GraphicsDevice->GetHandle(), FragmentShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
+
+		InitImgui();
 	}
 }
 
