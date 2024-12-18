@@ -22,3 +22,5 @@
 [submodule "Engine/ThirdParty/flecs"]
 	path = Engine/ThirdParty/flecs
 	url = https://github.com/SanderMertens/flecs
+[submodule "Engine/ThirdParty/glm"]
+	path = Engine/ThirdParty/glm
