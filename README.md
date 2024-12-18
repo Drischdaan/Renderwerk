@@ -19,6 +19,8 @@
 
 Renderwerk is my passion project, a game/rendering engine that I am developing in my free time. It is not intended to be a production-ready engine, but rather a playground for me to learn about graphics programming and experiment with different ideas and concepts. I started the project around the end of 2021, and it went through a lot of changes, rewrites and iterations since then. The engine is written in C++ and uses Vulkan as the primary rendering API. The project is still in its early stages, and there is a lot of work to be done. I am working on it in my free time, so progress might be slow.
 
+![Current snapshot](https://i.imgur.com/NFmegDC.png)
+
 ## 🛣️ Roadmap
 
 The roadmap is a rough outline of the features that are planned to be implemented in the engine. The list is not exhaustive and will be updated as the project progresses. The features are not listed in any particular order.
