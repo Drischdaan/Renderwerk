@@ -39,9 +39,11 @@ function rw_enable_multi_processor_compilation()
 end
 
 function rw_default_compiler_flags()
-	characterset('Unicode')
+	characterset('MBCS')
 	callingconvention('FastCall')
 	floatingpoint('Fast') -- If issues arise, change this
+	staticruntime('Off')
+	editandcontinue('Off')
 	rw_enable_multi_processor_compilation()
 end
 
@@ -86,21 +88,17 @@ end
 function rw_platform_flags(platform)
 	if platform == build_platforms.Windows then
 		defines({
-			macro_prefix .. 'PLATFORM_WINDOWS=1',
-			macro_prefix .. 'PLATFORM=TEXT("Windows")',
 			'WIN32_LEAN_AND_MEAN',
 			'NOMINMAX',
-			macro_prefix .. 'PLATFORM_LINUX=0',
 		})
 		disablewarnings({
 			'4251',
 		})
-	elseif platform == build_platforms.Linux then
-		defines({
-			macro_prefix .. 'PLATFORM_LINUX=1',
-			macro_prefix .. 'PLATFORM=TEXT("Linux")',
-			macro_prefix .. 'PLATFORM_WINDOWS=0',
+		links({
+			'mincore.lib',
 		})
+	elseif platform == build_platforms.Linux then
+		
 	end
 end
 
@@ -148,6 +146,10 @@ end
 function rw_language_cpp()
 	language('C++')
 	cppdialect(cpp_standard)
+end
+
+function rw_language_c()
+	language('C')
 end
 
 function rw_precompiled_header()
@@ -202,8 +204,8 @@ function rw_kind_shared_lib(name)
 		macro_prefix .. 'KIND=TEXT("SharedLib")',
 		macro_prefix .. 'COMPILE_' .. string.upper(name) .. '_API=1',
 		macro_prefix .. 'KIND_CONSOLE_APP=0',
+		macro_prefix .. 'KIND_WINDOWED_APP=0',
 		macro_prefix .. 'KIND_STATIC_LIB=0',
-		macro_prefix .. 'KIND_SHARED_LIB=0',
 	})
 end
 
@@ -212,7 +214,15 @@ function rw_default_location()
 end
 
 function rw_third_party_location()
-	location(path.join(third_party_folder_path, '%{prj.name}'))
+	location(third_party_folder_path)
+end
+
+function rw_make_third_party_location(append_path)
+	return path.join(third_party_folder_path, append_path)
+end
+
+function rw_make_third_party_project_location(append_path)
+	return rw_make_third_party_location(path.join('%{prj.name}', append_path))
 end
 
 function rw_link_project(name, include_path)
@@ -227,11 +237,45 @@ function rw_link_project(name, include_path)
 	})
 end
 
+function rw_include_project(name, include_path)
+	if not include_path then
+		include_path = source_folder_path .. '/' .. name .. '/Public'
+	end
+	includedirs ({
+		include_path,
+	})
+end
+
 function rw_copy_output_to_directory(directory)
 	prebuildcommands ({
 		('{MKDIR} "' .. directory .. '"')
 	})
 	postbuildcommands ({
 		('{COPY} %{cfg.buildtarget.relpath} "' .. directory .. '"')
+	})
+end
+
+function rw_copy_assets()
+	prebuildcommands ({
+		('{MKDIR} "' .. path.join(project_build_output_path, '%{prj.name}', 'Assets') .. '"')
+	})
+
+	postbuildcommands ({
+		('{COPY} ' .. path.join(root_path, 'Assets') .. ' "' .. path.join(source_folder_path, '%{prj.name}', 'Assets') .. '"')
+	})
+end
+
+function rw_link_vulkan()
+	includedirs({
+		path.join(vulkan_sdk_path, 'Include'),
+	})
+	libdirs({
+		path.join(vulkan_sdk_path, 'Lib'),
+	})
+	defines({
+		'VK_USE_PLATFORM_WIN32_KHR=1',
+	})
+	links({
+		'shaderc_shared',
 	})
 end

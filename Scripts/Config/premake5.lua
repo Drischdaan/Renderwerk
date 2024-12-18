@@ -8,3 +8,12 @@ group('Engine')
 
 group('Applications')
 	include('Projects/editor.lua')
+
+group('ThirdParty')
+	include('Projects/ThirdParty/magic_enum.lua')
+	include('Projects/ThirdParty/tracy.lua')
+	include('Projects/ThirdParty/spdlog.lua')
+	include('Projects/ThirdParty/json.lua')
+	include('Projects/ThirdParty/volk.lua')
+	include('Projects/ThirdParty/vma.lua')
+	include('Projects/ThirdParty/imgui.lua')

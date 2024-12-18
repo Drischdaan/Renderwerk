@@ -1,0 +1,21 @@
+[submodule "Engine/ThirdParty/magic_enum"]
+	path = Engine/ThirdParty/magic_enum
+	url = https://github.com/Neargye/magic_enum
+[submodule "Engine/ThirdParty/tracy"]
+	path = Engine/ThirdParty/tracy
+	url = https://github.com/wolfpld/tracy
+[submodule "Engine/ThirdParty/spdlog"]
+	path = Engine/ThirdParty/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "Engine/ThirdParty/json"]
+	path = Engine/ThirdParty/json
+	url = https://github.com/nlohmann/json
+[submodule "Engine/ThirdParty/volk"]
+	path = Engine/ThirdParty/volk
+	url = https://github.com/zeux/volk
+[submodule "Engine/ThirdParty/VulkanMemoryAllocator"]
+	path = Engine/ThirdParty/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "Engine/ThirdParty/imgui"]
+	path = Engine/ThirdParty/imgui
+	url = https://github.com/ocornut/imgui

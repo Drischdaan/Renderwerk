@@ -1,10 +1,13 @@
 @echo off
+
+set arg1=%1
+
 pushd %~dp0
 
 python --version > NUL
 if errorlevel 1 goto errorNoPython
 
-python .\Scripts\Setup.py
+python .\Scripts\Launch.py %arg1%
 
 goto:eof
 
