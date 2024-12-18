@@ -11,6 +11,7 @@
 #include "Renderwerk/Graphics/GraphicsPipelineBuilder.h"
 #include "Renderwerk/Platform/Filesystem.h"
 #include "Renderwerk/Platform/Window.h"
+#include "Renderwerk/Scene/Components.h"
 
 DEFINE_LOG_CHANNEL(LogRenderer);
 
@@ -437,6 +438,8 @@ void FRenderer::InitImgui()
 	Style->Colors[ImGuiCol_PlotHistogram] = ImVec4(0.40f, 0.39f, 0.38f, 0.63f);
 	Style->Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.25f, 1.00f, 0.00f, 1.00f);
 	Style->Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.25f, 1.00f, 0.00f, 0.43f);
+
+	Scene = MakeShared<FScene>("TestScene");
 }
 
 void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
@@ -446,7 +449,6 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 	ImGui::NewFrame();
 
 	ImGui::Begin("Settings");
-
 	constexpr auto Stages = GetEnumValueNamePair<ETestStage>();
 	if (ImGui::BeginCombo("Fill Mode", GetEnumValueName(TestStage).data()))
 	{
@@ -460,7 +462,31 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 		}
 		ImGui::EndCombo();
 	}
+	ImGui::End();
 
+	// TODO: Highly temporary, remove this as soon as possible
+	ImGui::Begin("Entities");
+	{
+		if (ImGui::Button("Create Entity"))
+			Scene->CreateEntity();
+		ImGui::Text("%s", Scene->GetName().c_str());
+		ImGui::Separator();
+		static TDeque<flecs::entity> ToDelete = {};
+		Scene->Query<FGuidComponent>().each([&](const flecs::entity Entity, const FGuidComponent& Guid)
+		{
+			ImGui::Text(std::format("Entity: {}", Guid.Value).c_str());
+			ImGui::SameLine();
+			ImGui::PushID(std::format("{}", Guid.Value).c_str());
+			if (ImGui::Button("Delete"))
+				ToDelete.push_back(Entity);
+			ImGui::PopID();
+		});
+		while (!ToDelete.empty())
+		{
+			ToDelete.front().destruct();
+			ToDelete.pop_front();
+		}
+	}
 	ImGui::End();
 
 	ImGui::Render();

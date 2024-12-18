@@ -3,6 +3,7 @@
 #include "Renderwerk/Core/CoreMinimal.h"
 
 #include "Renderwerk/Graphics/GraphicsApi.h"
+#include "Renderwerk/Scene/Scene.h"
 
 DECLARE_LOG_CHANNEL(LogRenderer);
 
@@ -95,4 +96,6 @@ private:
 	VkDescriptorSetLayout DescriptorSetLayout;
 	FGraphicsBuffer GpuVertexBuffer;
 	FGraphicsBuffer GpuIndexBuffer;
+
+	TSharedPtr<FScene> Scene;
 };

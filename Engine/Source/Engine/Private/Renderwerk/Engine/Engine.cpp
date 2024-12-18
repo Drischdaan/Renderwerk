@@ -7,6 +7,8 @@
 #include "Renderwerk/Platform/Window.h"
 #include "Renderwerk/Platform/WindowManager.h"
 
+#include "flecs.h"
+
 TSharedPtr<FEngine> GEngine = nullptr; // NOLINT(misc-use-internal-linkage)
 
 FEngine::FEngine(TVector<FString>&& InArguments) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -22,6 +24,16 @@ void FEngine::Run()
 	RunLoop();
 	Shutdown();
 }
+
+struct ENGINE_API FTest
+{
+	uint32 Value;
+};
+
+struct ENGINE_API FTest2
+{
+	uint32 Value;
+};
 
 void FEngine::Initialize()
 {
