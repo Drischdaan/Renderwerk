@@ -17,14 +17,14 @@ enum class ENGINE_API ETestStage : uint8
 	Wireframe,
 };
 
-struct ENGINE_API FVec3
+struct ENGINE_API alignas(16) FVec3
 {
 	float32 X = 0.f;
 	float32 Y = 0.f;
 	float32 Z = 0.f;
 };
 
-struct ENGINE_API FVec4
+struct ENGINE_API alignas(16) FVec4
 {
 	float32 X = 0.f;
 	float32 Y = 0.f;

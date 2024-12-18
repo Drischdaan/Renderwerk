@@ -106,9 +106,9 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		VERIFY(Result == VK_SUCCESS, "Failed to allocate command buffer");
 
 		constexpr TArray<FVertex, 3> Vertices = {
-			FVertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-			FVertex{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-			FVertex{{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
+			FVertex{{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+			FVertex{{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+			FVertex{{0.0f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
 		};
 		FGraphicsBuffer CpuVertexBuffer = GraphicsResourceAllocator->AllocateBuffer(Vertices.size() * sizeof(FVertex), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		                                                                            VMA_MEMORY_USAGE_CPU_ONLY);
