@@ -21,7 +21,8 @@ public:
 	[[nodiscard]] FGraphicsBuffer AllocateBuffer(size64 Size, VkBufferUsageFlags Usage, VmaMemoryUsage MemoryUsage) const;
 	void FreeBuffer(const FGraphicsBuffer& Buffer) const;
 
-	FGraphicsBuffer CreateUploadBuffer(const TSharedPtr<FGraphicsDevice>& Device, const FGraphicsBuffer& Buffer, const void* Data, size64 Size) const;
+	FGraphicsBuffer CreateUploadBuffer(const TSharedPtr<FGraphicsDevice>& Device, const FGraphicsBuffer& Buffer, const void* Data, size64 Size,
+	                                   VkBufferUsageFlags Usage) const;
 
 private:
 	TSharedPtr<FGraphicsContext> GraphicsContext;

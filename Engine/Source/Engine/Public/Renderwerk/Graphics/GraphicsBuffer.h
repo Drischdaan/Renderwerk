@@ -13,6 +13,7 @@ public:
 
 public:
 	[[nodiscard]] VkBuffer GetHandle() const { return Buffer; }
+	[[nodiscard]] VkDeviceAddress GetDeviceAddress() const { return DeviceAddress; }
 
 private:
 	VkBuffer Buffer = VK_NULL_HANDLE;

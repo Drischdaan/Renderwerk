@@ -7,6 +7,7 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_win32.h"
 
+#include "Renderwerk/Graphics/GraphicsDescriptorBuilder.h"
 #include "Renderwerk/Graphics/GraphicsPipelineBuilder.h"
 #include "Renderwerk/Platform/Filesystem.h"
 #include "Renderwerk/Platform/Window.h"
@@ -77,43 +78,13 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 
 	// TODO: Only temporary, remove this
 	{
-		FFile VertexShaderFile = FFile("Assets/Shaders/DefaultVert.spv");
-		VkShaderModule VertexShaderModule = GraphicsApi->CreateShaderModule(GraphicsDevice, VertexShaderFile.Read());
-
-		FFile FragmentShaderFile = FFile("Assets/Shaders/DefaultFrag.spv");
-		VkShaderModule FragmentShaderModule = GraphicsApi->CreateShaderModule(GraphicsDevice, FragmentShaderFile.Read());
-
-		VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo{};
-		PipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		PipelineLayoutCreateInfo.pNext = nullptr;
-		PipelineLayoutCreateInfo.flags = 0;
-		PipelineLayoutCreateInfo.setLayoutCount = 0;
-		PipelineLayoutCreateInfo.pSetLayouts = nullptr;
-		PipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-		PipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
-		FVulkanResult Result = vkCreatePipelineLayout(GraphicsDevice->GetHandle(), &PipelineLayoutCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(),
-		                                              &TestPipelineLayout);
-		ASSERT(Result == VK_SUCCESS, "Failed to create pipeline layout");
-
-		FGraphicsPipelineBuilder PipelineBuilder = {};
-		PipelineBuilder.SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-		PipelineBuilder.SetPolygonMode(VK_POLYGON_MODE_FILL);
-		PipelineBuilder.SetCullMode(VK_CULL_MODE_NONE);
-		PipelineBuilder.SetPipelineLayout(TestPipelineLayout);
-		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_VERTEX_BIT, VertexShaderModule);
-		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT, FragmentShaderModule);
-		TestPipeline = PipelineBuilder.BuildPipeline(GraphicsApi->GetGraphicsContext(), GraphicsDevice);
-
-		vkDestroyShaderModule(GraphicsDevice->GetHandle(), VertexShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
-		vkDestroyShaderModule(GraphicsDevice->GetHandle(), FragmentShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
-
 		InitImgui();
 
 		VkFenceCreateInfo FenceCreateInfo = {};
 		FenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		FenceCreateInfo.pNext = nullptr;
 		FenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		Result = vkCreateFence(GraphicsDevice->GetHandle(), &FenceCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(), &ImmediateFence);
+		FVulkanResult Result = vkCreateFence(GraphicsDevice->GetHandle(), &FenceCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(), &ImmediateFence);
 		VERIFY(Result == VK_SUCCESS, "Failed to create in-flight fence");
 
 		VkCommandPoolCreateInfo CommandPoolCreateInfo = {};
@@ -134,22 +105,77 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		Result = vkAllocateCommandBuffers(GraphicsDevice->GetHandle(), &CommandBufferAllocateInfo, &ImmediateCommandBuffer);
 		VERIFY(Result == VK_SUCCESS, "Failed to allocate command buffer");
 
-		const uint32 Vertices[] = {
-			0, 0,
-			1, 0,
-			0, 1,
+		constexpr TArray<FVertex, 3> Vertices = {
+			FVertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+			FVertex{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+			FVertex{{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
 		};
-		FGraphicsBuffer CpuVertexBuffer = GraphicsResourceAllocator->AllocateBuffer(sizeof(Vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-		GpuVertexBuffer = GraphicsResourceAllocator->CreateUploadBuffer(GraphicsDevice, CpuVertexBuffer, Vertices, sizeof(Vertices));
+		FGraphicsBuffer CpuVertexBuffer = GraphicsResourceAllocator->AllocateBuffer(Vertices.size() * sizeof(FVertex), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		                                                                            VMA_MEMORY_USAGE_CPU_ONLY);
+		GpuVertexBuffer = GraphicsResourceAllocator->CreateUploadBuffer(GraphicsDevice, CpuVertexBuffer, Vertices.data(), Vertices.size() * sizeof(FVertex),
+		                                                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+		constexpr TArray<uint32, 3> Indices = {0, 1, 2};
+		FGraphicsBuffer CpuIndexBuffer = GraphicsResourceAllocator->AllocateBuffer(Indices.size() * sizeof(uint32), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		                                                                           VMA_MEMORY_USAGE_CPU_ONLY);
+		GpuIndexBuffer = GraphicsResourceAllocator->CreateUploadBuffer(GraphicsDevice, CpuIndexBuffer, Indices.data(), Indices.size() * sizeof(uint32),
+		                                                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 		SubmitImmediately([&](const VkCommandBuffer CommandBuffer)
 		{
-			VkBufferCopy BufferCopy;
-			BufferCopy.srcOffset = 0;
-			BufferCopy.dstOffset = 0;
-			BufferCopy.size = sizeof(Vertices);
-			vkCmdCopyBuffer(CommandBuffer, CpuVertexBuffer.GetHandle(), GpuVertexBuffer.GetHandle(), 1, &BufferCopy);
+			VkBufferCopy VertexBufferCopy;
+			VertexBufferCopy.srcOffset = 0;
+			VertexBufferCopy.dstOffset = 0;
+			VertexBufferCopy.size = Vertices.size() * sizeof(FVertex);
+			vkCmdCopyBuffer(CommandBuffer, CpuVertexBuffer.GetHandle(), GpuVertexBuffer.GetHandle(), 1, &VertexBufferCopy);
+
+			VkBufferCopy IndexBufferCopy;
+			IndexBufferCopy.srcOffset = 0;
+			IndexBufferCopy.dstOffset = 0;
+			IndexBufferCopy.size = Indices.size() * sizeof(uint32);
+			vkCmdCopyBuffer(CommandBuffer, CpuIndexBuffer.GetHandle(), GpuIndexBuffer.GetHandle(), 1, &IndexBufferCopy);
 		});
 		GraphicsResourceAllocator->FreeBuffer(CpuVertexBuffer);
+		GraphicsResourceAllocator->FreeBuffer(CpuIndexBuffer);
+
+		FFile VertexShaderFile = FFile("Assets/Shaders/DefaultVert.spv");
+		VkShaderModule VertexShaderModule = GraphicsApi->CreateShaderModule(GraphicsDevice, VertexShaderFile.Read());
+
+		FFile FragmentShaderFile = FFile("Assets/Shaders/DefaultFrag.spv");
+		VkShaderModule FragmentShaderModule = GraphicsApi->CreateShaderModule(GraphicsDevice, FragmentShaderFile.Read());
+
+		// FGraphicsDescriptorBuilder DescriptorBuilder = {};
+		// DescriptorBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		//
+		// DescriptorSetLayout = DescriptorBuilder.Build(GraphicsApi->GetGraphicsContext(), GraphicsDevice, VK_SHADER_STAGE_ALL);
+
+		VkPushConstantRange PushConstantRange = {};
+		PushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		PushConstantRange.offset = 0;
+		PushConstantRange.size = sizeof(FDrawPushConstants);
+
+		VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo{};
+		PipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		PipelineLayoutCreateInfo.pNext = nullptr;
+		PipelineLayoutCreateInfo.flags = 0;
+		// PipelineLayoutCreateInfo.setLayoutCount = 1;
+		// PipelineLayoutCreateInfo.pSetLayouts = &DescriptorSetLayout;
+		PipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+		PipelineLayoutCreateInfo.pPushConstantRanges = &PushConstantRange;
+		Result = vkCreatePipelineLayout(GraphicsDevice->GetHandle(), &PipelineLayoutCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(),
+		                                &TestPipelineLayout);
+		ASSERT(Result == VK_SUCCESS, "Failed to create pipeline layout");
+
+		FGraphicsPipelineBuilder PipelineBuilder = {};
+		PipelineBuilder.SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+		PipelineBuilder.SetPolygonMode(VK_POLYGON_MODE_FILL);
+		PipelineBuilder.SetCullMode(VK_CULL_MODE_NONE);
+		PipelineBuilder.SetPipelineLayout(TestPipelineLayout);
+		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_VERTEX_BIT, VertexShaderModule);
+		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT, FragmentShaderModule);
+		TestPipeline = PipelineBuilder.BuildPipeline(GraphicsApi->GetGraphicsContext(), GraphicsDevice);
+
+		vkDestroyShaderModule(GraphicsDevice->GetHandle(), VertexShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
+		vkDestroyShaderModule(GraphicsDevice->GetHandle(), FragmentShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
 	}
 }
 
@@ -157,6 +183,8 @@ void FRenderer::Destroy()
 {
 	GraphicsDevice->WaitForIdle();
 
+	// vkDestroyDescriptorSetLayout(GraphicsDevice->GetHandle(), DescriptorSetLayout, GraphicsApi->GetGraphicsContext()->GetAllocator());
+	GraphicsResourceAllocator->FreeBuffer(GpuIndexBuffer);
 	GraphicsResourceAllocator->FreeBuffer(GpuVertexBuffer);
 	vkFreeCommandBuffers(GraphicsDevice->GetHandle(), ImmediateCommandPool, 1, &ImmediateCommandBuffer);
 	vkDestroyCommandPool(GraphicsDevice->GetHandle(), ImmediateCommandPool, GraphicsApi->GetGraphicsContext()->GetAllocator());
@@ -273,7 +301,12 @@ void FRenderer::BeginFrame()
 
 		vkCmdSetPolygonModeEXT(CommandBuffer->GetHandle(), TestStage == ETestStage::Filled ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE);
 
-		vkCmdDraw(CommandBuffer->GetHandle(), 3, 1, 0, 0);
+		FDrawPushConstants PushConstants;
+		PushConstants.VertexBufferAddress = GpuVertexBuffer.GetDeviceAddress();
+		vkCmdPushConstants(CommandBuffer->GetHandle(), TestPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(FDrawPushConstants), &PushConstants);
+		vkCmdBindIndexBuffer(CommandBuffer->GetHandle(), GpuIndexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(CommandBuffer->GetHandle(), 3, 1, 0, 0, 0);
 		CommandBuffer->EndDebugLabel();
 
 		CommandBuffer->BeginDebugLabel("DrawImgui");

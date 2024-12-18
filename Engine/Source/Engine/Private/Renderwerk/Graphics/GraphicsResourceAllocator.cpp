@@ -56,10 +56,11 @@ void FGraphicsResourceAllocator::FreeBuffer(const FGraphicsBuffer& Buffer) const
 }
 
 FGraphicsBuffer FGraphicsResourceAllocator::CreateUploadBuffer(const TSharedPtr<FGraphicsDevice>& Device, const FGraphicsBuffer& Buffer, const void* Data,
-                                                               const size64 Size) const
+                                                               const size64 Size, const VkBufferUsageFlags Usage) const
 {
-	FGraphicsBuffer GpuBuffer = AllocateBuffer(Size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-	                                           VMA_MEMORY_USAGE_GPU_ONLY);
+	FGraphicsBuffer GpuBuffer = AllocateBuffer(
+		Size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | Usage,
+		VMA_MEMORY_USAGE_GPU_ONLY);
 	VkBufferDeviceAddressInfo DeviceAddressInfo{};
 	DeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	DeviceAddressInfo.buffer = GpuBuffer.Buffer;
