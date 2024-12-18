@@ -7,6 +7,12 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_win32.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #include "Renderwerk/Graphics/GraphicsDescriptorBuilder.h"
 #include "Renderwerk/Graphics/GraphicsPipelineBuilder.h"
 #include "Renderwerk/Platform/Filesystem.h"
@@ -79,8 +85,6 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 
 	// TODO: Only temporary, remove this
 	{
-		InitImgui();
-
 		VkFenceCreateInfo FenceCreateInfo = {};
 		FenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		FenceCreateInfo.pNext = nullptr;
@@ -304,12 +308,22 @@ void FRenderer::BeginFrame()
 
 		vkCmdSetPolygonModeEXT(CommandBuffer->GetHandle(), TestStage == ETestStage::Filled ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE);
 
-		FDrawPushConstants PushConstants;
-		PushConstants.VertexBufferAddress = GpuVertexBuffer.GetDeviceAddress();
-		vkCmdPushConstants(CommandBuffer->GetHandle(), TestPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(FDrawPushConstants), &PushConstants);
-		vkCmdBindIndexBuffer(CommandBuffer->GetHandle(), GpuIndexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+		const glm::mat4 CameraMatrix = glm::perspective(glm::radians(FieldOfView), 1.f, 0.1f, 10.f);
 
-		vkCmdDrawIndexed(CommandBuffer->GetHandle(), 3, 1, 0, 0, 0);
+		Scene->Query<FTransformComponent>().each([&](const FTransformComponent& Transform)
+		{
+			glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0f), Transform.Position);
+			ModelMatrix *= glm::toMat4(glm::quat(Transform.Rotation));
+			ModelMatrix *= glm::scale(glm::mat4(1.0f), Transform.Scale);
+
+			FDrawPushConstants PushConstants;
+			PushConstants.Matrix = CameraMatrix * ModelMatrix;
+			PushConstants.VertexBufferAddress = GpuVertexBuffer.GetDeviceAddress();
+			vkCmdPushConstants(CommandBuffer->GetHandle(), TestPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(FDrawPushConstants), &PushConstants);
+			vkCmdBindIndexBuffer(CommandBuffer->GetHandle(), GpuIndexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdDrawIndexed(CommandBuffer->GetHandle(), 3, 1, 0, 0, 0);
+		});
 		CommandBuffer->EndDebugLabel();
 
 		CommandBuffer->BeginDebugLabel("DrawImgui");
@@ -442,6 +456,7 @@ void FRenderer::InitImgui()
 	Style->Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.25f, 1.00f, 0.00f, 0.43f);
 
 	Scene = MakeShared<FScene>("TestScene");
+	TestEntity = Scene->CreateEntity();
 }
 
 void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
@@ -464,6 +479,7 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 		}
 		ImGui::EndCombo();
 	}
+	ImGui::SliderFloat("Field of View", &FieldOfView, 50.f, 120.f);
 	ImGui::End();
 
 	// TODO: Highly temporary, remove this as soon as possible
@@ -474,13 +490,43 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 		ImGui::Text("%s", Scene->GetName().c_str());
 		ImGui::Separator();
 		static TDeque<flecs::entity> ToDelete = {};
-		Scene->Query<FGuidComponent>().each([&](const flecs::entity Entity, const FGuidComponent& Guid)
+		Scene->Query<FGuidComponent, FTransformComponent>().each([&](const flecs::entity Entity, const FGuidComponent& Guid, FTransformComponent& Transform)
 		{
-			ImGui::Text(std::format("Entity: {}", Guid.Value).c_str());
+			ImGui::Text(std::format("Entity: {}", Guid.Id).c_str());
 			ImGui::SameLine();
-			ImGui::PushID(std::format("{}", Guid.Value).c_str());
+			ImGui::PushID(std::format("{}", Guid.Id).c_str());
 			if (ImGui::Button("Delete"))
 				ToDelete.push_back(Entity);
+			ImGui::PopID();
+
+			ImGui::PushID(std::format("Position{}", Guid.Id).c_str());
+			float32 Position[3] = {Transform.Position.x, Transform.Position.y, Transform.Position.z};
+			if (ImGui::SliderFloat3("Position", Position, -10.f, 10.f))
+			{
+				Transform.Position.x = Position[0];
+				Transform.Position.y = Position[1];
+				Transform.Position.z = Position[2];
+			}
+			ImGui::PopID();
+
+			ImGui::PushID(std::format("Rotation{}", Guid.Id).c_str());
+			float32 Rotation[3] = {Transform.Rotation.x, Transform.Rotation.y, Transform.Rotation.z};
+			if (ImGui::SliderFloat3("Rotation", Rotation, -180.f, 180.f))
+			{
+				Transform.Rotation.x = Rotation[0];
+				Transform.Rotation.y = Rotation[1];
+				Transform.Rotation.z = Rotation[2];
+			}
+			ImGui::PopID();
+
+			ImGui::PushID(std::format("Scale{}", Guid.Id).c_str());
+			float32 Scale[3] = {Transform.Scale.x, Transform.Scale.y, Transform.Scale.z};
+			if (ImGui::SliderFloat3("Scale", Scale, 0.1f, 10.f))
+			{
+				Transform.Scale.x = Scale[0];
+				Transform.Scale.y = Scale[1];
+				Transform.Scale.z = Scale[2];
+			}
 			ImGui::PopID();
 		});
 		while (!ToDelete.empty())

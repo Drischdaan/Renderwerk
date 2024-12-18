@@ -19,6 +19,7 @@ public:
 
 public:
 	[[nodiscard]] bool8 IsValid() const;
+	[[nodiscard]] bool8 IsAlive() const;
 
 	void Destroy() const;
 
@@ -45,7 +46,7 @@ public:
 	}
 
 	template <typename TComponent>
-	[[nodiscard]] TComponent* GetComponent() const
+	[[nodiscard]] const TComponent* GetComponent() const
 	{
 		return Entity.get<TComponent>();
 	}

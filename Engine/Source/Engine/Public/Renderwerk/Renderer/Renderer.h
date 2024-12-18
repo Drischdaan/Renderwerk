@@ -5,6 +5,8 @@
 #include "Renderwerk/Graphics/GraphicsApi.h"
 #include "Renderwerk/Scene/Scene.h"
 
+#include <glm/glm.hpp>
+
 DECLARE_LOG_CHANNEL(LogRenderer);
 
 struct ENGINE_API FRendererDesc
@@ -41,6 +43,7 @@ struct ENGINE_API FVertex
 
 struct ENGINE_API FDrawPushConstants
 {
+	glm::mat4 Matrix;
 	VkDeviceAddress VertexBufferAddress;
 };
 
@@ -97,5 +100,7 @@ private:
 	FGraphicsBuffer GpuVertexBuffer;
 	FGraphicsBuffer GpuIndexBuffer;
 
+	float32 FieldOfView = 90.f;
 	TSharedPtr<FScene> Scene;
+	FEntity TestEntity;
 };

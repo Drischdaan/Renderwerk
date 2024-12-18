@@ -24,6 +24,7 @@ FEntity FScene::CreateEntity()
 {
 	FEntity Entity = {this, World.entity()};
 	Entity.AddComponent<FGuidComponent>();
+	Entity.AddComponent<FTransformComponent>();
 	RW_LOG(LogDefault, Info, "Created entity: {}", Entity.GetEntityId());
 	return Entity;
 }

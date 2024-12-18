@@ -16,6 +16,11 @@ bool8 FEntity::IsValid() const
 	return Entity.is_valid();
 }
 
+bool8 FEntity::IsAlive() const
+{
+	return Entity.is_alive();
+}
+
 void FEntity::Destroy() const
 {
 	Entity.destruct();
