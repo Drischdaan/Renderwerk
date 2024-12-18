@@ -57,6 +57,7 @@ void FGraphicsDevice::CreateDevice()
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 		VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 	};
 
 	RW_LOG(LogGraphics, Info, "Enabled device extensions:");
@@ -70,9 +71,14 @@ void FGraphicsDevice::CreateDevice()
 	EnabledFeatures.samplerAnisotropy = VK_TRUE;
 	EnabledFeatures.fillModeNonSolid = VK_TRUE;
 
+	VkPhysicalDeviceBufferDeviceAddressFeatures BufferDeviceAddressFeatures = {};
+	BufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	BufferDeviceAddressFeatures.pNext = nullptr;
+	BufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
 	VkPhysicalDeviceExtendedDynamicState3FeaturesEXT ExtendedDynamicState3Features = {};
 	ExtendedDynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-	ExtendedDynamicState3Features.pNext = nullptr;
+	ExtendedDynamicState3Features.pNext = &BufferDeviceAddressFeatures;
 	ExtendedDynamicState3Features.extendedDynamicState3PolygonMode = VK_TRUE;
 
 	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeatures = {};

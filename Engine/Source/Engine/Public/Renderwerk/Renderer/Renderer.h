@@ -38,6 +38,8 @@ private:
 	void InitImgui();
 	void DrawImgui(VkCommandBuffer CommandBuffer);
 
+	void SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) const;
+
 private:
 	FRendererDesc Description = {};
 
@@ -45,6 +47,7 @@ private:
 
 	VkSurfaceKHR Surface;
 	TSharedPtr<FGraphicsDevice> GraphicsDevice;
+	TSharedPtr<FGraphicsResourceAllocator> GraphicsResourceAllocator;
 
 	TSharedPtr<FGraphicsSwapchain> GraphicsSwapchain;
 
@@ -58,4 +61,10 @@ private:
 	VkDescriptorPool ImguiDescriptorPool;
 
 	ETestStage TestStage = ETestStage::Filled;
+
+	VkFence ImmediateFence;
+	VkCommandPool ImmediateCommandPool;
+	VkCommandBuffer ImmediateCommandBuffer;
+
+	FGraphicsBuffer GpuVertexBuffer;
 };

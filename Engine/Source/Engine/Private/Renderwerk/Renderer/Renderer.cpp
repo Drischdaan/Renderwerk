@@ -34,6 +34,9 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 	RW_LOG(LogGraphics, Info, "\t- Driver version: {}", Adapter->GetDriverVersionString());
 	GraphicsDevice = GraphicsApi->CreateDevice(Adapter);
 
+	GraphicsResourceAllocator = GraphicsApi->CreateResourceAllocator(GraphicsDevice);
+	GraphicsResourceAllocator->Initialize();
+
 	FGraphicsSwapchainDesc SwapchainDesc = {};
 	SwapchainDesc.Surface = Surface;
 	GraphicsSwapchain = GraphicsApi->CreateSwapchain(GraphicsDevice);
@@ -105,12 +108,59 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		vkDestroyShaderModule(GraphicsDevice->GetHandle(), FragmentShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
 
 		InitImgui();
+
+		VkFenceCreateInfo FenceCreateInfo = {};
+		FenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		FenceCreateInfo.pNext = nullptr;
+		FenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		Result = vkCreateFence(GraphicsDevice->GetHandle(), &FenceCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(), &ImmediateFence);
+		VERIFY(Result == VK_SUCCESS, "Failed to create in-flight fence");
+
+		VkCommandPoolCreateInfo CommandPoolCreateInfo = {};
+		CommandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		CommandPoolCreateInfo.pNext = nullptr;
+		CommandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		CommandPoolCreateInfo.queueFamilyIndex = GraphicsDevice->GetAdapter()->GetQueueMetadata(EGraphicsQueueType::Graphics).FamilyIndex;
+		Result = vkCreateCommandPool(GraphicsDevice->GetHandle(), &CommandPoolCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(),
+		                             &ImmediateCommandPool);
+		VERIFY(Result == VK_SUCCESS, "Failed to create command pool");
+
+		VkCommandBufferAllocateInfo CommandBufferAllocateInfo;
+		CommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		CommandBufferAllocateInfo.pNext = nullptr;
+		CommandBufferAllocateInfo.commandPool = ImmediateCommandPool;
+		CommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		CommandBufferAllocateInfo.commandBufferCount = 1;
+		Result = vkAllocateCommandBuffers(GraphicsDevice->GetHandle(), &CommandBufferAllocateInfo, &ImmediateCommandBuffer);
+		VERIFY(Result == VK_SUCCESS, "Failed to allocate command buffer");
+
+		const uint32 Vertices[] = {
+			0, 0,
+			1, 0,
+			0, 1,
+		};
+		FGraphicsBuffer CpuVertexBuffer = GraphicsResourceAllocator->AllocateBuffer(sizeof(Vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+		GpuVertexBuffer = GraphicsResourceAllocator->CreateUploadBuffer(GraphicsDevice, CpuVertexBuffer, Vertices, sizeof(Vertices));
+		SubmitImmediately([&](const VkCommandBuffer CommandBuffer)
+		{
+			VkBufferCopy BufferCopy;
+			BufferCopy.srcOffset = 0;
+			BufferCopy.dstOffset = 0;
+			BufferCopy.size = sizeof(Vertices);
+			vkCmdCopyBuffer(CommandBuffer, CpuVertexBuffer.GetHandle(), GpuVertexBuffer.GetHandle(), 1, &BufferCopy);
+		});
+		GraphicsResourceAllocator->FreeBuffer(CpuVertexBuffer);
 	}
 }
 
 void FRenderer::Destroy()
 {
 	GraphicsDevice->WaitForIdle();
+
+	GraphicsResourceAllocator->FreeBuffer(GpuVertexBuffer);
+	vkFreeCommandBuffers(GraphicsDevice->GetHandle(), ImmediateCommandPool, 1, &ImmediateCommandBuffer);
+	vkDestroyCommandPool(GraphicsDevice->GetHandle(), ImmediateCommandPool, GraphicsApi->GetGraphicsContext()->GetAllocator());
+	vkDestroyFence(GraphicsDevice->GetHandle(), ImmediateFence, GraphicsApi->GetGraphicsContext()->GetAllocator());
 
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -132,6 +182,8 @@ void FRenderer::Destroy()
 	}
 	GraphicsSwapchain->Destroy();
 	GraphicsSwapchain.reset();
+	GraphicsResourceAllocator->Destroy();
+	GraphicsResourceAllocator.reset();
 	GraphicsDevice->Destroy();
 	GraphicsDevice.reset();
 	GraphicsApi->DestroySurface(Surface);
@@ -380,4 +432,44 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), CommandBuffer);
+}
+
+void FRenderer::SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) const
+{
+	FVulkanResult Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to reset fence");
+
+	Result = vkResetCommandBuffer(ImmediateCommandBuffer, 0);
+	VERIFY(Result == VK_SUCCESS, "Failed to reset command buffer");
+
+	VkCommandBufferBeginInfo CommandBufferBeginInfo;
+	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	CommandBufferBeginInfo.pNext = nullptr;
+	CommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	CommandBufferBeginInfo.pInheritanceInfo = nullptr;
+	Result = vkBeginCommandBuffer(ImmediateCommandBuffer, &CommandBufferBeginInfo);
+	VERIFY(Result == VK_SUCCESS, "Failed to begin command buffer");
+
+	const TFunction<void(VkCommandBuffer)> ImmediateCommand = std::move(Command);
+	ImmediateCommand(ImmediateCommandBuffer);
+
+	Result = vkEndCommandBuffer(ImmediateCommandBuffer);
+	VERIFY(Result == VK_SUCCESS, "Failed to end command buffer");
+
+	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
+	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	CommandBufferSubmitInfo.pNext = nullptr;
+	CommandBufferSubmitInfo.commandBuffer = ImmediateCommandBuffer;
+
+	VkSubmitInfo2 SubmitInfo = {};
+	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	SubmitInfo.pNext = nullptr;
+	SubmitInfo.commandBufferInfoCount = 1;
+	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
+
+	Result = vkQueueSubmit2(GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, ImmediateFence);
+	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
+
+	Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence, VK_TRUE, UINT64_MAX);
+	VERIFY(Result == VK_SUCCESS, "Failed to wait for fence");
 }
