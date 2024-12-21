@@ -5,10 +5,12 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <span>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "Renderwerk/Core/CoreTypes.h"
 #include "Renderwerk/Core/Memory/Allocators.h"
 
 template <typename T, size64 TSize>
@@ -34,3 +36,6 @@ using TDeque = std::deque<T, FSTLAllocator<T>>;
 
 template <typename T>
 using TQueue = std::queue<T, TDeque<T>>;
+
+template <typename T, size64 TExtent = std::dynamic_extent>
+using TSpan = std::span<T, TExtent>;
