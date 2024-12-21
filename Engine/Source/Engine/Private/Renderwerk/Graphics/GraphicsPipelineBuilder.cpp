@@ -29,9 +29,9 @@ FGraphicsPipelineBuilder::FGraphicsPipelineBuilder()
 
 	DepthStencilState = {};
 	DepthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	DepthStencilState.depthTestEnable = VK_FALSE;
-	DepthStencilState.depthWriteEnable = VK_FALSE;
-	DepthStencilState.depthCompareOp = VK_COMPARE_OP_NEVER;
+	DepthStencilState.depthTestEnable = VK_TRUE;
+	DepthStencilState.depthWriteEnable = VK_TRUE;
+	DepthStencilState.depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL;
 	DepthStencilState.depthBoundsTestEnable = VK_FALSE;
 	DepthStencilState.stencilTestEnable = VK_FALSE;
 	DepthStencilState.minDepthBounds = 0.0f;
@@ -41,7 +41,7 @@ FGraphicsPipelineBuilder::FGraphicsPipelineBuilder()
 	RenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	RenderingCreateInfo.colorAttachmentCount = 1;
 	RenderingCreateInfo.pColorAttachmentFormats = &ColorAttachmentFormat;
-	RenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+	RenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 }
 
 void FGraphicsPipelineBuilder::SetInputTopology(const VkPrimitiveTopology Topology)

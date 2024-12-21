@@ -59,7 +59,7 @@ public:
 	void Initialize(const FRendererDesc& InDescription);
 	void Destroy();
 
-	void Resize() const;
+	void Resize();
 
 	void BeginFrame();
 	void EndFrame();
@@ -68,7 +68,10 @@ private:
 	void InitImgui();
 	void DrawImgui(VkCommandBuffer CommandBuffer);
 
-	void SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) const;
+	void SubmitImmediately(const TFunction<void(VkCommandBuffer)>& Command) const;
+
+	void CreateDepthImage();
+	void DestroyDepthImage() const;
 
 private:
 	FRendererDesc Description = {};
@@ -99,6 +102,12 @@ private:
 	VkDescriptorSetLayout DescriptorSetLayout;
 	FGraphicsBuffer GpuVertexBuffer;
 	FGraphicsBuffer GpuIndexBuffer;
+
+	VkImage DepthImage;
+	VkImageView DepthImageView;
+	VmaAllocation DepthImageAllocation;
+	VkExtent2D DepthImageExtent;
+	VkFormat DepthImageFormat;
 
 	float32 FieldOfView = 90.f;
 	TSharedPtr<FScene> Scene;

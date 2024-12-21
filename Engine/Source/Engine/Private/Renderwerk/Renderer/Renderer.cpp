@@ -111,9 +111,9 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		VERIFY(Result == VK_SUCCESS, "Failed to allocate command buffer");
 
 		constexpr TArray<FVertex, 3> Vertices = {
-			FVertex{{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-			FVertex{{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-			FVertex{{0.0f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
+			FVertex{.Position = {0.5f, 0.5f, 0.0f}, .Color = {1.0f, 0.0f, 0.0f, 1.0f}},
+			FVertex{.Position = {-0.5f, 0.5f, 0.0f}, .Color = {0.0f, 1.0f, 0.0f, 1.0f}},
+			FVertex{.Position = {0.0f, -0.5f, 0.0f}, .Color = {0.0f, 0.0f, 1.0f, 1.0f}}
 		};
 		FGraphicsBuffer CpuVertexBuffer = GraphicsResourceAllocator->AllocateBuffer(Vertices.size() * sizeof(FVertex), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		                                                                            VMA_MEMORY_USAGE_CPU_ONLY);
@@ -153,6 +153,9 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		//
 		// DescriptorSetLayout = DescriptorBuilder.Build(GraphicsApi->GetGraphicsContext(), GraphicsDevice, VK_SHADER_STAGE_ALL);
 
+
+		CreateDepthImage();
+
 		VkPushConstantRange PushConstantRange = {};
 		PushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		PushConstantRange.offset = 0;
@@ -177,6 +180,7 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		PipelineBuilder.SetPipelineLayout(TestPipelineLayout);
 		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_VERTEX_BIT, VertexShaderModule);
 		PipelineBuilder.AddShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT, FragmentShaderModule);
+		PipelineBuilder.SetDepthFormat(DepthImageFormat);
 		TestPipeline = PipelineBuilder.BuildPipeline(GraphicsApi->GetGraphicsContext(), GraphicsDevice);
 
 		vkDestroyShaderModule(GraphicsDevice->GetHandle(), VertexShaderModule, GraphicsApi->GetGraphicsContext()->GetAllocator());
@@ -190,6 +194,7 @@ void FRenderer::Destroy()
 {
 	GraphicsDevice->WaitForIdle();
 
+	DestroyDepthImage();
 	// vkDestroyDescriptorSetLayout(GraphicsDevice->GetHandle(), DescriptorSetLayout, GraphicsApi->GetGraphicsContext()->GetAllocator());
 	GraphicsResourceAllocator->FreeBuffer(GpuIndexBuffer);
 	GraphicsResourceAllocator->FreeBuffer(GpuVertexBuffer);
@@ -226,12 +231,14 @@ void FRenderer::Destroy()
 	GraphicsApi.reset();
 }
 
-void FRenderer::Resize() const
+void FRenderer::Resize()
 {
 	PROFILE_FUNCTION();
 	GraphicsDevice->WaitForIdle();
 
+	DestroyDepthImage();
 	GraphicsSwapchain->Resize();
+	CreateDepthImage();
 }
 
 void FRenderer::BeginFrame()
@@ -263,6 +270,8 @@ void FRenderer::BeginFrame()
 	CommandBuffer->Begin();
 
 	CommandBuffer->TransitionImageLayout(BackBuffer.Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+	CommandBuffer->TransitionImageLayout(DepthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
 
 	CommandBuffer->BeginDebugLabel("ClearBackBuffer");
 	CommandBuffer->ClearImage(BackBuffer.Image, VK_IMAGE_LAYOUT_GENERAL, {0.1f, 0.1f, 0.1f, 1.0f});
@@ -270,6 +279,7 @@ void FRenderer::BeginFrame()
 
 	// TODO: Only temporary, remove this
 	{
+		CommandBuffer->BeginDebugLabel("DrawTriangle");
 		VkRenderingAttachmentInfo ColorAttachmentInfo = {};
 		ColorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
 		ColorAttachmentInfo.pNext = nullptr;
@@ -278,6 +288,15 @@ void FRenderer::BeginFrame()
 		ColorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		ColorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
+		VkRenderingAttachmentInfo DepthAttachmentInfo = {};
+		DepthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		DepthAttachmentInfo.pNext = nullptr;
+		DepthAttachmentInfo.imageView = DepthImageView;
+		DepthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+		DepthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		DepthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		DepthAttachmentInfo.clearValue.depthStencil.depth = 0.0f;
+
 		VkRenderingInfo RenderingInfo = {};
 		RenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 		RenderingInfo.renderArea.offset = {.x = 0, .y = 0};
@@ -285,9 +304,9 @@ void FRenderer::BeginFrame()
 		RenderingInfo.layerCount = 1;
 		RenderingInfo.colorAttachmentCount = 1;
 		RenderingInfo.pColorAttachments = &ColorAttachmentInfo;
+		RenderingInfo.pDepthAttachment = &DepthAttachmentInfo;
 		vkCmdBeginRendering(CommandBuffer->GetHandle(), &RenderingInfo);
 
-		CommandBuffer->BeginDebugLabel("DrawTriangle");
 		vkCmdBindPipeline(CommandBuffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, TestPipeline);
 
 		VkViewport Viewport;
@@ -308,7 +327,8 @@ void FRenderer::BeginFrame()
 
 		vkCmdSetPolygonModeEXT(CommandBuffer->GetHandle(), TestStage == ETestStage::Filled ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE);
 
-		const glm::mat4 CameraMatrix = glm::perspective(glm::radians(FieldOfView), 1.f, 0.1f, 10.f);
+		const glm::mat4 ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3{0, 0, -5});
+		const glm::mat4 ProjectionMatrix = glm::perspective(glm::radians(FieldOfView), 1.f, 0.1f, 10.f);
 
 		Scene->Query<FTransformComponent>().each([&](const FTransformComponent& Transform)
 		{
@@ -317,20 +337,38 @@ void FRenderer::BeginFrame()
 			ModelMatrix *= glm::scale(glm::mat4(1.0f), Transform.Scale);
 
 			FDrawPushConstants PushConstants;
-			PushConstants.Matrix = CameraMatrix * ModelMatrix;
+			PushConstants.Matrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
 			PushConstants.VertexBufferAddress = GpuVertexBuffer.GetDeviceAddress();
 			vkCmdPushConstants(CommandBuffer->GetHandle(), TestPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(FDrawPushConstants), &PushConstants);
 			vkCmdBindIndexBuffer(CommandBuffer->GetHandle(), GpuIndexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdDrawIndexed(CommandBuffer->GetHandle(), 3, 1, 0, 0, 0);
 		});
+		vkCmdEndRendering(CommandBuffer->GetHandle());
 		CommandBuffer->EndDebugLabel();
 
 		CommandBuffer->BeginDebugLabel("DrawImgui");
+		VkRenderingAttachmentInfo ImguiColorAttachmentInfo = {};
+		ImguiColorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		ImguiColorAttachmentInfo.pNext = nullptr;
+		ImguiColorAttachmentInfo.imageView = BackBuffer.ImageView;
+		ImguiColorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		ImguiColorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		ImguiColorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+		VkRenderingInfo ImguiRenderingInfo = {};
+		ImguiRenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+		ImguiRenderingInfo.renderArea.offset = {.x = 0, .y = 0};
+		ImguiRenderingInfo.renderArea.extent = GraphicsSwapchain->GetExtent();
+		ImguiRenderingInfo.layerCount = 1;
+		ImguiRenderingInfo.colorAttachmentCount = 1;
+		ImguiRenderingInfo.pColorAttachments = &ImguiColorAttachmentInfo;
+		vkCmdBeginRendering(CommandBuffer->GetHandle(), &ImguiRenderingInfo);
+
 		DrawImgui(CommandBuffer->GetHandle());
-		CommandBuffer->EndDebugLabel();
 
 		vkCmdEndRendering(CommandBuffer->GetHandle());
+		CommandBuffer->EndDebugLabel();
 	}
 }
 
@@ -541,7 +579,7 @@ void FRenderer::DrawImgui(const VkCommandBuffer CommandBuffer)
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), CommandBuffer);
 }
 
-void FRenderer::SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) const
+void FRenderer::SubmitImmediately(const TFunction<void(VkCommandBuffer)>& Command) const
 {
 	FVulkanResult Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence);
 	VERIFY(Result == VK_SUCCESS, "Failed to reset fence");
@@ -557,8 +595,7 @@ void FRenderer::SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) co
 	Result = vkBeginCommandBuffer(ImmediateCommandBuffer, &CommandBufferBeginInfo);
 	VERIFY(Result == VK_SUCCESS, "Failed to begin command buffer");
 
-	const TFunction<void(VkCommandBuffer)> ImmediateCommand = std::move(Command);
-	ImmediateCommand(ImmediateCommandBuffer);
+	Command(ImmediateCommandBuffer);
 
 	Result = vkEndCommandBuffer(ImmediateCommandBuffer);
 	VERIFY(Result == VK_SUCCESS, "Failed to end command buffer");
@@ -579,4 +616,55 @@ void FRenderer::SubmitImmediately(TFunction<void(VkCommandBuffer)>&& Command) co
 
 	Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence, VK_TRUE, UINT64_MAX);
 	VERIFY(Result == VK_SUCCESS, "Failed to wait for fence");
+}
+
+void FRenderer::CreateDepthImage()
+{
+	DepthImageFormat = VK_FORMAT_D32_SFLOAT;
+
+	VkImageCreateInfo ImageCreateInfo = {};
+	ImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	ImageCreateInfo.pNext = nullptr;
+	ImageCreateInfo.flags = 0;
+	ImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	ImageCreateInfo.format = DepthImageFormat;
+	ImageCreateInfo.extent.width = GraphicsSwapchain->GetExtent().width;
+	ImageCreateInfo.extent.height = GraphicsSwapchain->GetExtent().height;
+	ImageCreateInfo.extent.depth = 1;
+	ImageCreateInfo.mipLevels = 1;
+	ImageCreateInfo.arrayLayers = 1;
+	ImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	ImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	ImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	VmaAllocationCreateInfo AllocationCreateInfo = {};
+	AllocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	AllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	vmaCreateImage(GraphicsResourceAllocator->GetHandle(), &ImageCreateInfo, &AllocationCreateInfo, &DepthImage, &DepthImageAllocation, nullptr);
+
+	VkImageViewCreateInfo ImageViewCreateInfo;
+	ImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	ImageViewCreateInfo.pNext = nullptr;
+	ImageViewCreateInfo.flags = 0;
+	ImageViewCreateInfo.image = DepthImage;
+	ImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	ImageViewCreateInfo.format = DepthImageFormat;
+	ImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+	ImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+	ImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+	ImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	ImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	ImageViewCreateInfo.subresourceRange.levelCount = 1;
+	ImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	ImageViewCreateInfo.subresourceRange.layerCount = 1;
+
+	vkCreateImageView(GraphicsDevice->GetHandle(), &ImageViewCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(), &DepthImageView);
+}
+
+void FRenderer::DestroyDepthImage() const
+{
+	vkDestroyImageView(GraphicsDevice->GetHandle(), DepthImageView, GraphicsApi->GetGraphicsContext()->GetAllocator());
+	vmaDestroyImage(GraphicsResourceAllocator->GetHandle(), DepthImage, DepthImageAllocation);
 }

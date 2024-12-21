@@ -24,6 +24,9 @@ public:
 	FGraphicsBuffer CreateUploadBuffer(const TSharedPtr<FGraphicsDevice>& Device, const FGraphicsBuffer& Buffer, const void* Data, size64 Size,
 	                                   VkBufferUsageFlags Usage) const;
 
+public:
+	[[nodiscard]] VmaAllocator GetHandle() const { return Allocator; }
+
 private:
 	TSharedPtr<FGraphicsContext> GraphicsContext;
 	TSharedPtr<FGraphicsDevice> GraphicsDevice;
