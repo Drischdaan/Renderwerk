@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/GraphicsBackend.h"
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
+#include "Renderwerk/Graphics/GraphicsDevice.h"
 #include "Renderwerk/Graphics/VulkanUtility.h"
 #include "Renderwerk/Platform/Window.h"
 
@@ -80,7 +81,7 @@ TVector<TSharedPtr<FGraphicsAdapter>> FGraphicsBackend::GetAdapters()
 	return Adapters;
 }
 
-bool8 FGraphicsBackend::IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TVector<FString>& RequiredExtensions) const
+bool8 FGraphicsBackend::IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TSpan<const char*>& RequiredExtensions) const
 {
 	if (Adapter->GetProperties().Type != EGraphicsAdapterType::Discrete)
 		return false;
@@ -94,6 +95,11 @@ bool8 FGraphicsBackend::IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Ad
 			return false;
 	}
 	return true;
+}
+
+TSharedPtr<FGraphicsDevice> FGraphicsBackend::CreateDevice(const TSharedPtr<FGraphicsAdapter>& Adapter) const
+{
+	return MakeShared<FGraphicsDevice>(Context, Adapter);
 }
 
 VkAllocationCallbacks* FGraphicsBackend::CreateAllocator()

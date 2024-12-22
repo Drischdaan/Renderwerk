@@ -31,8 +31,12 @@ public:
 	void EndFrame();
 
 private:
+	TSharedPtr<FGraphicsAdapter> SelectAdapter(const TSpan<const char*>& RequiredExtensions) const;
+
+private:
 	FRendererDesc Description = {};
 
 	TSharedPtr<FGraphicsBackend> GraphicsBackend;
 	VkSurfaceKHR Surface = VK_NULL_HANDLE;
+	TSharedPtr<FGraphicsDevice> GraphicsDevice;
 };

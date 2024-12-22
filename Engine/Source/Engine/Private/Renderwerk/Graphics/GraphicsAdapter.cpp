@@ -152,6 +152,14 @@ FGraphicsQueueMetadata FGraphicsAdapter::GetQueueMetadata(const EGraphicsQueueTy
 	return QueueMetadata.at(QueueType);
 }
 
+uint32 FGraphicsAdapter::GetQueueCountForIndex(uint32 QueueFamilyIndex) const
+{
+	return static_cast<uint32>(std::ranges::count_if(QueueMetadata, [QueueFamilyIndex](const auto& Metadata)
+	{
+		return Metadata.second.FamilyIndex == QueueFamilyIndex;
+	}));
+}
+
 FGraphicsSurfaceCapabilities FGraphicsAdapter::GetSurfaceCapabilities(const VkSurfaceKHR Surface) const
 {
 	FGraphicsSurfaceCapabilities SurfaceCapabilities = {};

@@ -29,3 +29,21 @@ VkWin32SurfaceCreateInfoKHR Vulkan::CreateStructure(VkWin32SurfaceCreateInfoKHR 
 	Instance.flags = 0;
 	return Instance;
 }
+
+template <>
+VkDeviceQueueCreateInfo Vulkan::CreateStructure(VkDeviceQueueCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkDeviceCreateInfo Vulkan::CreateStructure(VkDeviceCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}

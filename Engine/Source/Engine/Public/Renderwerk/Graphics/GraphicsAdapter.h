@@ -49,9 +49,12 @@ public:
 	[[nodiscard]] FString GetDriverVersionString() const;
 
 	[[nodiscard]] FGraphicsQueueMetadata GetQueueMetadata(EGraphicsQueueType QueueType) const;
+	[[nodiscard]] uint32 GetQueueCountForIndex(uint32 QueueFamilyIndex) const;
+
 	[[nodiscard]] FGraphicsSurfaceCapabilities GetSurfaceCapabilities(VkSurfaceKHR Surface) const;
 
 public:
+	[[nodiscard]] VkPhysicalDevice GetHandle() const { return PhysicalDevice; }
 	[[nodiscard]] FGraphicsAdapterProperties GetProperties() const { return Properties; }
 
 	[[nodiscard]] TMap<EGraphicsQueueType, FGraphicsQueueMetadata> GetQueueMetadataMap() const { return QueueMetadata; }

@@ -41,7 +41,9 @@ public:
 	void DestroySurface(VkSurfaceKHR Surface) const;
 
 	[[nodiscard]] TVector<TSharedPtr<FGraphicsAdapter>> GetAdapters();
-	[[nodiscard]] bool8 IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TVector<FString>& RequiredExtensions) const;
+	[[nodiscard]] bool8 IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TSpan<const char*>& RequiredExtensions) const;
+
+	[[nodiscard]] TSharedPtr<FGraphicsDevice> CreateDevice(const TSharedPtr<FGraphicsAdapter>& Adapter) const;
 
 private:
 	static VkAllocationCallbacks* CreateAllocator();
