@@ -6,3 +6,10 @@
 #include <volk.h>
 
 DEFINE_LOG_CHANNEL(LogGraphics);
+
+VkAllocationCallbacks* GVulkanAllocator = nullptr;
+
+VkAllocationCallbacks* GetVulkanAllocator()
+{
+	return GVulkanAllocator;
+}

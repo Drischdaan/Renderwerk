@@ -35,16 +35,24 @@ public:
 
 public:
 	void Initialize(const FGraphicsBackendDesc& InDescription);
-	void Destroy() const;
+	void Destroy();
+
+	[[nodiscard]] VkSurfaceKHR CreateSurface(const TSharedPtr<FWindow>& Window) const;
+	void DestroySurface(VkSurfaceKHR Surface) const;
+
+	[[nodiscard]] TVector<TSharedPtr<FGraphicsAdapter>> GetAdapters();
+	[[nodiscard]] bool8 IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TVector<FString>& RequiredExtensions) const;
 
 private:
+	static VkAllocationCallbacks* CreateAllocator();
 	static FInstanceProperties QueryInstanceProperties();
 	static void ValidateRequiredInstanceObjects(FString ObjectName, TSpan<FString> AvailableObjects, TSpan<const char*> RequiredObjects);
-	static VkInstance CreateInstance(FInstanceProperties& InProperties, TSpan<const char*> RequiredLayers = {}, TSpan<const char*> RequiredExtensions = {});
+	static VkInstance CreateInstance(const TSharedPtr<FGraphicsContext>& Context, FInstanceProperties& InProperties, TSpan<const char*> RequiredLayers = {},
+	                                 TSpan<const char*> RequiredExtensions = {});
 
 private:
 	FGraphicsBackendDesc Description = {};
 
 	FInstanceProperties InstanceProperties = {};
-	VkInstance Instance = VK_NULL_HANDLE;
+	TSharedPtr<FGraphicsContext> Context;
 };

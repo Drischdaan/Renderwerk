@@ -20,3 +20,12 @@ VkInstanceCreateInfo Vulkan::CreateStructure(VkInstanceCreateInfo Instance)
 	Instance.flags = 0;
 	return Instance;
 }
+
+template <>
+VkWin32SurfaceCreateInfoKHR Vulkan::CreateStructure(VkWin32SurfaceCreateInfoKHR Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}

@@ -2,7 +2,9 @@
 
 #include "Renderwerk/Graphics/GraphicsBackend.h"
 
+#include "Renderwerk/Graphics/GraphicsAdapter.h"
 #include "Renderwerk/Graphics/VulkanUtility.h"
+#include "Renderwerk/Platform/Window.h"
 
 FGraphicsBackend::FGraphicsBackend() = default;
 
@@ -11,6 +13,9 @@ FGraphicsBackend::~FGraphicsBackend() = default;
 void FGraphicsBackend::Initialize(const FGraphicsBackendDesc& InDescription)
 {
 	Description = InDescription;
+
+	Context = MakeShared<FGraphicsContext>();
+	Context->Allocator = CreateAllocator();
 
 	const VkResult Result = volkInitialize();
 	ASSERT(Result == VK_SUCCESS, "Failed to initialize volk");
@@ -34,14 +39,66 @@ void FGraphicsBackend::Initialize(const FGraphicsBackendDesc& InDescription)
 	InstanceProperties = QueryInstanceProperties();
 	RW_LOG(LogGraphics, Info, "Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(InstanceProperties.ApiVersion), VK_VERSION_MINOR(InstanceProperties.ApiVersion),
 	       VK_VERSION_PATCH(InstanceProperties.ApiVersion));
-	Instance = CreateInstance(InstanceProperties, RequiredLayers, RequiredExtensions);
-	volkLoadInstance(Instance);
+	Context->Instance = CreateInstance(Context, InstanceProperties, RequiredLayers, RequiredExtensions);
+	volkLoadInstance(Context->Instance);
 }
 
-void FGraphicsBackend::Destroy() const
+void FGraphicsBackend::Destroy()
 {
-	vkDestroyInstance(Instance, nullptr);
+	vkDestroyInstance(Context->Instance, nullptr);
 	volkFinalize();
+	FMemory::Delete(Context->Allocator);
+	Context.reset();
+}
+
+VkSurfaceKHR FGraphicsBackend::CreateSurface(const TSharedPtr<FWindow>& Window) const
+{
+	VkWin32SurfaceCreateInfoKHR SurfaceCreateInfo = Vulkan::CreateStructure<VkWin32SurfaceCreateInfoKHR>();
+	SurfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+	SurfaceCreateInfo.hwnd = Window->GetHandle();
+
+	VkSurfaceKHR Surface = VK_NULL_HANDLE;
+	const VkResult Result = vkCreateWin32SurfaceKHR(Context->Instance, &SurfaceCreateInfo, Context->Allocator, &Surface);
+	ASSERT(Result == VK_SUCCESS, "Failed to create Vulkan surface");
+	return Surface;
+}
+
+void FGraphicsBackend::DestroySurface(const VkSurfaceKHR Surface) const
+{
+	vkDestroySurfaceKHR(Context->Instance, Surface, Context->Allocator);
+}
+
+TVector<TSharedPtr<FGraphicsAdapter>> FGraphicsBackend::GetAdapters()
+{
+	TVector<VkPhysicalDevice> PhysicalDevices = VulkanUtility::GetPhysicalDevices(Context->Instance);
+	TVector<TSharedPtr<FGraphicsAdapter>> Adapters;
+	Adapters.reserve(PhysicalDevices.size());
+	std::ranges::transform(PhysicalDevices, std::back_inserter(Adapters), [Context = Context](VkPhysicalDevice PhysicalDevice)
+	{
+		return MakeShared<FGraphicsAdapter>(Context, PhysicalDevice);
+	});
+	return Adapters;
+}
+
+bool8 FGraphicsBackend::IsAdapterSuitable(const TSharedPtr<FGraphicsAdapter>& Adapter, const TVector<FString>& RequiredExtensions) const
+{
+	if (Adapter->GetProperties().Type != EGraphicsAdapterType::Discrete)
+		return false;
+	if (VK_API_VERSION_MAJOR(Adapter->GetProperties().ApiVersion) < VK_API_VERSION_MAJOR(InstanceProperties.ApiVersion))
+		return false;
+	if (VK_API_VERSION_MINOR(Adapter->GetProperties().ApiVersion) < VK_API_VERSION_MINOR(InstanceProperties.ApiVersion))
+		return false;
+	for (const FStringView RequiredExtension : RequiredExtensions)
+	{
+		if (!Adapter->IsExtensionSupported(RequiredExtension))
+			return false;
+	}
+	return true;
+}
+
+VkAllocationCallbacks* FGraphicsBackend::CreateAllocator()
+{
+	return nullptr;
 }
 
 FGraphicsBackend::FInstanceProperties FGraphicsBackend::QueryInstanceProperties()
@@ -65,7 +122,8 @@ void FGraphicsBackend::ValidateRequiredInstanceObjects(FString ObjectName, TSpan
 	}
 }
 
-VkInstance FGraphicsBackend::CreateInstance(FInstanceProperties& InProperties, const TSpan<const char*> RequiredLayers, const TSpan<const char*> RequiredExtensions)
+VkInstance FGraphicsBackend::CreateInstance(const TSharedPtr<FGraphicsContext>& Context, FInstanceProperties& InProperties, const TSpan<const char*> RequiredLayers,
+                                            const TSpan<const char*> RequiredExtensions)
 {
 	ValidateRequiredInstanceObjects("layer", InProperties.Layers, RequiredLayers);
 	ValidateRequiredInstanceObjects("extension", InProperties.Extensions, RequiredExtensions);
@@ -84,7 +142,7 @@ VkInstance FGraphicsBackend::CreateInstance(FInstanceProperties& InProperties, c
 	InstanceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 
 	VkInstance Instance = VK_NULL_HANDLE;
-	const VkResult Result = vkCreateInstance(&InstanceCreateInfo, nullptr, &Instance);
+	const VkResult Result = vkCreateInstance(&InstanceCreateInfo, Context->Allocator, &Instance);
 	ASSERT(Result == VK_SUCCESS, "Failed to create Vulkan instance");
 	RW_LOG(LogGraphics, Trace, "Created Vulkan instance");
 	return Instance;

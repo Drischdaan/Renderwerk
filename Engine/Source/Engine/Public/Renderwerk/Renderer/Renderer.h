@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
+#include "Renderwerk/Graphics/GraphicsCommon.h"
+
 class FGraphicsBackend;
 
 DECLARE_LOG_CHANNEL(LogRenderer);
@@ -32,4 +34,5 @@ private:
 	FRendererDesc Description = {};
 
 	TSharedPtr<FGraphicsBackend> GraphicsBackend;
+	VkSurfaceKHR Surface = VK_NULL_HANDLE;
 };
