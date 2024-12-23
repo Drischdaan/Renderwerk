@@ -45,6 +45,9 @@ public:
 
 	[[nodiscard]] TSharedPtr<FGraphicsDevice> CreateDevice(const TSharedPtr<FGraphicsAdapter>& Adapter) const;
 
+public:
+	[[nodiscard]] TSharedPtr<FGraphicsContext> GetContext() const { return Context; }
+
 private:
 	static VkAllocationCallbacks* CreateAllocator();
 	static FInstanceProperties QueryInstanceProperties();

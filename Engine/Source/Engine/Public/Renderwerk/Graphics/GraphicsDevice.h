@@ -17,7 +17,7 @@ public:
 	void WaitForIdle() const;
 
 public:
-	[[nodiscard]] VkDevice GetHandle() const { return Device; }
+	[[nodiscard]] VkDevice GetHandle() const { return Context->Device; }
 
 	[[nodiscard]] VkQueue GetGraphicsQueue() const { return GraphicsQueue; }
 	[[nodiscard]] VkQueue GetPresentQueue() const { return PresentQueue; }
@@ -30,8 +30,6 @@ private:
 private:
 	TSharedPtr<FGraphicsContext> Context;
 	TSharedPtr<FGraphicsAdapter> GraphicsAdapter;
-
-	VkDevice Device = VK_NULL_HANDLE;
 
 	VkQueue GraphicsQueue = VK_NULL_HANDLE;
 	VkQueue PresentQueue = VK_NULL_HANDLE;

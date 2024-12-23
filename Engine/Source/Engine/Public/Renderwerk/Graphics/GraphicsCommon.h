@@ -13,6 +13,7 @@ struct ENGINE_API FGraphicsContext
 {
 	VkAllocationCallbacks* Allocator = nullptr;
 	VkInstance Instance = VK_NULL_HANDLE;
+	VkDevice Device = VK_NULL_HANDLE;
 };
 
 enum class ENGINE_API EGraphicsQueueType : uint8

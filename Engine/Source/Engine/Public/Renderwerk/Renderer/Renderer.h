@@ -39,4 +39,5 @@ private:
 	TSharedPtr<FGraphicsBackend> GraphicsBackend;
 	VkSurfaceKHR Surface = VK_NULL_HANDLE;
 	TSharedPtr<FGraphicsDevice> GraphicsDevice;
+	
 };

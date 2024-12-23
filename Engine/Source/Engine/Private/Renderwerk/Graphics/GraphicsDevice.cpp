@@ -40,9 +40,9 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions)
 	DeviceCreateInfo.enabledExtensionCount = static_cast<uint32>(RequiredExtensions.size());
 	DeviceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 
-	const VkResult Result = vkCreateDevice(GraphicsAdapter->GetHandle(), &DeviceCreateInfo, Context->Allocator, &Device);
+	const VkResult Result = vkCreateDevice(GraphicsAdapter->GetHandle(), &DeviceCreateInfo, Context->Allocator, &Context->Device);
 	ASSERT(Result == VK_SUCCESS, "Failed to create logical device.");
-	volkLoadDevice(Device);
+	volkLoadDevice(Context->Device);
 	RW_LOG(LogGraphics, Trace, "Created device");
 
 	GraphicsQueue = GetQueue(GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Graphics));
@@ -53,18 +53,18 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions)
 
 void FGraphicsDevice::Destroy() const
 {
-	vkDestroyDevice(Device, Context->Allocator);
+	vkDestroyDevice(Context->Device, Context->Allocator);
 }
 
 void FGraphicsDevice::WaitForIdle() const
 {
-	const VkResult Result = vkDeviceWaitIdle(Device);
+	const VkResult Result = vkDeviceWaitIdle(Context->Device);
 	ASSERT(Result == VK_SUCCESS, "Failed to wait for device to become idle.");
 }
 
 VkQueue FGraphicsDevice::GetQueue(const FGraphicsQueueMetadata& Metadata) const
 {
 	VkQueue Queue = VK_NULL_HANDLE;
-	vkGetDeviceQueue(Device, Metadata.FamilyIndex, Metadata.QueueIndex, &Queue);
+	vkGetDeviceQueue(Context->Device, Metadata.FamilyIndex, Metadata.QueueIndex, &Queue);
 	return Queue;
 }

@@ -47,3 +47,38 @@ VkDeviceCreateInfo Vulkan::CreateStructure(VkDeviceCreateInfo Instance)
 	Instance.flags = 0;
 	return Instance;
 }
+
+template <>
+VkCommandPoolCreateInfo Vulkan::CreateStructure(VkCommandPoolCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkCommandBufferAllocateInfo Vulkan::CreateStructure(VkCommandBufferAllocateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	return Instance;
+}
+
+template <>
+VkCommandBufferBeginInfo Vulkan::CreateStructure(VkCommandBufferBeginInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkDebugUtilsLabelEXT Vulkan::CreateStructure(VkDebugUtilsLabelEXT Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	Instance.pNext = nullptr;
+	return Instance;
+}
