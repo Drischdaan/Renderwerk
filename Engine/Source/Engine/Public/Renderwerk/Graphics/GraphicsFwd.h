@@ -7,6 +7,7 @@ class FGraphicsCommandPool;
 class FGraphicsCommandBuffer;
 class FGraphicsCommandQueue;
 class FGraphicsSwapchain;
+class FGraphicsBuffer;
 
 struct FGraphicsAdapterProperties;
 struct FGraphicsQueueMetadata;

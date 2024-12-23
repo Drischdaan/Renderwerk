@@ -7,6 +7,9 @@
 
 #include <volk.h>
 
+#include <vk_mem_alloc.h>
+
+
 DECLARE_LOG_CHANNEL(LogGraphics);
 
 struct ENGINE_API FGraphicsContext
@@ -15,6 +18,7 @@ struct ENGINE_API FGraphicsContext
 	VkInstance Instance = VK_NULL_HANDLE;
 	VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice Device = VK_NULL_HANDLE;
+	VmaAllocator ResourceAllocator = VK_NULL_HANDLE;
 };
 
 enum class ENGINE_API EGraphicsQueueType : uint8
@@ -46,4 +50,12 @@ struct ENGINE_API FGraphicsFrame
 	VkSemaphore ImageWaitSemaphore = VK_NULL_HANDLE;
 	VkSemaphore RenderingFinishedSignalSemaphore = VK_NULL_HANDLE;
 	VkFence InFlightFence = VK_NULL_HANDLE;
+};
+
+enum class ENGINE_API EGraphicsMemoryUsage : uint8
+{
+	None = 0,
+	Auto,
+	CPU,
+	GPU,
 };

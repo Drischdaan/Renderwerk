@@ -183,3 +183,32 @@ VkPhysicalDeviceDynamicRenderingFeatures Vulkan::CreateStructure(VkPhysicalDevic
 	Instance.pNext = nullptr;
 	return Instance;
 }
+
+template <>
+VmaAllocatorCreateInfo Vulkan::CreateStructure(const VmaAllocatorCreateInfo Instance)
+{
+	return Instance;
+}
+
+template <>
+VkBufferCreateInfo Vulkan::CreateStructure(VkBufferCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VmaAllocationCreateInfo Vulkan::CreateStructure(const VmaAllocationCreateInfo Instance)
+{
+	return Instance;
+}
+
+template <>
+VkPhysicalDeviceBufferDeviceAddressFeatures Vulkan::CreateStructure(VkPhysicalDeviceBufferDeviceAddressFeatures Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	Instance.pNext = nullptr;
+	return Instance;
+}

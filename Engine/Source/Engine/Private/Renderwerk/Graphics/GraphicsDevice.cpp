@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/GraphicsDevice.h"
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
+#include "Renderwerk/Graphics/GraphicsBuffer.h"
 #include "Renderwerk/Graphics/GraphicsCommandPool.h"
 #include "Renderwerk/Graphics/GraphicsCommandQueue.h"
 #include "Renderwerk/Graphics/GraphicsSwapchain.h"
@@ -46,7 +47,7 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions, c
 	DeviceCreateInfo.enabledExtensionCount = static_cast<uint32>(RequiredExtensions.size());
 	DeviceCreateInfo.ppEnabledExtensionNames = RequiredExtensions.data();
 
-	const VkResult Result = vkCreateDevice(GraphicsAdapter->GetHandle(), &DeviceCreateInfo, Context->Allocator, &Context->Device);
+	VkResult Result = vkCreateDevice(GraphicsAdapter->GetHandle(), &DeviceCreateInfo, Context->Allocator, &Context->Device);
 	ASSERT(Result == VK_SUCCESS, "Failed to create logical device.");
 	volkLoadDevice(Context->Device);
 	RW_LOG(LogGraphics, Trace, "Created device");
@@ -55,10 +56,26 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions, c
 	PresentCommandQueue = CreateQueue(EGraphicsQueueType::Present);
 	ComputeCommandQueue = CreateQueue(EGraphicsQueueType::Compute);
 	TransferCommandQueue = CreateQueue(EGraphicsQueueType::Transfer);
+
+	VmaVulkanFunctions VulkanFunctions = {};
+	VulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	VulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
+	VmaAllocatorCreateInfo AllocatorCreateInfo = Vulkan::CreateStructure<VmaAllocatorCreateInfo>();
+	AllocatorCreateInfo.instance = Context->Instance;
+	AllocatorCreateInfo.physicalDevice = Context->PhysicalDevice;
+	AllocatorCreateInfo.device = Context->Device;
+	AllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+	AllocatorCreateInfo.pVulkanFunctions = &VulkanFunctions;
+	AllocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+	Result = vmaCreateAllocator(&AllocatorCreateInfo, &Context->ResourceAllocator);
+	ASSERT(Result == VK_SUCCESS, "Failed to create allocator");
 }
 
 void FGraphicsDevice::Destroy()
 {
+	vmaDestroyAllocator(Context->ResourceAllocator);
 	TransferCommandQueue.reset();
 	ComputeCommandQueue.reset();
 	PresentCommandQueue.reset();
@@ -111,6 +128,11 @@ VkFence FGraphicsDevice::CreateFence(const VkFenceCreateFlags Flags) const
 void FGraphicsDevice::DestroyFence(const VkFence Fence) const
 {
 	vkDestroyFence(Context->Device, Fence, Context->Allocator);
+}
+
+TSharedPtr<FGraphicsBuffer> FGraphicsDevice::CreateBuffer()
+{
+	return MakeShared<FGraphicsBuffer>(Context);
 }
 
 TSharedPtr<FGraphicsCommandQueue> FGraphicsDevice::CreateQueue(const EGraphicsQueueType Type) const

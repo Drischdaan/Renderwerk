@@ -2,8 +2,13 @@
 
 #include "Renderwerk/Renderer/Renderer.h"
 
+#include <glm/gtx/std_based_type.inl>
+
+#include "glm/vec3.hpp"
+
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
 #include "Renderwerk/Graphics/GraphicsBackend.h"
+#include "Renderwerk/Graphics/GraphicsBuffer.h"
 #include "Renderwerk/Graphics/GraphicsCommandBuffer.h"
 #include "Renderwerk/Graphics/GraphicsCommandPool.h"
 #include "Renderwerk/Graphics/GraphicsCommandQueue.h"
@@ -31,9 +36,14 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+		VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 	};
 
+	VkPhysicalDeviceBufferDeviceAddressFeatures BufferDeviceAddressFeatures = Vulkan::CreateStructure<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+	BufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
 	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeatures = Vulkan::CreateStructure<VkPhysicalDeviceDynamicRenderingFeatures>();
+	DynamicRenderingFeatures.pNext = &BufferDeviceAddressFeatures;
 	DynamicRenderingFeatures.dynamicRendering = VK_TRUE;
 
 	VkPhysicalDeviceSynchronization2Features Synchronization2Features = Vulkan::CreateStructure<VkPhysicalDeviceSynchronization2Features>();
@@ -146,7 +156,8 @@ void FRenderer::EndFrame()
 
 	if (!GraphicsSwapchain->Present(GraphicsDevice->GetGraphicsQueue(), Frame.RenderingFinishedSignalSemaphore))
 	{
-		Resize();
+		if (Description.Window->IsValid())
+			Resize();
 		return;
 	}
 	FrameIndex = (FrameIndex + 1) % RENDERER_FRAME_COUNT;

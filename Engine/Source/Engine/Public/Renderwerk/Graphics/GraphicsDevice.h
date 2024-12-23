@@ -26,6 +26,8 @@ public:
 	[[nodiscard]] VkFence CreateFence(VkFenceCreateFlags Flags = VK_FENCE_CREATE_SIGNALED_BIT) const;
 	void DestroyFence(VkFence Fence) const;
 
+	[[nodiscard]] TSharedPtr<FGraphicsBuffer> CreateBuffer();
+
 public:
 	[[nodiscard]] VkDevice GetHandle() const { return Context->Device; }
 

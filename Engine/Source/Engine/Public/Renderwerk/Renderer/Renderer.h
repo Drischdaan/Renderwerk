@@ -48,4 +48,6 @@ private:
 
 	uint32 FrameIndex = 0;
 	TArray<FGraphicsFrame, RENDERER_FRAME_COUNT> Frames;
+
+	TSharedPtr<FGraphicsBuffer> VertexBuffer;
 };
