@@ -22,4 +22,5 @@ private:
 	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
 
 	friend class ENGINE_API FGraphicsCommandPool;
+	friend class ENGINE_API FGraphicsCommandQueue;
 };

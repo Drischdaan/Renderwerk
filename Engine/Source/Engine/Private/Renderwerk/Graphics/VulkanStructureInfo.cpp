@@ -82,3 +82,28 @@ VkDebugUtilsLabelEXT Vulkan::CreateStructure(VkDebugUtilsLabelEXT Instance)
 	Instance.pNext = nullptr;
 	return Instance;
 }
+
+template <>
+VkSubmitInfo2 Vulkan::CreateStructure(VkSubmitInfo2 Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkCommandBufferSubmitInfo Vulkan::CreateStructure(VkCommandBufferSubmitInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	Instance.pNext = nullptr;
+	return Instance;
+}
+
+template <>
+VkSemaphoreSubmitInfo Vulkan::CreateStructure(VkSemaphoreSubmitInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	Instance.pNext = nullptr;
+	return Instance;
+}

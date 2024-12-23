@@ -12,27 +12,25 @@ public:
 
 public:
 	void Initialize(const TSpan<const char*>& RequiredExtensions);
-	void Destroy() const;
+	void Destroy();
 
 	void WaitForIdle() const;
 
 public:
 	[[nodiscard]] VkDevice GetHandle() const { return Context->Device; }
 
-	[[nodiscard]] VkQueue GetGraphicsQueue() const { return GraphicsQueue; }
-	[[nodiscard]] VkQueue GetPresentQueue() const { return PresentQueue; }
-	[[nodiscard]] VkQueue GetComputeQueue() const { return ComputeQueue; }
-	[[nodiscard]] VkQueue GetTransferQueue() const { return TransferQueue; }
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> GetGraphicsQueue() const { return GraphicsCommandQueue; }
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> GetPresentQueue() const { return PresentCommandQueue; }
 
 private:
-	[[nodiscard]] VkQueue GetQueue(const FGraphicsQueueMetadata& Metadata) const;
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> CreateQueue(EGraphicsQueueType Type) const;
 
 private:
 	TSharedPtr<FGraphicsContext> Context;
 	TSharedPtr<FGraphicsAdapter> GraphicsAdapter;
 
-	VkQueue GraphicsQueue = VK_NULL_HANDLE;
-	VkQueue PresentQueue = VK_NULL_HANDLE;
-	VkQueue ComputeQueue = VK_NULL_HANDLE;
-	VkQueue TransferQueue = VK_NULL_HANDLE;
+	TSharedPtr<FGraphicsCommandQueue> GraphicsCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> PresentCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> ComputeCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> TransferCommandQueue;
 };

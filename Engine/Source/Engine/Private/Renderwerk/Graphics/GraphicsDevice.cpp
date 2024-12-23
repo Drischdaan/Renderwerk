@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/GraphicsDevice.h"
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
+#include "Renderwerk/Graphics/GraphicsCommandQueue.h"
 
 FGraphicsDevice::FGraphicsDevice(const TSharedPtr<FGraphicsContext>& InContext, const TSharedPtr<FGraphicsAdapter>& InAdapter)
 	: Context(InContext), GraphicsAdapter(InAdapter)
@@ -45,14 +46,18 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions)
 	volkLoadDevice(Context->Device);
 	RW_LOG(LogGraphics, Trace, "Created device");
 
-	GraphicsQueue = GetQueue(GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Graphics));
-	PresentQueue = GetQueue(GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Present));
-	ComputeQueue = GetQueue(GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Compute));
-	TransferQueue = GetQueue(GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Transfer));
+	GraphicsCommandQueue = CreateQueue(EGraphicsQueueType::Graphics);
+	PresentCommandQueue = CreateQueue(EGraphicsQueueType::Present);
+	ComputeCommandQueue = CreateQueue(EGraphicsQueueType::Compute);
+	TransferCommandQueue = CreateQueue(EGraphicsQueueType::Transfer);
 }
 
-void FGraphicsDevice::Destroy() const
+void FGraphicsDevice::Destroy()
 {
+	TransferCommandQueue.reset();
+	ComputeCommandQueue.reset();
+	PresentCommandQueue.reset();
+	GraphicsCommandQueue.reset();
 	vkDestroyDevice(Context->Device, Context->Allocator);
 }
 
@@ -62,9 +67,10 @@ void FGraphicsDevice::WaitForIdle() const
 	ASSERT(Result == VK_SUCCESS, "Failed to wait for device to become idle.");
 }
 
-VkQueue FGraphicsDevice::GetQueue(const FGraphicsQueueMetadata& Metadata) const
+TSharedPtr<FGraphicsCommandQueue> FGraphicsDevice::CreateQueue(const EGraphicsQueueType Type) const
 {
+	FGraphicsQueueMetadata Metadata = GraphicsAdapter->GetQueueMetadata(Type);
 	VkQueue Queue = VK_NULL_HANDLE;
 	vkGetDeviceQueue(Context->Device, Metadata.FamilyIndex, Metadata.QueueIndex, &Queue);
-	return Queue;
+	return MakeShared<FGraphicsCommandQueue>(EGraphicsQueueType::Transfer, Metadata, Queue);
 }
