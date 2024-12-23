@@ -4,7 +4,12 @@
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
 #include "Renderwerk/Graphics/GraphicsBackend.h"
+#include "Renderwerk/Graphics/GraphicsCommandBuffer.h"
+#include "Renderwerk/Graphics/GraphicsCommandPool.h"
+#include "Renderwerk/Graphics/GraphicsCommandQueue.h"
 #include "Renderwerk/Graphics/GraphicsDevice.h"
+#include "Renderwerk/Graphics/GraphicsSwapchain.h"
+#include "Renderwerk/Platform/Window.h"
 
 DEFINE_LOG_CHANNEL(LogRenderer);
 
@@ -24,15 +29,57 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 
 	TVector<const char*> DeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 	};
+
+	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeatures = Vulkan::CreateStructure<VkPhysicalDeviceDynamicRenderingFeatures>();
+	DynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
+	VkPhysicalDeviceSynchronization2Features Synchronization2Features = Vulkan::CreateStructure<VkPhysicalDeviceSynchronization2Features>();
+	Synchronization2Features.pNext = &DynamicRenderingFeatures;
+	Synchronization2Features.synchronization2 = VK_TRUE;
 
 	const TSharedPtr<FGraphicsAdapter> GraphicsAdapter = SelectAdapter(DeviceExtensions);
 	GraphicsDevice = GraphicsBackend->CreateDevice(GraphicsAdapter);
-	GraphicsDevice->Initialize(DeviceExtensions);
+	GraphicsDevice->Initialize(DeviceExtensions, &Synchronization2Features);
+
+	FGraphicsSwapchainDesc SwapchainDesc = {};
+	SwapchainDesc.Surface = Surface;
+	GraphicsSwapchain = GraphicsDevice->CreateSwapchain();
+	GraphicsSwapchain->Initialize(SwapchainDesc);
+
+	for (FGraphicsFrame& Frame : Frames)
+	{
+		FGraphicsCommandPoolDesc CommandPoolDesc = {};
+		CommandPoolDesc.QueueFamilyIndex = GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Graphics).FamilyIndex;
+		Frame.CommandPool = GraphicsDevice->CreateCommandPool();
+		Frame.CommandPool->Initialize(CommandPoolDesc);
+
+		Frame.MainCommandBuffer = Frame.CommandPool->AllocateBuffer();
+
+		Frame.ImageWaitSemaphore = GraphicsDevice->CreateSemaphore();
+		Frame.RenderingFinishedSignalSemaphore = GraphicsDevice->CreateSemaphore();
+		Frame.InFlightFence = GraphicsDevice->CreateFence();
+	}
 }
 
 void FRenderer::Destroy()
 {
+	GraphicsDevice->WaitForIdle();
+
+	for (FGraphicsFrame& Frame : Frames)
+	{
+		GraphicsDevice->DestroyFence(Frame.InFlightFence);
+		GraphicsDevice->DestroySemaphore(Frame.RenderingFinishedSignalSemaphore);
+		GraphicsDevice->DestroySemaphore(Frame.ImageWaitSemaphore);
+		Frame.CommandPool->FreeBuffer(Frame.MainCommandBuffer);
+		Frame.CommandPool->Destroy();
+		Frame.CommandPool.reset();
+	}
+
+	GraphicsSwapchain->Destroy();
+	GraphicsSwapchain.reset();
 	GraphicsDevice->Destroy();
 	GraphicsDevice.reset();
 	GraphicsBackend->DestroySurface(Surface);
@@ -40,19 +87,69 @@ void FRenderer::Destroy()
 	GraphicsBackend.reset();
 }
 
-void FRenderer::Resize()
+void FRenderer::Resize() const
 {
 	PROFILE_FUNCTION();
+	GraphicsDevice->WaitForIdle();
+
+	GraphicsSwapchain->Resize();
 }
 
-void FRenderer::BeginFrame()
+void FRenderer::BeginFrame() const
 {
 	PROFILE_FUNCTION();
+
+	const FGraphicsFrame& Frame = Frames.at(FrameIndex);
+
+	{
+		PROFILE_SCOPE("vkWaitForFences");
+		VkResult Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence, VK_TRUE, UINT64_MAX);
+		ASSERT(Result == VK_SUCCESS, "Failed to wait for fence");
+		Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &Frame.InFlightFence);
+		ASSERT(Result == VK_SUCCESS, "Failed to reset fence");
+	}
+
+	if (!GraphicsSwapchain->AcquireNextImageIndex(Frame.ImageWaitSemaphore))
+	{
+		if (Description.Window->IsValid())
+			Resize();
+		return;
+	}
+
+	const TSharedPtr<FGraphicsCommandBuffer> CommandBuffer = Frame.MainCommandBuffer;
+	const FGraphicsBackBuffer BackBuffer = GraphicsSwapchain->GetCurrentBackBuffer();
+
+	CommandBuffer->Reset();
+	CommandBuffer->Begin();
+
+	CommandBuffer->TransitionImageLayout(BackBuffer.Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void FRenderer::EndFrame()
 {
 	PROFILE_FUNCTION();
+
+	const FGraphicsFrame& Frame = Frames.at(FrameIndex);
+	const TSharedPtr<FGraphicsCommandBuffer> CommandBuffer = Frame.MainCommandBuffer;
+	const FGraphicsBackBuffer BackBuffer = GraphicsSwapchain->GetCurrentBackBuffer();
+
+	CommandBuffer->TransitionImageLayout(BackBuffer.Image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	CommandBuffer->End();
+
+	TVector<TSharedPtr<FGraphicsCommandBuffer>> CommandBuffers = {CommandBuffer};
+	FGraphicsSubmitSyncDesc SubmitSyncDesc = {};
+	SubmitSyncDesc.WaitSemaphores = {Frame.ImageWaitSemaphore};
+	SubmitSyncDesc.SignalSemaphores = {Frame.RenderingFinishedSignalSemaphore};
+	SubmitSyncDesc.SubmitFence = Frame.InFlightFence;
+	GraphicsDevice->GetGraphicsQueue()->SubmitCommandBuffers(CommandBuffers, SubmitSyncDesc);
+
+	if (!GraphicsSwapchain->Present(GraphicsDevice->GetGraphicsQueue(), Frame.RenderingFinishedSignalSemaphore))
+	{
+		Resize();
+		return;
+	}
+	FrameIndex = (FrameIndex + 1) % RENDERER_FRAME_COUNT;
 }
 
 TSharedPtr<FGraphicsAdapter> FRenderer::SelectAdapter(const TSpan<const char*>& RequiredExtensions) const

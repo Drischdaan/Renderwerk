@@ -20,6 +20,9 @@ public:
 public:
 	void SubmitCommandBuffers(const TSpan<TSharedPtr<FGraphicsCommandBuffer>>& CommandBuffers, const FGraphicsSubmitSyncDesc& Description = {}) const;
 
+public:
+	[[nodiscard]] VkQueue GetHandle() const { return Queue; }
+
 private:
 	EGraphicsQueueType QueueType;
 	FGraphicsQueueMetadata Metadata;

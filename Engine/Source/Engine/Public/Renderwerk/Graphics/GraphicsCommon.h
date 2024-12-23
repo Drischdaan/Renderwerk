@@ -13,6 +13,7 @@ struct ENGINE_API FGraphicsContext
 {
 	VkAllocationCallbacks* Allocator = nullptr;
 	VkInstance Instance = VK_NULL_HANDLE;
+	VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice Device = VK_NULL_HANDLE;
 };
 
@@ -36,4 +37,13 @@ struct ENGINE_API FGraphicsSurfaceCapabilities
 	VkSurfaceCapabilitiesKHR Capabilities = {};
 	TVector<VkSurfaceFormatKHR> Formats = {};
 	TVector<VkPresentModeKHR> PresentModes = {};
+};
+
+struct ENGINE_API FGraphicsFrame
+{
+	TSharedPtr<FGraphicsCommandPool> CommandPool;
+	TSharedPtr<FGraphicsCommandBuffer> MainCommandBuffer;
+	VkSemaphore ImageWaitSemaphore = VK_NULL_HANDLE;
+	VkSemaphore RenderingFinishedSignalSemaphore = VK_NULL_HANDLE;
+	VkFence InFlightFence = VK_NULL_HANDLE;
 };

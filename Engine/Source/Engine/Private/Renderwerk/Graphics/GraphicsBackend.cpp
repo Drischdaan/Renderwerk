@@ -139,6 +139,7 @@ VkInstance FGraphicsBackend::CreateInstance(const TSharedPtr<FGraphicsContext>& 
 	ApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	ApplicationInfo.pEngineName = "Renderwerk";
 	ApplicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	ApplicationInfo.apiVersion = VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(InProperties.ApiVersion), VK_API_VERSION_MINOR(InProperties.ApiVersion), 0);
 
 	VkInstanceCreateInfo InstanceCreateInfo = Vulkan::CreateStructure<VkInstanceCreateInfo>();
 	InstanceCreateInfo.pApplicationInfo = &ApplicationInfo;

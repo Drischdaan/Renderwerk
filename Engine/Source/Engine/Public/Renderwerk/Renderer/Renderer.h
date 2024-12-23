@@ -8,6 +8,11 @@ class FGraphicsBackend;
 
 DECLARE_LOG_CHANNEL(LogRenderer);
 
+enum : uint8
+{
+	RENDERER_FRAME_COUNT = 3,
+};
+
 struct ENGINE_API FRendererDesc
 {
 	TSharedPtr<FWindow> Window;
@@ -25,9 +30,9 @@ public:
 	void Initialize(const FRendererDesc& InDescription);
 	void Destroy();
 
-	void Resize();
+	void Resize() const;
 
-	void BeginFrame();
+	void BeginFrame() const;
 	void EndFrame();
 
 private:
@@ -39,5 +44,8 @@ private:
 	TSharedPtr<FGraphicsBackend> GraphicsBackend;
 	VkSurfaceKHR Surface = VK_NULL_HANDLE;
 	TSharedPtr<FGraphicsDevice> GraphicsDevice;
-	
+	TSharedPtr<FGraphicsSwapchain> GraphicsSwapchain;
+
+	uint32 FrameIndex = 0;
+	TArray<FGraphicsFrame, RENDERER_FRAME_COUNT> Frames;
 };

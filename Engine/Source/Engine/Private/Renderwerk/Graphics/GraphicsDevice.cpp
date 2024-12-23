@@ -3,7 +3,9 @@
 #include "Renderwerk/Graphics/GraphicsDevice.h"
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
+#include "Renderwerk/Graphics/GraphicsCommandPool.h"
 #include "Renderwerk/Graphics/GraphicsCommandQueue.h"
+#include "Renderwerk/Graphics/GraphicsSwapchain.h"
 
 FGraphicsDevice::FGraphicsDevice(const TSharedPtr<FGraphicsContext>& InContext, const TSharedPtr<FGraphicsAdapter>& InAdapter)
 	: Context(InContext), GraphicsAdapter(InAdapter)
@@ -12,8 +14,10 @@ FGraphicsDevice::FGraphicsDevice(const TSharedPtr<FGraphicsContext>& InContext, 
 
 FGraphicsDevice::~FGraphicsDevice() = default;
 
-void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions)
+void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions, const void* NextChain)
 {
+	Context->PhysicalDevice = GraphicsAdapter->GetHandle();
+
 	const TSet<uint32> QueueFamilyIndices = {
 		GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Graphics).FamilyIndex,
 		GraphicsAdapter->GetQueueMetadata(EGraphicsQueueType::Present).FamilyIndex,
@@ -34,6 +38,7 @@ void FGraphicsDevice::Initialize(const TSpan<const char*>& RequiredExtensions)
 	}
 
 	VkDeviceCreateInfo DeviceCreateInfo = Vulkan::CreateStructure<VkDeviceCreateInfo>();
+	DeviceCreateInfo.pNext = NextChain;
 	DeviceCreateInfo.queueCreateInfoCount = static_cast<uint32>(QueueCreateInfos.size());
 	DeviceCreateInfo.pQueueCreateInfos = QueueCreateInfos.data();
 	DeviceCreateInfo.enabledLayerCount = 0;
@@ -65,6 +70,47 @@ void FGraphicsDevice::WaitForIdle() const
 {
 	const VkResult Result = vkDeviceWaitIdle(Context->Device);
 	ASSERT(Result == VK_SUCCESS, "Failed to wait for device to become idle.");
+}
+
+TSharedPtr<FGraphicsSwapchain> FGraphicsDevice::CreateSwapchain()
+{
+	return MakeShared<FGraphicsSwapchain>(Context);
+}
+
+TSharedPtr<FGraphicsCommandPool> FGraphicsDevice::CreateCommandPool()
+{
+	return MakeShared<FGraphicsCommandPool>(Context);
+}
+
+VkSemaphore FGraphicsDevice::CreateSemaphore() const
+{
+	const VkSemaphoreCreateInfo SemaphoreCreateInfo = Vulkan::CreateStructure<VkSemaphoreCreateInfo>();
+
+	VkSemaphore Semaphore = VK_NULL_HANDLE;
+	const VkResult Result = vkCreateSemaphore(Context->Device, &SemaphoreCreateInfo, Context->Allocator, &Semaphore);
+	ASSERT(Result == VK_SUCCESS, "Failed to create semaphore.");
+	return Semaphore;
+}
+
+void FGraphicsDevice::DestroySemaphore(const VkSemaphore Semaphore) const
+{
+	vkDestroySemaphore(Context->Device, Semaphore, Context->Allocator);
+}
+
+VkFence FGraphicsDevice::CreateFence(const VkFenceCreateFlags Flags) const
+{
+	VkFenceCreateInfo FenceCreateInfo = Vulkan::CreateStructure<VkFenceCreateInfo>();
+	FenceCreateInfo.flags = Flags;
+
+	VkFence Fence = VK_NULL_HANDLE;
+	const VkResult Result = vkCreateFence(Context->Device, &FenceCreateInfo, Context->Allocator, &Fence);
+	ASSERT(Result == VK_SUCCESS, "Failed to create fence.");
+	return Fence;
+}
+
+void FGraphicsDevice::DestroyFence(const VkFence Fence) const
+{
+	vkDestroyFence(Context->Device, Fence, Context->Allocator);
 }
 
 TSharedPtr<FGraphicsCommandQueue> FGraphicsDevice::CreateQueue(const EGraphicsQueueType Type) const

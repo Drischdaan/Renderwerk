@@ -18,6 +18,8 @@ public:
 	void BeginDebugLabel(FStringView Name, const VkClearColorValue& Color = {1.0f, 1.0f, 1.0f, 1.0f}) const;
 	void EndDebugLabel() const;
 
+	void TransitionImageLayout(VkImage Image, VkImageLayout OldLayout, VkImageLayout NewLayout, VkImageAspectFlagBits AspectMask = VK_IMAGE_ASPECT_COLOR_BIT) const;
+
 private:
 	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
 

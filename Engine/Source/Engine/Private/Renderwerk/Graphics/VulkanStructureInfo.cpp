@@ -107,3 +107,79 @@ VkSemaphoreSubmitInfo Vulkan::CreateStructure(VkSemaphoreSubmitInfo Instance)
 	Instance.pNext = nullptr;
 	return Instance;
 }
+
+template <>
+VkPresentInfoKHR Vulkan::CreateStructure(VkPresentInfoKHR Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	Instance.pNext = nullptr;
+	return Instance;
+}
+
+template <>
+VkImageViewCreateInfo Vulkan::CreateStructure(VkImageViewCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkSwapchainCreateInfoKHR Vulkan::CreateStructure(VkSwapchainCreateInfoKHR Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkSemaphoreCreateInfo Vulkan::CreateStructure(VkSemaphoreCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkFenceCreateInfo Vulkan::CreateStructure(VkFenceCreateInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	Instance.pNext = nullptr;
+	Instance.flags = 0;
+	return Instance;
+}
+
+template <>
+VkImageMemoryBarrier2 Vulkan::CreateStructure(VkImageMemoryBarrier2 Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	Instance.pNext = nullptr;
+	return Instance;
+}
+
+template <>
+VkPhysicalDeviceSynchronization2Features Vulkan::CreateStructure(VkPhysicalDeviceSynchronization2Features Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+	Instance.pNext = nullptr;
+	return Instance;
+}
+
+template <>
+VkDependencyInfo Vulkan::CreateStructure(VkDependencyInfo Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	Instance.pNext = nullptr;
+	return Instance;
+}
+
+template <>
+VkPhysicalDeviceDynamicRenderingFeatures Vulkan::CreateStructure(VkPhysicalDeviceDynamicRenderingFeatures Instance)
+{
+	Instance.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+	Instance.pNext = nullptr;
+	return Instance;
+}

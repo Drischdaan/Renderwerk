@@ -45,3 +45,32 @@ void FGraphicsCommandBuffer::EndDebugLabel() const
 {
 	vkCmdEndDebugUtilsLabelEXT(CommandBuffer);
 }
+
+void FGraphicsCommandBuffer::TransitionImageLayout(const VkImage Image, const VkImageLayout OldLayout, const VkImageLayout NewLayout,
+                                                   const VkImageAspectFlagBits AspectMask) const
+{
+	VkImageSubresourceRange SubImage;
+	SubImage.aspectMask = AspectMask;
+	SubImage.baseMipLevel = 0;
+	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
+	SubImage.baseArrayLayer = 0;
+	SubImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	VkImageMemoryBarrier2 ImageMemoryBarrier = Vulkan::CreateStructure<VkImageMemoryBarrier2>();
+	ImageMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	ImageMemoryBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+	ImageMemoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	ImageMemoryBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+	ImageMemoryBarrier.oldLayout = OldLayout;
+	ImageMemoryBarrier.newLayout = NewLayout;
+	ImageMemoryBarrier.subresourceRange = SubImage;
+	ImageMemoryBarrier.image = Image;
+
+	VkDependencyInfo DependencyInfo = Vulkan::CreateStructure<VkDependencyInfo>();
+	DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	DependencyInfo.pNext = nullptr;
+	DependencyInfo.imageMemoryBarrierCount = 1;
+	DependencyInfo.pImageMemoryBarriers = &ImageMemoryBarrier;
+	if (vkCmdPipelineBarrier2)
+		vkCmdPipelineBarrier2(CommandBuffer, &DependencyInfo);
+}
