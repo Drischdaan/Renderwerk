@@ -44,7 +44,11 @@ void FMemory::Copy(void* Destination, const void* Source, const size64 Size)
 
 void FMemory::Free(void* Pointer)
 {
-	VERIFY(Pointer != nullptr, "Pointer must not be nullptr");
+	if (Pointer == nullptr)
+	{
+		RW_LOG(LogDefault, Warning, "Attempted to free nullptr");
+		return;
+	}
 	if (IS_PROFILER_STARTED())
 	{
 		PROFILER_MARK_FREE(Pointer);

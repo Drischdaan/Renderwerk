@@ -2,7 +2,14 @@
 
 #include "Renderwerk/Graphics/GraphicsCommon.h"
 
-#include "Renderwerk/Graphics/GraphicsContext.h"
+enum class ENGINE_API EGraphicsAdapterType : uint8
+{
+	Unknown = 0,
+	Integrated,
+	Discrete,
+	Virtual,
+	Software,
+};
 
 // https://pcisig.com/membership/member-companies
 enum class ENGINE_API EGraphicsAdapterVendor : uint16
@@ -16,63 +23,51 @@ enum class ENGINE_API EGraphicsAdapterVendor : uint16
 
 [[nodiscard]] ENGINE_API FString GetVendorString(EGraphicsAdapterVendor Vendor);
 
-enum class ENGINE_API EGraphicsAdapterType : uint8
+struct ENGINE_API FGraphicsAdapterProperties
 {
-	None = 0,
-	Discrete,
-	Integrated,
-	Virtual,
-	Software,
+	FString Name;
+	EGraphicsAdapterType Type = EGraphicsAdapterType::Unknown;
+	EGraphicsAdapterVendor Vendor = EGraphicsAdapterVendor::Unknown;
+	uint32 ApiVersion = 0;
+	uint32 DriverVersion = 0;
 };
 
 class ENGINE_API FGraphicsAdapter
 {
 public:
-	FGraphicsAdapter();
+	FGraphicsAdapter(const TSharedPtr<FGraphicsContext>& InContext, VkPhysicalDevice InPhysicalDevice);
 	~FGraphicsAdapter();
 
 	DELETE_COPY_AND_MOVE(FGraphicsAdapter);
 
 public:
-	void Initialize(const TSharedPtr<FGraphicsContext>& InGraphicsContext, const VkPhysicalDevice& InPhysicalDevice, const VkSurfaceKHR& Surface);
+	void Initialize(VkSurfaceKHR Surface);
 
-	[[nodiscard]] bool8 SupportsExtension(const char* ExtensionName);
-	[[nodiscard]] bool8 SupportsLayer(const char* LayerName);
+	[[nodiscard]] bool8 IsLayerSupported(FStringView LayerName) const;
+	[[nodiscard]] bool8 IsExtensionSupported(FStringView ExtensionName) const;
+
+	[[nodiscard]] FString GetDriverVersionString() const;
 
 	[[nodiscard]] FGraphicsQueueMetadata GetQueueMetadata(EGraphicsQueueType QueueType) const;
 	[[nodiscard]] uint32 GetQueueCountForIndex(uint32 QueueFamilyIndex) const;
 
-	[[nodiscard]] FGraphicsSurfaceProperties GetSurfaceProperties(const VkSurfaceKHR& Surface) const;
-
-	[[nodiscard]] FString GetDriverVersionString() const;
+	[[nodiscard]] FGraphicsSurfaceCapabilities GetSurfaceCapabilities(VkSurfaceKHR Surface) const;
 
 public:
 	[[nodiscard]] VkPhysicalDevice GetHandle() const { return PhysicalDevice; }
+	[[nodiscard]] FGraphicsAdapterProperties GetProperties() const { return Properties; }
 
-	[[nodiscard]] FString GetName() const { return Name; }
-	[[nodiscard]] EGraphicsAdapterType GetType() const { return Type; }
-	[[nodiscard]] EGraphicsAdapterVendor GetVendor() const { return Vendor; }
-	[[nodiscard]] uint32 GetDriverVersion() const { return DriverVersion; }
-	[[nodiscard]] uint32 GetApiVersion() const { return ApiVersion; }
+	[[nodiscard]] TMap<EGraphicsQueueType, FGraphicsQueueMetadata> GetQueueMetadataMap() const { return QueueMetadata; }
 
 private:
-	void AcquireProperties();
-	void AcquireExtensionsAndLayers();
-	void AcquireQueueMetadata(const VkSurfaceKHR& Surface);
-
-private:
-	TSharedPtr<FGraphicsContext> GraphicsContext = nullptr;
+	TSharedPtr<FGraphicsContext> Context;
 
 	VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
 
-	FString Name = TEXT("Unknown");
-	EGraphicsAdapterType Type = EGraphicsAdapterType::None;
-	EGraphicsAdapterVendor Vendor = EGraphicsAdapterVendor::Unknown;
-	uint32 DriverVersion = 0;
-	uint32 ApiVersion = 0;
+	FGraphicsAdapterProperties Properties = {};
 
-	TVector<VkExtensionProperties> SupportedExtensions;
-	TVector<VkLayerProperties> SupportedLayers;
+	TVector<FString> Layers;
+	TVector<FString> Extensions;
 
 	TMap<EGraphicsQueueType, FGraphicsQueueMetadata> QueueMetadata;
 };

@@ -2,16 +2,13 @@
 
 #include "Renderwerk/Graphics/GraphicsCommon.h"
 
-#include "Renderwerk/Graphics/GraphicsContext.h"
-#include "Renderwerk/Graphics/GraphicsDevice.h"
-
 struct ENGINE_API FGraphicsSwapchainDesc
 {
 	VkSurfaceKHR Surface;
-	uint32 BackBufferCount = 3;
-	VkFormat BackBufferFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	uint32 BufferCount = 3;
+	VkFormat Format = VK_FORMAT_B8G8R8A8_UNORM;
 	VkColorSpaceKHR ColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	VkPresentModeKHR PresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+	VkPresentModeKHR PresentMode = VK_PRESENT_MODE_FIFO_KHR;
 };
 
 struct ENGINE_API FGraphicsBackBuffer
@@ -23,41 +20,41 @@ struct ENGINE_API FGraphicsBackBuffer
 class ENGINE_API FGraphicsSwapchain
 {
 public:
-	FGraphicsSwapchain(const TSharedPtr<FGraphicsContext>& InGraphicsContext, const TSharedPtr<FGraphicsDevice>& InGraphicsDevice);
+	FGraphicsSwapchain(const TSharedPtr<FGraphicsContext>& InContext);
 	~FGraphicsSwapchain();
 
 	DELETE_COPY_AND_MOVE(FGraphicsSwapchain);
 
 public:
-	void Initialize(const FGraphicsSwapchainDesc& InSwapchainDesc);
+	void Initialize(const FGraphicsSwapchainDesc& InDescription);
 	void Destroy();
 
 	void Resize();
 
-	[[nodiscard]] bool8 AcquireNextImageIndex(VkSemaphore SignalSemaphore);
-	[[nodiscard]] bool8 Present(VkSemaphore WaitSemaphore) const;
+	[[nodiscard]] bool8 AcquireNextImageIndex(VkSemaphore SignalSemaphore = VK_NULL_HANDLE);
+	[[nodiscard]] bool8 Present(const TSharedPtr<FGraphicsCommandQueue>& CommandQueue, VkSemaphore WaitSemaphore = VK_NULL_HANDLE) const;
 
 	[[nodiscard]] FGraphicsBackBuffer GetBackBuffer(uint32 Index) const;
+	[[nodiscard]] FGraphicsBackBuffer GetCurrentBackBuffer() const;
 
 public:
 	[[nodiscard]] uint32 GetCurrentImageIndex() const { return CurrentImageIndex; }
 	[[nodiscard]] VkExtent2D GetExtent() const { return Extent; }
-	[[nodiscard]] VkFormat GetFormat() const { return Description.BackBufferFormat; }
 
 private:
 	VkSwapchainKHR RecreateSwapchain(VkSwapchainKHR OldSwapchain = VK_NULL_HANDLE);
-	void AcquireBackBuffers();
-	void ReleaseBackBuffers();
 	void DestroySwapchain() const;
 
+	void AcquireBackBuffers();
+	void ReleaseBackBuffers();
+
 private:
-	TSharedPtr<FGraphicsContext> GraphicsContext;
-	TSharedPtr<FGraphicsDevice> GraphicsDevice;
+	TSharedPtr<FGraphicsContext> Context;
+
 	FGraphicsSwapchainDesc Description = {};
 
-	VkSwapchainKHR Swapchain = VK_NULL_HANDLE;
-
 	VkExtent2D Extent = {};
+	VkSwapchainKHR Swapchain = VK_NULL_HANDLE;
 	TVector<FGraphicsBackBuffer> BackBuffers;
 
 	uint32 CurrentImageIndex = 0;

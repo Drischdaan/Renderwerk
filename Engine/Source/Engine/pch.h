@@ -22,6 +22,10 @@
 #include <xutility>
 
 #include <Windows.h>
+// Microsoft what is this shit??????????
+#ifdef CreateSemaphore
+#	undef CreateSemaphore
+#endif
 
 #include "Renderwerk/Core/CoreMinimal.h"
 #include "Renderwerk/Debug/Profiling.h"

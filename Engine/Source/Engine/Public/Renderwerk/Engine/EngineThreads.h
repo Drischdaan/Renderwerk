@@ -49,6 +49,9 @@ public:
 
 	DELETE_COPY_AND_MOVE(FRenderThread);
 
+public:
+	[[nodiscard]] TSharedPtr<FRenderer> GetRenderer() const { return Renderer; }
+
 private:
 	void Initialize() override;
 	void Shutdown() override;

@@ -2,16 +2,34 @@
 
 #include "Renderwerk/Graphics/GraphicsSwapchain.h"
 
-FGraphicsSwapchain::FGraphicsSwapchain(const TSharedPtr<FGraphicsContext>& InGraphicsContext, const TSharedPtr<FGraphicsDevice>& InGraphicsDevice)
-	: GraphicsContext(InGraphicsContext), GraphicsDevice(InGraphicsDevice)
+#include "Renderwerk/Graphics/GraphicsCommandQueue.h"
+
+FGraphicsSwapchain::FGraphicsSwapchain(const TSharedPtr<FGraphicsContext>& InContext)
+	: Context(InContext)
 {
 }
 
 FGraphicsSwapchain::~FGraphicsSwapchain() = default;
 
-void FGraphicsSwapchain::Initialize(const FGraphicsSwapchainDesc& InSwapchainDesc)
+void FGraphicsSwapchain::Initialize(const FGraphicsSwapchainDesc& InDescription)
 {
-	Description = InSwapchainDesc;
+	Description = InDescription;
+
+	VkSurfaceCapabilitiesKHR SurfaceCapabilities;
+	const VkResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Context->PhysicalDevice, Description.Surface, &SurfaceCapabilities);
+	ASSERT(Result == VK_SUCCESS, "Failed to get surface capabilities");
+
+	if (Description.BufferCount < SurfaceCapabilities.minImageCount)
+	{
+		RW_LOG(LogGraphics, Warning, "Buffer count is less than the minimum required by the surface. New buffer count: {}", SurfaceCapabilities.minImageCount);
+		Description.BufferCount = SurfaceCapabilities.minImageCount;
+	}
+	else if (Description.BufferCount > SurfaceCapabilities.maxImageCount)
+	{
+		RW_LOG(LogGraphics, Warning, "Buffer count is greater than the maximum allowed by the surface. New buffer count: {}", SurfaceCapabilities.maxImageCount);
+		Description.BufferCount = SurfaceCapabilities.maxImageCount;
+	}
+
 	Swapchain = RecreateSwapchain();
 	AcquireBackBuffers();
 }
@@ -33,57 +51,58 @@ void FGraphicsSwapchain::Resize()
 bool8 FGraphicsSwapchain::AcquireNextImageIndex(const VkSemaphore SignalSemaphore)
 {
 	PROFILE_FUNCTION();
-	const FVulkanResult Result = vkAcquireNextImageKHR(GraphicsDevice->GetHandle(), Swapchain, UINT64_MAX, SignalSemaphore, VK_NULL_HANDLE, &CurrentImageIndex);
+	const VkResult Result = vkAcquireNextImageKHR(Context->Device, Swapchain, UINT64_MAX, SignalSemaphore, VK_NULL_HANDLE, &CurrentImageIndex);
 	if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		return false;
-	VERIFY(Result == VK_SUCCESS, "Failed to acquire image index");
+	ASSERT(Result == VK_SUCCESS, "Failed to acquire next image index");
 	return true;
 }
 
-bool8 FGraphicsSwapchain::Present(const VkSemaphore WaitSemaphore) const
+bool8 FGraphicsSwapchain::Present(const TSharedPtr<FGraphicsCommandQueue>& CommandQueue, const VkSemaphore WaitSemaphore) const
 {
 	PROFILE_FUNCTION();
-	VkPresentInfoKHR PresentInfo = {};
-	PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	PresentInfo.pNext = nullptr;
-	PresentInfo.waitSemaphoreCount = 1;
-	PresentInfo.pWaitSemaphores = &WaitSemaphore;
+	VkPresentInfoKHR PresentInfo = Vulkan::CreateStructure<VkPresentInfoKHR>();
 	PresentInfo.swapchainCount = 1;
 	PresentInfo.pSwapchains = &Swapchain;
 	PresentInfo.pImageIndices = &CurrentImageIndex;
-	const FVulkanResult Result = vkQueuePresentKHR(GraphicsDevice->GetPresentQueue(), &PresentInfo);
+	PresentInfo.waitSemaphoreCount = WaitSemaphore != VK_NULL_HANDLE;
+	PresentInfo.pWaitSemaphores = &WaitSemaphore;
+
+	const VkResult Result = vkQueuePresentKHR(CommandQueue->GetHandle(), &PresentInfo);
 	if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		return false;
-	VERIFY(Result == VK_SUCCESS, "Failed to present image");
+	ASSERT(Result == VK_SUCCESS, "Failed to present");
 	return true;
 }
 
 FGraphicsBackBuffer FGraphicsSwapchain::GetBackBuffer(const uint32 Index) const
 {
-	ASSERT(Index < BackBuffers.size(), "Index out of range");
-	return BackBuffers.at(Index);
+	return BackBuffers[Index];
+}
+
+FGraphicsBackBuffer FGraphicsSwapchain::GetCurrentBackBuffer() const
+{
+	return GetBackBuffer(CurrentImageIndex);
 }
 
 VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwapchain)
 {
-	const FGraphicsSurfaceProperties SurfaceProperties = GraphicsDevice->GetAdapter()->GetSurfaceProperties(Description.Surface);
+	PROFILE_FUNCTION();
+	VkSurfaceCapabilitiesKHR SurfaceCapabilities;
+	VkResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Context->PhysicalDevice, Description.Surface, &SurfaceCapabilities);
+	ASSERT(Result == VK_SUCCESS, "Failed to get surface capabilities");
 
-	VkSwapchainCreateInfoKHR SwapchainCreateInfo;
-	SwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	SwapchainCreateInfo.pNext = nullptr;
-	SwapchainCreateInfo.flags = 0;
+	VkSwapchainCreateInfoKHR SwapchainCreateInfo = Vulkan::CreateStructure<VkSwapchainCreateInfoKHR>();
 	SwapchainCreateInfo.surface = Description.Surface;
-	SwapchainCreateInfo.minImageCount = Description.BackBufferCount;
-	SwapchainCreateInfo.imageFormat = Description.BackBufferFormat;
+	SwapchainCreateInfo.minImageCount = Description.BufferCount;
+	SwapchainCreateInfo.imageFormat = Description.Format;
 	SwapchainCreateInfo.imageColorSpace = Description.ColorSpace;
-	SwapchainCreateInfo.imageExtent = SurfaceProperties.Capabilities.currentExtent;
+	SwapchainCreateInfo.imageExtent = SurfaceCapabilities.currentExtent;
 	SwapchainCreateInfo.imageArrayLayers = 1;
 	SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	SwapchainCreateInfo.preTransform = SurfaceProperties.Capabilities.currentTransform;
+	SwapchainCreateInfo.preTransform = SurfaceCapabilities.currentTransform;
 	SwapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	SwapchainCreateInfo.queueFamilyIndexCount = 0;
-	SwapchainCreateInfo.pQueueFamilyIndices = nullptr;
 	SwapchainCreateInfo.presentMode = Description.PresentMode;
 	SwapchainCreateInfo.clipped = VK_TRUE;
 	SwapchainCreateInfo.oldSwapchain = OldSwapchain;
@@ -91,55 +110,57 @@ VkSwapchainKHR FGraphicsSwapchain::RecreateSwapchain(const VkSwapchainKHR OldSwa
 	Extent = SwapchainCreateInfo.imageExtent;
 
 	VkSwapchainKHR NewSwapchain = VK_NULL_HANDLE;
-	const FVulkanResult Result = vkCreateSwapchainKHR(GraphicsDevice->GetHandle(), &SwapchainCreateInfo, GraphicsContext->GetAllocator(), &NewSwapchain);
+	Result = vkCreateSwapchainKHR(Context->Device, &SwapchainCreateInfo, Context->Allocator, &NewSwapchain);
 	ASSERT(Result == VK_SUCCESS, "Failed to create swapchain");
-
 	if (OldSwapchain != VK_NULL_HANDLE)
 		DestroySwapchain();
+	RW_LOG(LogGraphics, Trace, "Recreated swapchain with {} buffers (Format: {}, PresentMode: {}, Size: {}x{})", Description.BufferCount,
+	       GetEnumValueName(Description.Format),
+	       GetEnumValueName(Description.PresentMode), Extent.width, Extent.height);
 	return NewSwapchain;
+}
+
+void FGraphicsSwapchain::DestroySwapchain() const
+{
+	vkDestroySwapchainKHR(Context->Device, Swapchain, Context->Allocator);
 }
 
 void FGraphicsSwapchain::AcquireBackBuffers()
 {
-	uint32 BackBufferCount = 0;
-	FVulkanResult Result = vkGetSwapchainImagesKHR(GraphicsDevice->GetHandle(), Swapchain, &BackBufferCount, nullptr);
+	PROFILE_FUNCTION();
+	uint32 ImageCount = 0;
+	VkResult Result = vkGetSwapchainImagesKHR(Context->Device, Swapchain, &ImageCount, nullptr);
 	ASSERT(Result == VK_SUCCESS, "Failed to get swapchain images");
-	TVector<VkImage> SwapchainImages(BackBufferCount);
-	Result = vkGetSwapchainImagesKHR(GraphicsDevice->GetHandle(), Swapchain, &BackBufferCount, SwapchainImages.data());
+	TVector<VkImage> Images(ImageCount);
+	Result = vkGetSwapchainImagesKHR(Context->Device, Swapchain, &ImageCount, Images.data());
 	ASSERT(Result == VK_SUCCESS, "Failed to get swapchain images");
-	BackBuffers.resize(BackBufferCount);
-	for (uint32 Index = 0; Index < BackBufferCount; ++Index)
+	BackBuffers.resize(ImageCount);
+	for (uint32 Index = 0; Index < ImageCount; ++Index)
 	{
-		BackBuffers[Index].Image = SwapchainImages[Index];
+		BackBuffers[Index].Image = Images[Index];
 
-		VkImageViewCreateInfo ImageViewCreateInfo = {};
-		ImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		ImageViewCreateInfo.image = BackBuffers[Index].Image;
-		ImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		ImageViewCreateInfo.format = Description.BackBufferFormat;
-		ImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		ImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-		ImageViewCreateInfo.subresourceRange.levelCount = 1;
-		ImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-		ImageViewCreateInfo.subresourceRange.layerCount = 1;
+		VkImageViewCreateInfo ImageViewInfo = Vulkan::CreateStructure<VkImageViewCreateInfo>();
+		ImageViewInfo.image = BackBuffers[Index].Image;
+		ImageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		ImageViewInfo.format = Description.Format;
+		ImageViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ImageViewInfo.subresourceRange.baseMipLevel = 0;
+		ImageViewInfo.subresourceRange.levelCount = 1;
+		ImageViewInfo.subresourceRange.baseArrayLayer = 0;
+		ImageViewInfo.subresourceRange.layerCount = 1;
 
-		Result = vkCreateImageView(GraphicsDevice->GetHandle(), &ImageViewCreateInfo, GraphicsContext->GetAllocator(), &BackBuffers[Index].ImageView);
+		Result = vkCreateImageView(Context->Device, &ImageViewInfo, Context->Allocator, &BackBuffers[Index].ImageView);
 		ASSERT(Result == VK_SUCCESS, "Failed to create image view");
 	}
 }
 
 void FGraphicsSwapchain::ReleaseBackBuffers()
 {
-	for (const FGraphicsBackBuffer& BackBufferView : BackBuffers)
-		vkDestroyImageView(GraphicsDevice->GetHandle(), BackBufferView.ImageView, GraphicsContext->GetAllocator());
+	for (const FGraphicsBackBuffer& BackBuffer : BackBuffers)
+		vkDestroyImageView(Context->Device, BackBuffer.ImageView, Context->Allocator);
 	BackBuffers.clear();
-}
-
-void FGraphicsSwapchain::DestroySwapchain() const
-{
-	vkDestroySwapchainKHR(GraphicsDevice->GetHandle(), Swapchain, GraphicsContext->GetAllocator());
 }

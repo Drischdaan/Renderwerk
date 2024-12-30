@@ -2,45 +2,50 @@
 
 #include "Renderwerk/Graphics/GraphicsCommon.h"
 
-#include "Renderwerk/Graphics/GraphicsAdapter.h"
-
 class ENGINE_API FGraphicsDevice
 {
 public:
-	FGraphicsDevice();
+	FGraphicsDevice(const TSharedPtr<FGraphicsContext>& InContext, const TSharedPtr<FGraphicsAdapter>& InAdapter);
 	~FGraphicsDevice();
 
-	DEFINE_DEFAULT_COPY_AND_MOVE(FGraphicsDevice);
+	DELETE_COPY_AND_MOVE(FGraphicsDevice);
 
 public:
-	void Initialize(const TSharedPtr<FGraphicsContext>& InGraphicsContext, const TSharedPtr<FGraphicsAdapter>& InGraphicsAdapter);
-	void Destroy() const;
+	void Initialize(const TSpan<const char*>& RequiredExtensions, const void* NextChain = nullptr);
+	void Destroy();
 
 	void WaitForIdle() const;
 
+	[[nodiscard]] TSharedPtr<FGraphicsSwapchain> CreateSwapchain();
+
+	[[nodiscard]] TSharedPtr<FGraphicsCommandPool> CreateCommandPool();
+
+	[[nodiscard]] VkSemaphore CreateSemaphore() const;
+	void DestroySemaphore(VkSemaphore Semaphore) const;
+
+	[[nodiscard]] VkFence CreateFence(VkFenceCreateFlags Flags = VK_FENCE_CREATE_SIGNALED_BIT) const;
+	void DestroyFence(VkFence Fence) const;
+
+	[[nodiscard]] TSharedPtr<FGraphicsBuffer> CreateBuffer();
+	[[nodiscard]] TSharedPtr<FGraphicsRenderTarget> CreateRenderTarget();
+
 public:
-	[[nodiscard]] VkDevice GetHandle() const { return Device; }
+	[[nodiscard]] VkDevice GetHandle() const { return Context->Device; }
 
-	[[nodiscard]] TSharedPtr<FGraphicsAdapter> GetAdapter() const { return GraphicsAdapter; }
+	[[nodiscard]] TSharedPtr<FGraphicsAdapter> GetGraphicsAdapter() const { return GraphicsAdapter; }
 
-	[[nodiscard]] VkQueue GetGraphicsQueue() const { return GraphicsQueue; }
-	[[nodiscard]] VkQueue GetPresentQueue() const { return PresentQueue; }
-	[[nodiscard]] VkQueue GetComputeQueue() const { return ComputeQueue; }
-	[[nodiscard]] VkQueue GetTransferQueue() const { return TransferQueue; }
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> GetGraphicsQueue() const { return GraphicsCommandQueue; }
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> GetPresentQueue() const { return PresentCommandQueue; }
 
 private:
-	void CreateDevice();
-	void AcquireQueues();
-	VkQueue GetQueue(const FGraphicsQueueMetadata& Metadata) const;
+	[[nodiscard]] TSharedPtr<FGraphicsCommandQueue> CreateQueue(EGraphicsQueueType Type) const;
 
 private:
-	TSharedPtr<FGraphicsContext> GraphicsContext = nullptr;
-	TSharedPtr<FGraphicsAdapter> GraphicsAdapter = nullptr;
+	TSharedPtr<FGraphicsContext> Context;
+	TSharedPtr<FGraphicsAdapter> GraphicsAdapter;
 
-	VkDevice Device = VK_NULL_HANDLE;
-
-	VkQueue GraphicsQueue = VK_NULL_HANDLE;
-	VkQueue PresentQueue = VK_NULL_HANDLE;
-	VkQueue ComputeQueue = VK_NULL_HANDLE;
-	VkQueue TransferQueue = VK_NULL_HANDLE;
+	TSharedPtr<FGraphicsCommandQueue> GraphicsCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> PresentCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> ComputeCommandQueue;
+	TSharedPtr<FGraphicsCommandQueue> TransferCommandQueue;
 };

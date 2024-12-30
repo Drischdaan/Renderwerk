@@ -2,24 +2,44 @@
 
 #include "Renderwerk/Graphics/GraphicsCommon.h"
 
-struct ENGINE_API FGraphicsBuffer
+enum class ENGINE_API EGraphicsBufferUsage : uint8
+{
+	None = 0,
+	Vertex,
+	Index,
+	Storage,
+};
+
+struct ENGINE_API FGraphicsBufferDesc
+{
+	size64 Size;
+	EGraphicsBufferUsage Usage;
+	EGraphicsMemoryUsage MemoryUsage = EGraphicsMemoryUsage::Auto;
+};
+
+class ENGINE_API FGraphicsBuffer
 {
 public:
-	FGraphicsBuffer() = default;
-	FGraphicsBuffer(VkBuffer Buffer, VmaAllocation Allocation, const VmaAllocationInfo& AllocationInfo);
-	~FGraphicsBuffer() = default;
+	FGraphicsBuffer(const TSharedPtr<FGraphicsContext>& InContext);
+	~FGraphicsBuffer();
 
-	DEFINE_DEFAULT_COPY_AND_MOVE(FGraphicsBuffer);
+	DELETE_COPY_AND_MOVE(FGraphicsBuffer);
+
+public:
+	void Initialize(const FGraphicsBufferDesc& InDescription);
+	void Destroy() const;
+
+	void CopyData(const void* Data, size64 Size) const;
 
 public:
 	[[nodiscard]] VkBuffer GetHandle() const { return Buffer; }
-	[[nodiscard]] VkDeviceAddress GetDeviceAddress() const { return DeviceAddress; }
 
 private:
+	TSharedPtr<FGraphicsContext> Context;
+
+	FGraphicsBufferDesc Description = {};
+
 	VkBuffer Buffer = VK_NULL_HANDLE;
 	VmaAllocation Allocation = VK_NULL_HANDLE;
 	VmaAllocationInfo AllocationInfo = {};
-	VkDeviceAddress DeviceAddress = 0;
-
-	friend class ENGINE_API FGraphicsResourceAllocator;
 };

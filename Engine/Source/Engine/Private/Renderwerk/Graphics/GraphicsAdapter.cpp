@@ -2,25 +2,10 @@
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
 
+#include "Renderwerk/Graphics/VulkanUtility.h"
+
 namespace
 {
-	EGraphicsAdapterType MapAdapterType(const VkPhysicalDeviceType& InType)
-	{
-		switch (InType)
-		{
-		case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-			return EGraphicsAdapterType::Discrete;
-		case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-			return EGraphicsAdapterType::Integrated;
-		case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-			return EGraphicsAdapterType::Virtual;
-		case VK_PHYSICAL_DEVICE_TYPE_CPU:
-			return EGraphicsAdapterType::Software;
-		default:
-			return EGraphicsAdapterType::None;
-		}
-	}
-
 	EGraphicsAdapterVendor MapAdapterVendor(const uint32& InVendorID)
 	{
 		switch (InVendorID)
@@ -53,132 +38,33 @@ FString GetVendorString(const EGraphicsAdapterVendor Vendor)
 	}
 }
 
-FGraphicsAdapter::FGraphicsAdapter() = default;
+FGraphicsAdapter::FGraphicsAdapter(const TSharedPtr<FGraphicsContext>& InContext, const VkPhysicalDevice InPhysicalDevice)
+	: Context(InContext), PhysicalDevice(InPhysicalDevice)
+{
+}
 
 FGraphicsAdapter::~FGraphicsAdapter() = default;
 
-void FGraphicsAdapter::Initialize(const TSharedPtr<FGraphicsContext>& InGraphicsContext, const VkPhysicalDevice& InPhysicalDevice, const VkSurfaceKHR& Surface)
+void FGraphicsAdapter::Initialize(const VkSurfaceKHR Surface)
 {
-	GraphicsContext = InGraphicsContext;
-	PhysicalDevice = InPhysicalDevice;
-	AcquireProperties();
-	AcquireExtensionsAndLayers();
-	AcquireQueueMetadata(Surface);
-}
+	VkPhysicalDeviceProperties DeviceProperties = {};
+	vkGetPhysicalDeviceProperties(PhysicalDevice, &DeviceProperties);
 
-bool8 FGraphicsAdapter::SupportsExtension(const char* ExtensionName)
-{
-	return std::ranges::any_of(SupportedExtensions, [ExtensionName](const VkExtensionProperties& Extension)
-	{
-		return strcmp(Extension.extensionName, ExtensionName) == 0;
-	});
-}
+	Properties.Name = DeviceProperties.deviceName;
+	Properties.Type = static_cast<EGraphicsAdapterType>(DeviceProperties.deviceType);
+	Properties.Vendor = MapAdapterVendor(DeviceProperties.vendorID);
+	Properties.ApiVersion = DeviceProperties.apiVersion;
+	Properties.DriverVersion = DeviceProperties.driverVersion;
 
-bool8 FGraphicsAdapter::SupportsLayer(const char* LayerName)
-{
-	return std::ranges::any_of(SupportedLayers, [LayerName](const VkLayerProperties& Layer)
-	{
-		return strcmp(Layer.layerName, LayerName) == 0;
-	});
-}
+	Layers = VulkanUtility::GetPhysicalDeviceLayers(PhysicalDevice);
+	Extensions = VulkanUtility::GetPhysicalDeviceExtensions(PhysicalDevice);
 
-FGraphicsQueueMetadata FGraphicsAdapter::GetQueueMetadata(const EGraphicsQueueType QueueType) const
-{
-	return QueueMetadata.at(QueueType);
-}
-
-uint32 FGraphicsAdapter::GetQueueCountForIndex(const uint32 QueueFamilyIndex) const
-{
-	return static_cast<uint32>(std::ranges::count_if(QueueMetadata, [QueueFamilyIndex](const auto& Metadata)
-	{
-		return Metadata.second.FamilyIndex == QueueFamilyIndex;
-	}));
-}
-
-FGraphicsSurfaceProperties FGraphicsAdapter::GetSurfaceProperties(const VkSurfaceKHR& Surface) const
-{
-	FGraphicsSurfaceProperties SurfaceProperties = {};
-	FVulkanResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysicalDevice, Surface, &SurfaceProperties.Capabilities);
-	ASSERT(Result == VK_SUCCESS, "Failed to get surface capabilities");
-
-	uint32 FormatCount = 0;
-	Result = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysicalDevice, Surface, &FormatCount, nullptr);
-	ASSERT(Result == VK_SUCCESS, "Failed to get surface formats");
-	SurfaceProperties.Formats.resize(FormatCount);
-	Result = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysicalDevice, Surface, &FormatCount, SurfaceProperties.Formats.data());
-	ASSERT(Result == VK_SUCCESS, "Failed to get surface formats");
-
-	uint32 PresentModeCount = 0;
-	Result = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysicalDevice, Surface, &PresentModeCount, nullptr);
-	ASSERT(Result == VK_SUCCESS, "Failed to get present modes");
-	SurfaceProperties.PresentModes.resize(PresentModeCount);
-	Result = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysicalDevice, Surface, &PresentModeCount, SurfaceProperties.PresentModes.data());
-	ASSERT(Result == VK_SUCCESS, "Failed to get present modes");
-	return SurfaceProperties;
-}
-
-FString FGraphicsAdapter::GetDriverVersionString() const
-{
-	FString DriverVersionString;
-	switch (Vendor)
-	{
-	case EGraphicsAdapterVendor::NVIDIA:
-		DriverVersionString = std::format("{}.{}", (DriverVersion >> 22) & 0x3ff, (DriverVersion >> 14) & 0x0ff);
-		break;
-	case EGraphicsAdapterVendor::Intel:
-		DriverVersionString = std::format("{}.{}", DriverVersion >> 14, DriverVersion & 0x3fff);
-		break;
-	case EGraphicsAdapterVendor::Microsoft:
-	case EGraphicsAdapterVendor::AMD:
-	case EGraphicsAdapterVendor::Unknown:
-	default:
-		DriverVersionString = std::format("{}.{}.{}", VK_API_VERSION_MAJOR(DriverVersion), VK_API_VERSION_MAJOR(DriverVersion), VK_API_VERSION_MAJOR(DriverVersion));
-		break;
-	}
-	return DriverVersionString;
-}
-
-void FGraphicsAdapter::AcquireProperties()
-{
-	VkPhysicalDeviceProperties Properties;
-	vkGetPhysicalDeviceProperties(PhysicalDevice, &Properties);
-	Name = Properties.deviceName;
-	Type = MapAdapterType(Properties.deviceType);
-	Vendor = MapAdapterVendor(Properties.vendorID);
-	DriverVersion = Properties.driverVersion;
-	ApiVersion = Properties.apiVersion;
-}
-
-void FGraphicsAdapter::AcquireExtensionsAndLayers()
-{
-	uint32 ExtensionCount = 0;
-	FVulkanResult Result = vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, nullptr);
-	ASSERT(Result == VK_SUCCESS, "Failed to enumerate device extension properties");
-	SupportedExtensions.resize(ExtensionCount);
-	Result = vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, SupportedExtensions.data());
-	ASSERT(Result == VK_SUCCESS, "Failed to enumerate device extension properties");
-
-	uint32 LayerCount = 0;
-	Result = vkEnumerateDeviceLayerProperties(PhysicalDevice, &LayerCount, nullptr);
-	ASSERT(Result == VK_SUCCESS, "Failed to enumerate device layer properties");
-	SupportedLayers.resize(LayerCount);
-	Result = vkEnumerateDeviceLayerProperties(PhysicalDevice, &LayerCount, SupportedLayers.data());
-	ASSERT(Result == VK_SUCCESS, "Failed to enumerate device layer properties");
-}
-
-void FGraphicsAdapter::AcquireQueueMetadata(const VkSurfaceKHR& Surface)
-{
-	uint32 QueueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &QueueFamilyCount, nullptr);
-	TVector<VkQueueFamilyProperties> QueueFamilyProperties(QueueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &QueueFamilyCount, QueueFamilyProperties.data());
-
-	constexpr uint8 BestTransferScore = 0;
-	for (uint32 Index = 0; Index < QueueFamilyCount; ++Index)
+	const TVector<VkQueueFamilyProperties> QueueFamilyProperties = VulkanUtility::GetQueueFamilyProperties(PhysicalDevice);
+	uint8 BestTransferScore = 0;
+	for (uint32 Index = 0; Index < static_cast<uint32>(QueueFamilyProperties.size()); ++Index)
 	{
 		uint8 CurrentTransferScore = 0;
 		const VkQueueFamilyProperties QueueFamily = QueueFamilyProperties[Index];
-
 		if (QueueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && !QueueMetadata.contains(EGraphicsQueueType::Graphics))
 		{
 			FGraphicsQueueMetadata GraphicsQueueMetadata = {};
@@ -200,7 +86,6 @@ void FGraphicsAdapter::AcquireQueueMetadata(const VkSurfaceKHR& Surface)
 				}
 			}
 		}
-
 		if (QueueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
 			FGraphicsQueueMetadata ComputeQueueMetadata = {};
@@ -209,7 +94,6 @@ void FGraphicsAdapter::AcquireQueueMetadata(const VkSurfaceKHR& Surface)
 			QueueMetadata.insert_or_assign(EGraphicsQueueType::Compute, ComputeQueueMetadata);
 			++CurrentTransferScore;
 		}
-
 		if (QueueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
 			if (CurrentTransferScore <= BestTransferScore)
@@ -218,21 +102,70 @@ void FGraphicsAdapter::AcquireQueueMetadata(const VkSurfaceKHR& Surface)
 				TransferQueueMetadata.FamilyIndex = Index;
 				TransferQueueMetadata.QueueIndex = CurrentTransferScore;
 				QueueMetadata.insert_or_assign(EGraphicsQueueType::Transfer, TransferQueueMetadata);
+				BestTransferScore = CurrentTransferScore;
 			}
 		}
 	}
+}
 
-	RW_LOG(LogGraphics, Info, "|   Type   | Family Index | Queue Index |");
-	RW_LOG(LogGraphics, Info, "|----------|--------------|-------------|");
-	for (const auto& [Type, Metadata] : QueueMetadata)
+bool8 FGraphicsAdapter::IsLayerSupported(FStringView LayerName) const
+{
+	return std::ranges::any_of(Layers, [LayerName](const FString& Layer)
 	{
-		FString QueueName = FString(GetEnumValueName(Type));
-		const size64 Padding = 8 - QueueName.length();
-		if (Padding > 0)
-		{
-			for (size64 Index = 0; Index < Padding; ++Index)
-				QueueName += " ";
-		}
-		RW_LOG(LogGraphics, Info, "| {} |       {}      |      {}      |", QueueName, Metadata.FamilyIndex, Metadata.QueueIndex);
+		return LayerName == Layer;
+	});
+}
+
+bool8 FGraphicsAdapter::IsExtensionSupported(FStringView ExtensionName) const
+{
+	return std::ranges::any_of(Extensions, [ExtensionName](const FString& Extension)
+	{
+		return ExtensionName == Extension;
+	});
+}
+
+FString FGraphicsAdapter::GetDriverVersionString() const
+{
+	FString DriverVersionString;
+	switch (Properties.Vendor)
+	{
+	case EGraphicsAdapterVendor::NVIDIA:
+		DriverVersionString = std::format("{}.{}", (Properties.DriverVersion >> 22) & 0x3ff, (Properties.DriverVersion >> 14) & 0x0ff);
+		break;
+	case EGraphicsAdapterVendor::Intel:
+		DriverVersionString = std::format("{}.{}", Properties.DriverVersion >> 14, Properties.DriverVersion & 0x3fff);
+		break;
+	case EGraphicsAdapterVendor::Microsoft:
+	case EGraphicsAdapterVendor::AMD:
+	case EGraphicsAdapterVendor::Unknown:
+	default:
+		DriverVersionString = std::format("{}.{}.{}", VK_API_VERSION_MAJOR(Properties.DriverVersion), VK_API_VERSION_MAJOR(Properties.DriverVersion),
+		                                  VK_API_VERSION_MAJOR(Properties.DriverVersion));
+		break;
 	}
+	return DriverVersionString;
+}
+
+FGraphicsQueueMetadata FGraphicsAdapter::GetQueueMetadata(const EGraphicsQueueType QueueType) const
+{
+	VERIFY(QueueMetadata.contains(QueueType), "Queue metadata not found");
+	return QueueMetadata.at(QueueType);
+}
+
+uint32 FGraphicsAdapter::GetQueueCountForIndex(uint32 QueueFamilyIndex) const
+{
+	return static_cast<uint32>(std::ranges::count_if(QueueMetadata, [QueueFamilyIndex](const auto& Metadata)
+	{
+		return Metadata.second.FamilyIndex == QueueFamilyIndex;
+	}));
+}
+
+FGraphicsSurfaceCapabilities FGraphicsAdapter::GetSurfaceCapabilities(const VkSurfaceKHR Surface) const
+{
+	FGraphicsSurfaceCapabilities SurfaceCapabilities = {};
+	const VkResult Result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysicalDevice, Surface, &SurfaceCapabilities.Capabilities);
+	VERIFY(Result == VK_SUCCESS, "Failed to get surface capabilities");
+	SurfaceCapabilities.Formats = VulkanUtility::GetSurfaceFormats(PhysicalDevice, Surface);
+	SurfaceCapabilities.PresentModes = VulkanUtility::GetPresentModes(PhysicalDevice, Surface);
+	return SurfaceCapabilities;
 }
