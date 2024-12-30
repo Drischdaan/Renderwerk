@@ -142,3 +142,8 @@ void FGraphicsApi::DeallocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& De
 	VkCommandBuffer CommandBuffers[] = {CommandBuffer->GetHandle()};
 	vkFreeCommandBuffers(Device->GetHandle(), CommandPool, _countof(CommandBuffers), CommandBuffers);
 }
+
+TSharedPtr<FGraphicsResourceAllocator> FGraphicsApi::CreateResourceAllocator(const TSharedPtr<FGraphicsDevice>& Device) const
+{
+	return MakeShared<FGraphicsResourceAllocator>(GraphicsContext, Device);
+}

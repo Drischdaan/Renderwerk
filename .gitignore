@@ -31,9 +31,10 @@ Scripts/Config/properties_preprocessed.lua
 Engine/ThirdParty/AgilitySDK/
 Engine/ThirdParty/DirectXCompiler/
 
-# Assets
-Engine/**/Assets/
-
 # Log files
 *.log
 Logs/
+
+*.spv
+
+imgui.ini

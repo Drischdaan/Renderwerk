@@ -6,6 +6,7 @@
 #include "Renderwerk/Graphics/GraphicsCommandBuffer.h"
 #include "Renderwerk/Graphics/GraphicsContext.h"
 #include "Renderwerk/Graphics/GraphicsDevice.h"
+#include "Renderwerk/Graphics/GraphicsResourceAllocator.h"
 #include "Renderwerk/Graphics/GraphicsSwapchain.h"
 
 class ENGINE_API FGraphicsApi
@@ -27,6 +28,8 @@ public:
 
 	TSharedPtr<FGraphicsCommandBuffer> AllocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, VkCommandPool CommandPool) const;
 	void DeallocateCommandBuffer(const TSharedPtr<FGraphicsDevice>& Device, VkCommandPool CommandPool, const TSharedPtr<FGraphicsCommandBuffer>& CommandBuffer) const;
+
+	TSharedPtr<FGraphicsResourceAllocator> CreateResourceAllocator(const TSharedPtr<FGraphicsDevice>& Device) const;
 
 	void SubmitQueue(VkQueue Queue, const FGraphicsFrame& Frame);
 

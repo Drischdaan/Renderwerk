@@ -36,7 +36,7 @@ void FGraphicsCommandBuffer::End() const
 void FGraphicsCommandBuffer::TransitionImageLayout(const VkImage& Image, const VkImageLayout OldLayout, const VkImageLayout NewLayout) const
 {
 	VkImageSubresourceRange SubImage;
-	SubImage.aspectMask = NewLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	SubImage.aspectMask = NewLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	SubImage.baseMipLevel = 0;
 	SubImage.levelCount = VK_REMAINING_MIP_LEVELS;
 	SubImage.baseArrayLayer = 0;
@@ -65,7 +65,7 @@ void FGraphicsCommandBuffer::TransitionImageLayout(const VkImage& Image, const V
 void FGraphicsCommandBuffer::ClearImage(const VkImage& Image, const VkImageLayout Layout, const VkClearColorValue& ClearColor) const
 {
 	VkImageSubresourceRange SubresourceRange;
-	SubresourceRange.aspectMask = Layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	SubresourceRange.aspectMask = Layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	SubresourceRange.baseMipLevel = 0;
 	SubresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	SubresourceRange.baseArrayLayer = 0;
