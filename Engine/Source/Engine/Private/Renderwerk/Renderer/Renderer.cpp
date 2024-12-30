@@ -55,9 +55,6 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 	GraphicsDevice = GraphicsBackend->CreateDevice(GraphicsAdapter);
 	GraphicsDevice->Initialize(DeviceExtensions, &Synchronization2Features);
 
-	GraphicsResourceAllocator = GraphicsApi->CreateResourceAllocator(GraphicsDevice);
-	GraphicsResourceAllocator->Initialize();
-
 	FGraphicsSwapchainDesc SwapchainDesc = {};
 	SwapchainDesc.Surface = Surface;
 	GraphicsSwapchain = GraphicsDevice->CreateSwapchain();
@@ -103,8 +100,6 @@ void FRenderer::Destroy()
 
 	GraphicsSwapchain->Destroy();
 	GraphicsSwapchain.reset();
-	GraphicsResourceAllocator->Destroy();
-	GraphicsResourceAllocator.reset();
 	GraphicsDevice->Destroy();
 	GraphicsDevice.reset();
 	GraphicsBackend->DestroySurface(Surface);
@@ -236,94 +231,4 @@ TSharedPtr<FGraphicsAdapter> FRenderer::SelectAdapter(const TSpan<const char*>& 
 		RW_LOG(LogGraphics, Info, "| {} |       {}      |      {}      |", QueueName, Metadata.FamilyIndex, Metadata.QueueIndex);
 	}
 	return GraphicsAdapter;
-}
-
-void FRenderer::SubmitImmediately(const TFunction<void(VkCommandBuffer)>& Command) const
-{
-	FVulkanResult Result = vkResetFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence);
-	VERIFY(Result == VK_SUCCESS, "Failed to reset fence");
-
-	Result = vkResetCommandBuffer(ImmediateCommandBuffer, 0);
-	VERIFY(Result == VK_SUCCESS, "Failed to reset command buffer");
-
-	VkCommandBufferBeginInfo CommandBufferBeginInfo;
-	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	CommandBufferBeginInfo.pNext = nullptr;
-	CommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	CommandBufferBeginInfo.pInheritanceInfo = nullptr;
-	Result = vkBeginCommandBuffer(ImmediateCommandBuffer, &CommandBufferBeginInfo);
-	VERIFY(Result == VK_SUCCESS, "Failed to begin command buffer");
-
-	Command(ImmediateCommandBuffer);
-
-	Result = vkEndCommandBuffer(ImmediateCommandBuffer);
-	VERIFY(Result == VK_SUCCESS, "Failed to end command buffer");
-
-	VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {};
-	CommandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-	CommandBufferSubmitInfo.pNext = nullptr;
-	CommandBufferSubmitInfo.commandBuffer = ImmediateCommandBuffer;
-
-	VkSubmitInfo2 SubmitInfo = {};
-	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-	SubmitInfo.pNext = nullptr;
-	SubmitInfo.commandBufferInfoCount = 1;
-	SubmitInfo.pCommandBufferInfos = &CommandBufferSubmitInfo;
-
-	Result = vkQueueSubmit2(GraphicsDevice->GetGraphicsQueue(), 1, &SubmitInfo, ImmediateFence);
-	VERIFY(Result == VK_SUCCESS, "Failed to submit command buffer");
-
-	Result = vkWaitForFences(GraphicsDevice->GetHandle(), 1, &ImmediateFence, VK_TRUE, UINT64_MAX);
-	VERIFY(Result == VK_SUCCESS, "Failed to wait for fence");
-}
-
-void FRenderer::CreateDepthImage()
-{
-	DepthImageFormat = VK_FORMAT_D32_SFLOAT;
-
-	VkImageCreateInfo ImageCreateInfo = {};
-	ImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	ImageCreateInfo.pNext = nullptr;
-	ImageCreateInfo.flags = 0;
-	ImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	ImageCreateInfo.format = DepthImageFormat;
-	ImageCreateInfo.extent.width = GraphicsSwapchain->GetExtent().width;
-	ImageCreateInfo.extent.height = GraphicsSwapchain->GetExtent().height;
-	ImageCreateInfo.extent.depth = 1;
-	ImageCreateInfo.mipLevels = 1;
-	ImageCreateInfo.arrayLayers = 1;
-	ImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	ImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	ImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-	VmaAllocationCreateInfo AllocationCreateInfo = {};
-	AllocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	AllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-	vmaCreateImage(GraphicsResourceAllocator->GetHandle(), &ImageCreateInfo, &AllocationCreateInfo, &DepthImage, &DepthImageAllocation, nullptr);
-
-	VkImageViewCreateInfo ImageViewCreateInfo;
-	ImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	ImageViewCreateInfo.pNext = nullptr;
-	ImageViewCreateInfo.flags = 0;
-	ImageViewCreateInfo.image = DepthImage;
-	ImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	ImageViewCreateInfo.format = DepthImageFormat;
-	ImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	ImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	ImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	ImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	ImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	ImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	ImageViewCreateInfo.subresourceRange.levelCount = 1;
-	ImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-	ImageViewCreateInfo.subresourceRange.layerCount = 1;
-
-	vkCreateImageView(GraphicsDevice->GetHandle(), &ImageViewCreateInfo, GraphicsApi->GetGraphicsContext()->GetAllocator(), &DepthImageView);
-}
-
-void FRenderer::DestroyDepthImage() const
-{
-	vkDestroyImageView(GraphicsDevice->GetHandle(), DepthImageView, GraphicsApi->GetGraphicsContext()->GetAllocator());
-	vmaDestroyImage(GraphicsResourceAllocator->GetHandle(), DepthImage, DepthImageAllocation);
 }

@@ -38,11 +38,6 @@ public:
 private:
 	TSharedPtr<FGraphicsAdapter> SelectAdapter(const TSpan<const char*>& RequiredExtensions) const;
 
-	void SubmitImmediately(const TFunction<void(VkCommandBuffer)>& Command) const;
-
-	void CreateDepthImage();
-	void DestroyDepthImage() const;
-
 private:
 	FRendererDesc Description = {};
 
