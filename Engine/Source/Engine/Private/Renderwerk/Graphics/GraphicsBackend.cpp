@@ -21,6 +21,18 @@ TSharedPtr<IGraphicsAdapter> IGraphicsBackend::GetAdapterByDeviceId(const uint32
 	return nullptr;
 }
 
+TSharedPtr<IGraphicsAdapter> IGraphicsBackend::GetSuitableAdapter(const TSharedPtr<IGraphicsWindowContext>& WindowContext)
+{
+	const TVector<TSharedPtr<IGraphicsAdapter>> GraphicsAdapters = GetAvailableAdapters();
+	for (const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter : GraphicsAdapters)
+	{
+		GraphicsAdapter->Initialize(WindowContext);
+		if (IsAdapterSuitable(GraphicsAdapter))
+			return GraphicsAdapter;
+	}
+	return nullptr;
+}
+
 TUniquePtr<IGraphicsBackend> IGraphicsBackend::Create(const EGraphicsBackendType InBackendType)
 {
 	switch (InBackendType)

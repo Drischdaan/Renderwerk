@@ -42,3 +42,12 @@ public:
 protected:
 	IGraphicsBackend* Backend;
 };
+
+enum class ENGINE_API EGraphicsQueueType : uint8
+{
+	None = 0,
+	Graphics,
+	Present,
+	Compute,
+	Transfer,
+};

@@ -17,6 +17,7 @@ public:
 	void Destroy() override;
 
 	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
+	[[nodiscard]] bool8 IsAdapterSuitable(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter) override;
 
 	[[nodiscard]] TSharedPtr<IGraphicsWindowContext> CreateWindowContext() override;
 

@@ -40,10 +40,6 @@ private:
 	TSharedPtr<IGraphicsAdapter> GetAdapter(uint32 AdapterDeviceId) const;
 
 private:
-	static TSharedPtr<IGraphicsAdapter> SelectSuitableAdapter(const TSpan<TSharedPtr<IGraphicsAdapter>>& GraphicsAdapters,
-	                                                          const TSharedPtr<IGraphicsWindowContext>& WindowContext);
-
-private:
 	FRendererDesc Description = {};
 
 	TUniquePtr<IGraphicsBackend> GraphicsBackend;

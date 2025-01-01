@@ -72,6 +72,32 @@ TVector<TSharedPtr<IGraphicsAdapter>> FDirectX12GraphicsBackend::GetAvailableAda
 	return Adapters;
 }
 
+bool8 FDirectX12GraphicsBackend::IsAdapterSuitable(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	const FDirectX12GraphicsAdapter& Adapter = GraphicsAdapter->As<FDirectX12GraphicsAdapter>();
+	if (Adapter.GetProperties().Type != EGraphicsAdapterType::Discrete)
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' is not discrete", Adapter.GetProperties().Name);
+		return false;
+	}
+	if (Adapter.GetFeatureSupport().MaxSupportedFeatureLevel() < D3D_FEATURE_LEVEL_12_0)
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' does not support feature level 12 or higher", Adapter.GetProperties().Name);
+		return false;
+	}
+	if (Adapter.GetFeatureSupport().HighestShaderModel() < D3D_SHADER_MODEL_6_8)
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' does not support shader model 6.8 or higher", Adapter.GetProperties().Name);
+		return false;
+	}
+	if (Adapter.GetFeatureSupport().MeshShaderTier() == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' does not support mesh shaders", Adapter.GetProperties().Name);
+		return false;
+	}
+	return true;
+}
+
 TSharedPtr<IGraphicsWindowContext> FDirectX12GraphicsBackend::CreateWindowContext()
 {
 	return MakeShared<FDirectX12GraphicsWindowContext>(this);

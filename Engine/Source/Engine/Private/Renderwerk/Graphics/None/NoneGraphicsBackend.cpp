@@ -23,6 +23,11 @@ TVector<TSharedPtr<IGraphicsAdapter>> FNoneGraphicsBackend::GetAvailableAdapters
 	return {};
 }
 
+bool8 FNoneGraphicsBackend::IsAdapterSuitable(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	return false;
+}
+
 TSharedPtr<IGraphicsWindowContext> FNoneGraphicsBackend::CreateWindowContext()
 {
 	return nullptr;

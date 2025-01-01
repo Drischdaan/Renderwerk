@@ -29,6 +29,8 @@ public:
 
 	[[nodiscard]] virtual TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() = 0;
 	[[nodiscard]] virtual TSharedPtr<IGraphicsAdapter> GetAdapterByDeviceId(uint32 DeviceId);
+	[[nodiscard]] virtual TSharedPtr<IGraphicsAdapter> GetSuitableAdapter(const TSharedPtr<IGraphicsWindowContext>& WindowContext);
+	[[nodiscard]] virtual bool8 IsAdapterSuitable(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter) = 0;
 
 	[[nodiscard]] virtual TSharedPtr<IGraphicsWindowContext> CreateWindowContext() = 0;
 

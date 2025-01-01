@@ -64,7 +64,7 @@ TSharedPtr<IGraphicsAdapter> FRenderer::GetAdapter(uint32 AdapterDeviceId) const
 	{
 		RW_LOG(LogRenderer, Info, "Selecting suitable adapter...");
 		TVector<TSharedPtr<IGraphicsAdapter>> GraphicsAdapters = GraphicsBackend->GetAvailableAdapters();
-		GraphicsAdapter = SelectSuitableAdapter(GraphicsAdapters, WindowContext);
+		GraphicsAdapter = GraphicsBackend->GetSuitableAdapter(WindowContext);
 		// TODO: Set device id in config system
 	}
 	else
@@ -75,7 +75,7 @@ TSharedPtr<IGraphicsAdapter> FRenderer::GetAdapter(uint32 AdapterDeviceId) const
 		{
 			RW_LOG(LogRenderer, Warning, "Adapter with DeviceId: {:#x} not found. Trying to select suitable...", AdapterDeviceId);
 			TVector<TSharedPtr<IGraphicsAdapter>> GraphicsAdapters = GraphicsBackend->GetAvailableAdapters();
-			GraphicsAdapter = SelectSuitableAdapter(GraphicsAdapters, WindowContext);
+			GraphicsAdapter = GraphicsBackend->GetSuitableAdapter(WindowContext);
 		}
 	}
 	VERIFY(GraphicsAdapter != nullptr, "Failed to select suitable adapter");
@@ -86,20 +86,4 @@ TSharedPtr<IGraphicsAdapter> FRenderer::GetAdapter(uint32 AdapterDeviceId) const
 	RW_LOG(LogRenderer, Info, "\t- Vendor: {}", GetGraphicsAdapterVendorName(Properties.Vendor));
 	RW_LOG(LogRenderer, Info, "\t- DriverVersion: {}", GraphicsAdapter->GetDriverVersionString());
 	return GraphicsAdapter;
-}
-
-TSharedPtr<IGraphicsAdapter> FRenderer::SelectSuitableAdapter(const TSpan<TSharedPtr<IGraphicsAdapter>>& GraphicsAdapters,
-                                                              const TSharedPtr<IGraphicsWindowContext>& WindowContext)
-{
-	TSharedPtr<IGraphicsAdapter> SuitableAdapter;
-	for (const TSharedPtr<IGraphicsAdapter>& Adapter : GraphicsAdapters)
-	{
-		Adapter->Initialize(WindowContext);
-		const FGraphicsAdapterProperties Properties = Adapter->GetProperties();
-		if (Properties.Type != EGraphicsAdapterType::Discrete)
-			continue;
-		SuitableAdapter = Adapter;
-		break;
-	}
-	return SuitableAdapter;
 }

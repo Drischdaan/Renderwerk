@@ -76,6 +76,22 @@ TVector<TSharedPtr<IGraphicsAdapter>> FVulkanGraphicsBackend::GetAvailableAdapte
 	return Adapters;
 }
 
+bool8 FVulkanGraphicsBackend::IsAdapterSuitable(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	const FVulkanGraphicsAdapter& VulkanAdapter = GraphicsAdapter->As<FVulkanGraphicsAdapter>();
+	if (VulkanAdapter.GetProperties().Type != EGraphicsAdapterType::Discrete)
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' is not discrete", VulkanAdapter.GetProperties().Name);
+		return false;
+	}
+	if (!VulkanAdapter.SupportsExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+	{
+		RW_LOG(LogGraphics, Trace, "Skipping adapter. '{}' does not support swapchain extension", VulkanAdapter.GetProperties().Name);
+		return false;
+	}
+	return true;
+}
+
 TSharedPtr<IGraphicsWindowContext> FVulkanGraphicsBackend::CreateWindowContext()
 {
 	return MakeShared<FVulkanGraphicsWindowContext>(this);
