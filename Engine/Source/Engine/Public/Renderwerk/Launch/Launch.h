@@ -26,7 +26,9 @@ ENGINE_API int32 LaunchEngine(const FLaunchParameters& Parameters);
  * Ensures correct engine initialization and shutdown.
  */
 #define LAUNCH_RENDERWERK() \
-	\
+	 \
+	extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; } \
+	extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\"; } \
 	ENTRYPOINT_HEADER \
 	{ \
 		FLaunchParameters Parameters = {}; \

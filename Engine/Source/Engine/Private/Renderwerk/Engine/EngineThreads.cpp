@@ -80,7 +80,7 @@ void FRenderThread::Initialize()
 
 	FRendererDesc RendererDesc = {};
 	RendererDesc.Window = GetEngine()->GetWindowManager()->Get(GetEngine()->MainWindowGuid);
-	RendererDesc.BackendType = EGraphicsBackendType::Vulkan;
+	RendererDesc.BackendType = EGraphicsBackendType::DirectX12;
 	Renderer = MakeShared<FRenderer>();
 	Renderer->Initialize(RendererDesc);
 	IEngineThread::Initialize();

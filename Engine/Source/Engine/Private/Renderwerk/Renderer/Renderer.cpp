@@ -18,7 +18,9 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 	RW_LOG(LogRenderer, Info, "Using '{}' graphics backend", GetEnumValueName(Description.BackendType));
 	Description.Window->AppendTitle(std::format(" <{}>", GetEnumValueName(Description.BackendType)).c_str());
 
-	constexpr FGraphicsBackendDesc BackendDesc = {};
+	FGraphicsBackendDesc BackendDesc = {};
+	BackendDesc.bEnableDebugging = true;
+	BackendDesc.bEnableGpuValidation = true;
 	GraphicsBackend = IGraphicsBackend::Create(Description.BackendType);
 	GraphicsBackend->Initialize(BackendDesc);
 }
