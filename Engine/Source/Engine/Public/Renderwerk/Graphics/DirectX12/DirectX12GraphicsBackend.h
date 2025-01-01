@@ -21,6 +21,8 @@ public:
 
 	[[nodiscard]] TSharedPtr<IGraphicsWindowContext> CreateWindowContext() override;
 
+	[[nodiscard]] TSharedPtr<IGraphicsDevice> CreateDevice(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter) override;
+
 public:
 	[[nodiscard]] ComPtr<IDXGIFactory7> GetFactory() const { return Factory; }
 

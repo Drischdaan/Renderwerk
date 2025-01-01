@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsBackend.h"
 
 #include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsAdapter.h"
+#include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsDevice.h"
 #include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsWindowContext.h"
 
 FDirectX12GraphicsBackend::FDirectX12GraphicsBackend()
@@ -101,4 +102,11 @@ bool8 FDirectX12GraphicsBackend::IsAdapterSuitable(const TSharedPtr<IGraphicsAda
 TSharedPtr<IGraphicsWindowContext> FDirectX12GraphicsBackend::CreateWindowContext()
 {
 	return MakeShared<FDirectX12GraphicsWindowContext>(this);
+}
+
+TSharedPtr<IGraphicsDevice> FDirectX12GraphicsBackend::CreateDevice(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	TSharedPtr<FDirectX12GraphicsDevice> Device = MakeShared<FDirectX12GraphicsDevice>(this);
+	Device->Initialize(GraphicsAdapter);
+	return Device;
 }

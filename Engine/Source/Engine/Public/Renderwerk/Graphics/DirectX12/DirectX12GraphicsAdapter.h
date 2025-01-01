@@ -17,6 +17,8 @@ public:
 	void Destroy() override;
 
 public:
+	[[nodiscard]] const ComPtr<IDXGIAdapter4>& GetHandle() const { return Adapter; }
+
 	[[nodiscard]] const CD3DX12FeatureSupport& GetFeatureSupport() const { return FeatureSupport; }
 
 private:
