@@ -137,3 +137,11 @@ FVulkanQueueMetadata FVulkanGraphicsAdapter::GetQueueMetadata(const EGraphicsQue
 {
 	return QueueMetadataMap.at(Type);
 }
+
+uint32 FVulkanGraphicsAdapter::GetQueueCountForIndex(uint32 QueueFamilyIndex) const
+{
+	return static_cast<uint32>(std::ranges::count_if(QueueMetadataMap, [QueueFamilyIndex](const auto& Metadata)
+	{
+		return Metadata.second.FamilyIndex == QueueFamilyIndex;
+	}));
+}

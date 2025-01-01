@@ -35,4 +35,22 @@ namespace Vulkan
 		Instance.flags = 0;
 		return Instance;
 	}
+
+	template <>
+	[[nodiscard]] inline VkDeviceQueueCreateInfo CreateStructure(VkDeviceQueueCreateInfo Instance)
+	{
+		Instance.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		Instance.pNext = nullptr;
+		Instance.flags = 0;
+		return Instance;
+	}
+
+	template <>
+	[[nodiscard]] inline VkDeviceCreateInfo CreateStructure(VkDeviceCreateInfo Instance)
+	{
+		Instance.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		Instance.pNext = nullptr;
+		Instance.flags = 0;
+		return Instance;
+	}
 }

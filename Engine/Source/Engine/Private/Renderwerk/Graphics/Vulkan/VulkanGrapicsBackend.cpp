@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsBackend.h"
+#include "Renderwerk/Graphics/Vulkan/VulkanGraphicsDevice.h"
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsWindowContext.h"
 
 FVulkanGraphicsBackend::FVulkanGraphicsBackend()
@@ -95,4 +96,11 @@ bool8 FVulkanGraphicsBackend::IsAdapterSuitable(const TSharedPtr<IGraphicsAdapte
 TSharedPtr<IGraphicsWindowContext> FVulkanGraphicsBackend::CreateWindowContext()
 {
 	return MakeShared<FVulkanGraphicsWindowContext>(this);
+}
+
+TSharedPtr<IGraphicsDevice> FVulkanGraphicsBackend::CreateDevice(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	TSharedPtr<FVulkanGraphicsDevice> Device = MakeShared<FVulkanGraphicsDevice>(this);
+	Device->Initialize(GraphicsAdapter);
+	return Device;
 }

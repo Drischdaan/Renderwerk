@@ -29,8 +29,11 @@ public:
 	[[nodiscard]] bool8 SupportsExtension(const FString& ExtensionName) const;
 
 	[[nodiscard]] FVulkanQueueMetadata GetQueueMetadata(EGraphicsQueueType Type) const;
+	[[nodiscard]] uint32 GetQueueCountForIndex(uint32 QueueFamilyIndex) const;
 
 public:
+	[[nodiscard]] VkPhysicalDevice GetHandle() const { return PhysicalDevice; }
+
 	[[nodiscard]] uint32 GetApiVersion() const { return ApiVersion; }
 
 private:
