@@ -16,6 +16,11 @@ public:
 	void Initialize(const TSharedPtr<IGraphicsWindowContext>& InGraphicsWindowContext) override;
 	void Destroy() override;
 
+public:
+	[[nodiscard]] const CD3DX12FeatureSupport& GetFeatureSupport() const { return FeatureSupport; }
+
 private:
 	ComPtr<IDXGIAdapter4> Adapter;
+
+	CD3DX12FeatureSupport FeatureSupport = {};
 };

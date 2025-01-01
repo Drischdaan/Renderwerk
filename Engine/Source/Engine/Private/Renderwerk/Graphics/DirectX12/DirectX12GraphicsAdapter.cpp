@@ -25,6 +25,13 @@ void FDirectX12GraphicsAdapter::Initialize(const TSharedPtr<IGraphicsWindowConte
 	Properties.Vendor = MapAdapterVendor(AdapterDesc.VendorId);
 	// DirectX 12 doesn't provide a driver version, so we need to use vendor specific APIs or the registry to get it
 	Properties.DriverVersion = AdapterDesc.DeviceId;
+
+	ComPtr<ID3D12Device> TempDevice;
+	const HRESULT DeviceResult = D3D12CreateDevice(Adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&TempDevice));
+	ASSERT(SUCCEEDED(DeviceResult), "Failed to create temp device. {}", D3D12ResultToString(DeviceResult));
+
+	FeatureSupport.Init(TempDevice.Get());
+	TempDevice.Reset();
 }
 
 void FDirectX12GraphicsAdapter::Destroy()
