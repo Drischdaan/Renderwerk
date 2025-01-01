@@ -26,4 +26,13 @@ namespace Vulkan
 		Instance.flags = 0;
 		return Instance;
 	}
+
+	template <>
+	[[nodiscard]] inline VkWin32SurfaceCreateInfoKHR CreateStructure(VkWin32SurfaceCreateInfoKHR Instance)
+	{
+		Instance.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		Instance.pNext = nullptr;
+		Instance.flags = 0;
+		return Instance;
+	}
 }

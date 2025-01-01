@@ -30,6 +30,8 @@ public:
 	[[nodiscard]] virtual TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() = 0;
 	[[nodiscard]] virtual TSharedPtr<IGraphicsAdapter> GetAdapterByDeviceId(uint32 DeviceId);
 
+	[[nodiscard]] virtual TSharedPtr<IGraphicsWindowContext> CreateWindowContext() = 0;
+
 public:
 	[[nodiscard]] EGraphicsBackendType GetBackendType() const { return BackendType; }
 

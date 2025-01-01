@@ -18,6 +18,8 @@ public:
 
 	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
 
+	[[nodiscard]] TSharedPtr<IGraphicsWindowContext> CreateWindowContext() override;
+
 public:
 	[[nodiscard]] ComPtr<IDXGIFactory7> GetFactory() const { return Factory; }
 

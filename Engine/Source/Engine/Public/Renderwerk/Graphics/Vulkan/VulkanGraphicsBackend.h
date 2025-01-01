@@ -18,6 +18,8 @@ public:
 
 	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
 
+	[[nodiscard]] TSharedPtr<IGraphicsWindowContext> CreateWindowContext() override;
+
 public:
 	[[nodiscard]] VkAllocationCallbacks* GetVulkanAllocator() const { return VulkanAllocator; }
 	[[nodiscard]] VkInstance GetVulkanInstance() const { return VulkanInstance; }

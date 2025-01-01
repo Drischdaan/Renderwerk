@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsBackend.h"
+#include "Renderwerk/Graphics/Vulkan/VulkanGraphicsWindowContext.h"
 
 FVulkanGraphicsBackend::FVulkanGraphicsBackend()
 	: IGraphicsBackend(EGraphicsBackendType::Vulkan)
@@ -70,8 +71,12 @@ TVector<TSharedPtr<IGraphicsAdapter>> FVulkanGraphicsBackend::GetAvailableAdapte
 	for (VkPhysicalDevice PhysicalDevice : PhysicalDevices)
 	{
 		TSharedPtr<FVulkanGraphicsAdapter> Adapter = MakeShared<FVulkanGraphicsAdapter>(this, PhysicalDevice);
-		Adapter->Initialize();
 		Adapters.push_back(Adapter);
 	}
 	return Adapters;
+}
+
+TSharedPtr<IGraphicsWindowContext> FVulkanGraphicsBackend::CreateWindowContext()
+{
+	return MakeShared<FVulkanGraphicsWindowContext>(this);
 }

@@ -2,3 +2,4 @@
 
 class IGraphicsBackend;
 class IGraphicsAdapter;
+class IGraphicsWindowContext;

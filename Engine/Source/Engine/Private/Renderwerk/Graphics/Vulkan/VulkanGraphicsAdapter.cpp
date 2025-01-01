@@ -31,8 +31,10 @@ FVulkanGraphicsAdapter::FVulkanGraphicsAdapter(IGraphicsBackend* InBackend, cons
 
 FVulkanGraphicsAdapter::~FVulkanGraphicsAdapter() = default;
 
-void FVulkanGraphicsAdapter::Initialize()
+void FVulkanGraphicsAdapter::Initialize(const TSharedPtr<IGraphicsWindowContext>& InGraphicsWindowContext)
 {
+	GraphicsWindowContext = InGraphicsWindowContext;
+
 	VkPhysicalDeviceProperties DeviceProperties;
 	vkGetPhysicalDeviceProperties(PhysicalDevice, &DeviceProperties);
 
@@ -47,4 +49,5 @@ void FVulkanGraphicsAdapter::Initialize()
 
 void FVulkanGraphicsAdapter::Destroy()
 {
+	GraphicsWindowContext.reset();
 }

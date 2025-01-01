@@ -11,8 +11,10 @@ FDirectX12GraphicsAdapter::FDirectX12GraphicsAdapter(IGraphicsBackend* GraphicsB
 
 FDirectX12GraphicsAdapter::~FDirectX12GraphicsAdapter() = default;
 
-void FDirectX12GraphicsAdapter::Initialize()
+void FDirectX12GraphicsAdapter::Initialize(const TSharedPtr<IGraphicsWindowContext>& InGraphicsWindowContext)
 {
+	GraphicsWindowContext = InGraphicsWindowContext;
+
 	DXGI_ADAPTER_DESC3 AdapterDesc;
 	const HRESULT Result = Adapter->GetDesc3(&AdapterDesc);
 	ASSERT(SUCCEEDED(Result), "Failed to get adapter description");
@@ -27,5 +29,6 @@ void FDirectX12GraphicsAdapter::Initialize()
 
 void FDirectX12GraphicsAdapter::Destroy()
 {
+	GraphicsWindowContext.reset();
 	Adapter.Reset();
 }

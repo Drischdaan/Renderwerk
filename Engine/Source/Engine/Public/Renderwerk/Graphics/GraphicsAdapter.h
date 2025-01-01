@@ -73,7 +73,7 @@ public:
 	DEFINE_DEFAULT_COPY_AND_MOVE(IGraphicsAdapter);
 
 public:
-	virtual void Initialize() = 0;
+	virtual void Initialize(const TSharedPtr<IGraphicsWindowContext>& InGraphicsWindowContext) = 0;
 	virtual void Destroy() = 0;
 
 public:
@@ -83,6 +83,8 @@ public:
 	[[nodiscard]] FGraphicsAdapterProperties GetProperties() const { return Properties; }
 
 protected:
+	TSharedPtr<IGraphicsWindowContext> GraphicsWindowContext;
+
 	FGraphicsAdapterProperties Properties = {};
 };
 

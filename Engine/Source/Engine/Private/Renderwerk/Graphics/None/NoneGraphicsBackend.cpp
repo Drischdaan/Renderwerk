@@ -22,3 +22,8 @@ TVector<TSharedPtr<IGraphicsAdapter>> FNoneGraphicsBackend::GetAvailableAdapters
 {
 	return {};
 }
+
+TSharedPtr<IGraphicsWindowContext> FNoneGraphicsBackend::CreateWindowContext()
+{
+	return nullptr;
+}

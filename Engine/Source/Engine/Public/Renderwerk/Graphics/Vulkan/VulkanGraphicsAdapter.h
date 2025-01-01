@@ -15,7 +15,7 @@ public:
 	DEFINE_DEFAULT_COPY_AND_MOVE(FVulkanGraphicsAdapter);
 
 public:
-	void Initialize() override;
+	void Initialize(const TSharedPtr<IGraphicsWindowContext>& InGraphicsWindowContext) override;
 	void Destroy() override;
 
 public:
