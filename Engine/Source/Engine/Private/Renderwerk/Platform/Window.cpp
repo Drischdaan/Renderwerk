@@ -51,6 +51,17 @@ void FWindow::Hide() const
 	ShowWindow(WindowHandle, SW_HIDE);
 }
 
+void FWindow::SetTitle(const FString& InTitle)
+{
+	State.Title = InTitle;
+	SetWindowText(WindowHandle, State.Title.c_str());
+}
+
+void FWindow::AppendTitle(const FString& InTitle)
+{
+	SetTitle(State.Title + InTitle);
+}
+
 void FWindow::SignalCloseCondition()
 {
 	CloseCondition.notify_all();

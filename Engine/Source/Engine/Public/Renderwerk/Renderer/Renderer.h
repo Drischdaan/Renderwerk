@@ -2,7 +2,9 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
-class FGraphicsBackend;
+#include "Renderwerk/Graphics/GraphicsCommon.h"
+
+#include "Renderwerk/Graphics/GraphicsBackend.h"
 
 DECLARE_LOG_CHANNEL(LogRenderer);
 
@@ -14,6 +16,7 @@ enum : uint8
 struct ENGINE_API FRendererDesc
 {
 	TSharedPtr<FWindow> Window;
+	EGraphicsBackendType BackendType = EGraphicsBackendType::None;
 };
 
 class ENGINE_API FRenderer
@@ -35,4 +38,6 @@ public:
 
 private:
 	FRendererDesc Description = {};
+
+	TUniquePtr<IGraphicsBackend> GraphicsBackend;
 };

@@ -68,6 +68,9 @@ public:
 	void Show() const;
 	void Hide() const;
 
+	void SetTitle(const FString& InTitle);
+	void AppendTitle(const FString& InTitle);
+
 	void SignalCloseCondition();
 
 public:
