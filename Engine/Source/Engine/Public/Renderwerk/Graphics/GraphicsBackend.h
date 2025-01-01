@@ -34,6 +34,8 @@ public:
 
 	[[nodiscard]] virtual TSharedPtr<IGraphicsWindowContext> CreateWindowContext() = 0;
 
+	[[nodiscard]] virtual TSharedPtr<IGraphicsDevice> CreateDevice(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter) = 0;
+
 public:
 	[[nodiscard]] EGraphicsBackendType GetBackendType() const { return BackendType; }
 

@@ -44,4 +44,5 @@ private:
 
 	TUniquePtr<IGraphicsBackend> GraphicsBackend;
 	TSharedPtr<IGraphicsWindowContext> WindowContext;
+	TSharedPtr<IGraphicsDevice> GraphicsDevice;
 };

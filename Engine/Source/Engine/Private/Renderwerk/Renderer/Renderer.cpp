@@ -4,6 +4,7 @@
 
 #include "Renderwerk/Graphics/GraphicsAdapter.h"
 #include "Renderwerk/Graphics/GraphicsBackend.h"
+#include "Renderwerk/Graphics/GraphicsDevice.h"
 #include "Renderwerk/Graphics/GraphicsWindowContext.h"
 #include "Renderwerk/Platform/Window.h"
 
@@ -31,11 +32,15 @@ void FRenderer::Initialize(const FRendererDesc& InDescription)
 
 	// TODO: Retrieve this from config system
 	constexpr uint32 AdapterDeviceId = 0;
-	TSharedPtr<IGraphicsAdapter> GraphicsAdapter = GetAdapter(AdapterDeviceId);
+	const TSharedPtr<IGraphicsAdapter> GraphicsAdapter = GetAdapter(AdapterDeviceId);
+
+	GraphicsDevice = GraphicsBackend->CreateDevice(GraphicsAdapter);
 }
 
 void FRenderer::Destroy()
 {
+	GraphicsDevice->Destroy();
+	GraphicsDevice.reset();
 	WindowContext->Destroy();
 	WindowContext.reset();
 	GraphicsBackend->Destroy();

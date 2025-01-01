@@ -51,3 +51,19 @@ enum class ENGINE_API EGraphicsQueueType : uint8
 	Compute,
 	Transfer,
 };
+
+class ENGINE_API IGraphicsDeviceChild
+{
+public:
+	IGraphicsDeviceChild(IGraphicsDevice* InDevice)
+		: Device(InDevice)
+	{
+	}
+
+	virtual ~IGraphicsDeviceChild() = default;
+
+	DEFINE_DEFAULT_COPY_AND_MOVE(IGraphicsDeviceChild);
+
+protected:
+	IGraphicsDevice* Device;
+};
