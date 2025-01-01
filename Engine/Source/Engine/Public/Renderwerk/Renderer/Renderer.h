@@ -2,8 +2,6 @@
 
 #include "Renderwerk/Core/CoreMinimal.h"
 
-#include "Renderwerk/Graphics/GraphicsCommon.h"
-
 class FGraphicsBackend;
 
 DECLARE_LOG_CHANNEL(LogRenderer);
@@ -36,18 +34,5 @@ public:
 	void EndFrame();
 
 private:
-	TSharedPtr<FGraphicsAdapter> SelectAdapter(const TSpan<const char*>& RequiredExtensions) const;
-
-private:
 	FRendererDesc Description = {};
-
-	TSharedPtr<FGraphicsBackend> GraphicsBackend;
-	VkSurfaceKHR Surface = VK_NULL_HANDLE;
-	TSharedPtr<FGraphicsDevice> GraphicsDevice;
-	TSharedPtr<FGraphicsSwapchain> GraphicsSwapchain;
-
-	uint32 FrameIndex = 0;
-	TArray<FGraphicsFrame, RENDERER_FRAME_COUNT> Frames;
-
-	TSharedPtr<FGraphicsRenderTarget> RenderTarget;
 };
