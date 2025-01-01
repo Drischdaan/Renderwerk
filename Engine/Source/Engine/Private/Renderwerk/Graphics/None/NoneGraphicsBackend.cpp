@@ -32,3 +32,8 @@ TSharedPtr<IGraphicsWindowContext> FNoneGraphicsBackend::CreateWindowContext()
 {
 	return nullptr;
 }
+
+TSharedPtr<IGraphicsDevice> FNoneGraphicsBackend::CreateDevice(const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter)
+{
+	return nullptr;
+}
