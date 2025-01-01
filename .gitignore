@@ -28,7 +28,6 @@ Scripts/Config/properties_preprocessed.lua
 *.dmp
 
 # Dependencies that are downloaded by the setup script
-Engine/ThirdParty/AgilitySDK/
 Engine/ThirdParty/DirectXCompiler/
 
 # Log files

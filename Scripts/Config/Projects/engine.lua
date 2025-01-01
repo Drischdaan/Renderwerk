@@ -15,6 +15,7 @@ rw_project('Engine')
 
 	-- Dependencies
 	rw_link_vulkan()
+	rw_link_d3d12()
 	rw_include_project('magic_enum', rw_make_third_party_location(path.join('magic_enum', 'include')))
 	rw_include_project('json', rw_make_third_party_location(path.join('json', 'include')))
 	rw_include_project('volk', rw_make_third_party_location(path.join('volk')))

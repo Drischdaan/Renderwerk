@@ -19,6 +19,7 @@ rw_project('Editor')
 	rw_precompiled_header()
 
 	-- Dependencies
+	rw_link_d3d12()
 	rw_link_project('Engine')
 	rw_include_project('magic_enum', rw_make_third_party_location(path.join('magic_enum', 'include')))
 	rw_include_project('json', rw_make_third_party_location(path.join('json', 'include')))
@@ -29,3 +30,5 @@ rw_project('Editor')
 	rw_link_project('spdlog', rw_make_third_party_location(path.join('spdlog', 'include')))
 	rw_link_project('imgui', rw_make_third_party_location(path.join('imgui')))
 	rw_link_project('flecs', rw_make_third_party_location(path.join('flecs', 'distr')))
+
+	rw_copy_d3d12_binaries()
