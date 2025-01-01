@@ -2,6 +2,8 @@
 
 #include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsBackend.h"
 
+#include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsAdapter.h"
+
 FDirectX12GraphicsBackend::FDirectX12GraphicsBackend()
 	: IGraphicsBackend(EGraphicsBackendType::DirectX12)
 {
@@ -55,4 +57,17 @@ void FDirectX12GraphicsBackend::Destroy()
 		}
 		DXGIDebug.Reset();
 	}
+}
+
+TVector<TSharedPtr<IGraphicsAdapter>> FDirectX12GraphicsBackend::GetAvailableAdapters()
+{
+	TVector<TSharedPtr<IGraphicsAdapter>> Adapters;
+	ComPtr<IDXGIAdapter4> Adapter;
+	for (int Index = 0; Factory->EnumAdapterByGpuPreference(Index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&Adapter)) != DXGI_ERROR_NOT_FOUND; ++Index)
+	{
+		TSharedPtr<FDirectX12GraphicsAdapter> DirectX12Adapter = MakeShared<FDirectX12GraphicsAdapter>(this, Adapter);
+		DirectX12Adapter->Initialize();
+		Adapters.emplace_back(DirectX12Adapter);
+	}
+	return Adapters;
 }

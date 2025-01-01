@@ -48,3 +48,7 @@
 #define ENUM_STRING_CASE(EnumType, EnumValue) case EnumType::EnumValue: return #EnumValue
 
 #define BIT(Value) (1 << Value)
+
+#define VERSION_MAJOR(Version) (((uint32)(Version) >> 22U) & 0x7FU)
+#define VERSION_MINOR(Version) (((uint32)(Version) >> 12U) & 0x3FFU)
+#define VERSION_PATCH(Version) ((uint32)(Version) & 0xFFFU)

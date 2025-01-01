@@ -2,9 +2,24 @@
 
 #include "Renderwerk/Graphics/GraphicsBackend.h"
 
+#include "Renderwerk/Graphics/GraphicsAdapter.h"
+
 #include "Renderwerk/Graphics/DirectX12/DirectX12GraphicsBackend.h"
 #include "Renderwerk/Graphics/None/NoneGraphicsBackend.h"
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsBackend.h"
+
+TSharedPtr<IGraphicsAdapter> IGraphicsBackend::GetAdapterByDeviceId(const uint32 DeviceId)
+{
+	const TVector<TSharedPtr<IGraphicsAdapter>> GraphicsAdapters = GetAvailableAdapters();
+	for (const TSharedPtr<IGraphicsAdapter>& GraphicsAdapter : GraphicsAdapters)
+	{
+		if (GraphicsAdapter->GetProperties().DeviceId == DeviceId)
+		{
+			return GraphicsAdapter;
+		}
+	}
+	return nullptr;
+}
 
 TUniquePtr<IGraphicsBackend> IGraphicsBackend::Create(const EGraphicsBackendType InBackendType)
 {

@@ -17,3 +17,8 @@ void FNoneGraphicsBackend::Initialize(const FGraphicsBackendDesc& InDescription)
 void FNoneGraphicsBackend::Destroy()
 {
 }
+
+TVector<TSharedPtr<IGraphicsAdapter>> FNoneGraphicsBackend::GetAvailableAdapters()
+{
+	return {};
+}

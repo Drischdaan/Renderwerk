@@ -16,6 +16,8 @@ public:
 	void Initialize(const FGraphicsBackendDesc& InDescription) override;
 	void Destroy() override;
 
+	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
+
 public:
 	[[nodiscard]] ComPtr<IDXGIFactory7> GetFactory() const { return Factory; }
 

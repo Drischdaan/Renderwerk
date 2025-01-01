@@ -35,7 +35,7 @@ public:
 	{
 	}
 
-	~IGraphicsBackendChild() = default;
+	virtual ~IGraphicsBackendChild() = default;
 
 	DEFINE_DEFAULT_COPY_AND_MOVE(IGraphicsBackendChild);
 

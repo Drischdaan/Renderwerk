@@ -24,8 +24,11 @@ public:
 	DEFINE_DEFAULT_COPY_AND_MOVE(IGraphicsBackend);
 
 public:
-	virtual void Initialize(const FGraphicsBackendDesc& InDescription) EMPTY_IMPLEMENTATION()
-	virtual void Destroy() EMPTY_IMPLEMENTATION()
+	virtual void Initialize(const FGraphicsBackendDesc& InDescription) = 0;
+	virtual void Destroy() = 0;
+
+	[[nodiscard]] virtual TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() = 0;
+	[[nodiscard]] virtual TSharedPtr<IGraphicsAdapter> GetAdapterByDeviceId(uint32 DeviceId);
 
 public:
 	[[nodiscard]] EGraphicsBackendType GetBackendType() const { return BackendType; }

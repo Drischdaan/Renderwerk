@@ -14,5 +14,7 @@ public:
 	void Initialize(const FGraphicsBackendDesc& InDescription) override;
 	void Destroy() override;
 
+	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
+
 private:
 };

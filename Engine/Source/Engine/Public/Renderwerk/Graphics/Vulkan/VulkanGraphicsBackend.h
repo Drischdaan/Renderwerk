@@ -16,6 +16,8 @@ public:
 	void Initialize(const FGraphicsBackendDesc& InDescription) override;
 	void Destroy() override;
 
+	[[nodiscard]] TVector<TSharedPtr<IGraphicsAdapter>> GetAvailableAdapters() override;
+
 public:
 	[[nodiscard]] VkAllocationCallbacks* GetVulkanAllocator() const { return VulkanAllocator; }
 	[[nodiscard]] VkInstance GetVulkanInstance() const { return VulkanInstance; }

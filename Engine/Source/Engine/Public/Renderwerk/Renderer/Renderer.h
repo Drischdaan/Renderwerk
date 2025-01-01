@@ -37,6 +37,12 @@ public:
 	void EndFrame();
 
 private:
+	TSharedPtr<IGraphicsAdapter> GetAdapter(uint32 AdapterDeviceId) const;
+
+private:
+	static TSharedPtr<IGraphicsAdapter> SelectSuitableAdapter(const TSpan<TSharedPtr<IGraphicsAdapter>>& GraphicsAdapters);
+
+private:
 	FRendererDesc Description = {};
 
 	TUniquePtr<IGraphicsBackend> GraphicsBackend;

@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 
+#include "Renderwerk/Graphics/Vulkan/VulkanGraphicsAdapter.h"
 #include "Renderwerk/Graphics/Vulkan/VulkanGraphicsBackend.h"
 
 FVulkanGraphicsBackend::FVulkanGraphicsBackend()
@@ -54,4 +55,23 @@ void FVulkanGraphicsBackend::Destroy()
 {
 	vkDestroyInstance(VulkanInstance, VulkanAllocator);
 	volkFinalize();
+}
+
+TVector<TSharedPtr<IGraphicsAdapter>> FVulkanGraphicsBackend::GetAvailableAdapters()
+{
+	uint32 AdapterCount = 0;
+	VkResult Result = vkEnumeratePhysicalDevices(VulkanInstance, &AdapterCount, nullptr);
+	ASSERT(Result == VK_SUCCESS, "Failed to enumerate physical devices");
+	TVector<VkPhysicalDevice> PhysicalDevices(AdapterCount);
+	Result = vkEnumeratePhysicalDevices(VulkanInstance, &AdapterCount, PhysicalDevices.data());
+	ASSERT(Result == VK_SUCCESS, "Failed to enumerate physical devices");
+
+	TVector<TSharedPtr<IGraphicsAdapter>> Adapters;
+	for (VkPhysicalDevice PhysicalDevice : PhysicalDevices)
+	{
+		TSharedPtr<FVulkanGraphicsAdapter> Adapter = MakeShared<FVulkanGraphicsAdapter>(this, PhysicalDevice);
+		Adapter->Initialize();
+		Adapters.push_back(Adapter);
+	}
+	return Adapters;
 }
