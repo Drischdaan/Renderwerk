@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf-8
+max_line_length = 170
+trim_trailing_whitespace = true
+insert_final_newline = true
+indent_style = tab
+
+# LUA files
+[*.lua]
+indent_size = 2
+
+# C++ files
+[*.{cpp,h,cc,hpp}]
+indent_size = 4
