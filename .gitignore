@@ -1,2 +1,10 @@
+# Jetbrain IDEs
+.idea/
+
+# Visual Studio
+*.sln
+*.vcxproj*
+
+# Binary output
 Binaries/
 Intermediates/
