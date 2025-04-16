@@ -1,0 +1,67 @@
+<svg viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark slate background -->
+  <rect width="900" height="180" fill="#1E2130" />
+  
+  <!-- Grid pattern -->
+  <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#2A3142" stroke-width="1" />
+  </pattern>
+  <rect width="900" height="180" fill="url(#grid)" opacity="0.5" />
+  
+  <!-- Glow effect for the bottom -->
+  <rect x="0" y="140" width="900" height="40" fill="url(#glowGradient)" />
+  <linearGradient id="glowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#0059ff" stop-opacity="0.4" />
+    <stop offset="100%" stop-color="#0059ff" stop-opacity="0" />
+  </linearGradient>
+  
+  <!-- Center glowing effect -->
+  <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+    <stop offset="0%" stop-color="#4080FF" stop-opacity="0.15" />
+    <stop offset="100%" stop-color="#1E2130" stop-opacity="0" />
+  </radialGradient>
+  <rect width="900" height="180" fill="url(#centerGlow)" />
+  
+  <!-- Main title -->
+  <text x="450" y="89" font-family="'Recursive Mono', monospace" font-size="50" font-weight="700" text-anchor="middle" fill="#ffffff" filter="url(#textGlow)">RENDERWERK</text>
+  
+  <!-- Subtitle -->
+  <text x="450" y="114" font-family="'Recursive Mono', monospace" font-size="16" text-anchor="middle" fill="#8EBBFF">MODERN D3D12 GAME ENGINE</text>
+  
+  <!-- Decorative elements -->
+  <path d="M 270 84 L 200 84" stroke="#4080FF" stroke-width="2" />
+  <path d="M 630 84 L 700 84" stroke="#4080FF" stroke-width="2" />
+  
+  <!-- Tech visuals - wireframe model suggestion -->
+  <g opacity="0.6">
+    <path d="M 120,70 L 160,50 L 180,80 L 140,100 Z" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 160,50 L 160,90" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 180,80 L 180,120" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 140,100 L 140,140" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 120,70 L 120,110" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 120,110 L 160,90 L 180,120 L 140,140 Z" fill="none" stroke="#4080FF" stroke-width="1" />
+  </g>
+  
+  <g opacity="0.6">
+    <path d="M 780,70 L 740,50 L 720,80 L 760,100 Z" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 740,50 L 740,90" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 720,80 L 720,120" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 760,100 L 760,140" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 780,70 L 780,110" fill="none" stroke="#4080FF" stroke-width="1" />
+    <path d="M 780,110 L 740,90 L 720,120 L 760,140 Z" fill="none" stroke="#4080FF" stroke-width="1" />
+  </g>
+  
+  <!-- Subtle particles -->
+  <circle cx="550" cy="40" r="1" fill="#ffffff" />
+  <circle cx="580" cy="60" r="1" fill="#ffffff" />
+  <circle cx="600" cy="30" r="1" fill="#ffffff" />
+  <circle cx="520" cy="50" r="1" fill="#ffffff" />
+  <circle cx="350" cy="40" r="1" fill="#ffffff" />
+  <circle cx="320" cy="60" r="1" fill="#ffffff" />
+  <circle cx="300" cy="30" r="1" fill="#ffffff" />
+  <circle cx="380" cy="50" r="1" fill="#ffffff" />
+  
+  <!-- Version tag -->
+  <rect x="750" y="140" width="120" height="25" rx="4" fill="#2A3142" stroke="#4080FF" stroke-width="1" />
+  <text x="810" y="157" font-family="'Recursive Mono', monospace" font-size="12" text-anchor="middle" fill="#ffffff">v0.0.0</text>
+</svg>
