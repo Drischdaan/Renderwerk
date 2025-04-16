@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Renderwerk! This document provides guidelines for contributing to our C++ game engine project.
 
-## Code Style
+## 💅 Code Style
 
 Renderwerk follows a code style similar to Unreal Engine. Here are the key guidelines:
 
@@ -39,7 +39,7 @@ private:
 };
 ```
 
-## Commit Guidelines
+## 🧭 Commit Guidelines
 
 We use Conventional Commits for our commit messages. Each commit message should be structured as follows:
 
@@ -70,7 +70,7 @@ fix(physics): resolve collision detection issue with static meshes
 test(core): add unit tests for entity component system
 ```
 
-## Pull Request Process
+## 📦 Pull Request Process
 
 1. Create a pull request from your feature branch to the develop branch
 2. Ensure your code follows our style guidelines
@@ -81,7 +81,7 @@ test(core): add unit tests for entity component system
 
 Our GitHub workflow automatically builds the project and runs tests when a PR is created.
 
-## Testing
+## 🪠 Testing
 
 Always write tests for new functionality where it makes sense. We value:
 
@@ -108,7 +108,7 @@ TEST(MeshRendererTests, LoadsTriangleMeshCorrectly)
 }
 ```
 
-## Questions?
+## 🤔 Questions?
 
 If you have questions about contributing, please open an issue or reach out to the maintainers.
 
