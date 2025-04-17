@@ -25,7 +25,7 @@ jobs:
       - name: Setup workspace
         shell: pwsh
         run: |
-          .\Build\Scripts\Setup.ps1
+          .\Build\Scripts\Setup.ps1 -Skip-Confirm
       - name: Generate project files
         shell: pwsh
         run: |
