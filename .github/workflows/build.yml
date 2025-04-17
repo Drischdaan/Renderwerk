@@ -46,4 +46,4 @@ jobs:
         with:
           name: build-artifacts
           path: ./Binaries/Engine/${{env.BUILD_CONFIGURATION}}
-      - run: ./Binaries/Engine/${{env.BUILD_CONFIGURATION}}/Editor.exe
+      - run: ./Binaries/Engine/${{env.BUILD_CONFIGURATION}}/EngineTests.exe
