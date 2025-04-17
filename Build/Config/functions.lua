@@ -87,8 +87,8 @@ function rw_platform_flags(platform)
 end
 
 function rw_binaries_output(name)
-	targetdir(path.join(binaries_path, 'Engine'))
-	objdir(path.join(intermediates_path, 'Engine', name))
+	targetdir(path.join(binaries_path, 'Engine', '%{cfg.buildcfg}'))
+	objdir(path.join(intermediates_path, 'Engine', '%{cfg.buildcfg}', name))
 end
 
 function rw_module(name, properties)
