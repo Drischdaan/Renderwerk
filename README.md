@@ -12,7 +12,7 @@ Since this is my hobby project, updates might be a bit slow sometimes as I work 
 
 ### Prerequisites
 
-> **❗Note:** The engine was only tested on Windows 11 using SDK version 10.0.26100.0, but should also run on Windows 10
+> **❗Note:** The engine was only tested on Windows 11 using SDK version 10.0.26100.0, but should also run on Windows 10 and older SDK versions
 
 - Windows 11
 - Visual Studio 2022 or Jetbrains Rider
@@ -22,8 +22,15 @@ Since this is my hobby project, updates might be a bit slow sometimes as I work 
 ### Setting up the project
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/Drischdaan/Renderwerk.git
 cd Renderwerk
+
+# 2. Setup workspace
+.\Build\Scripts\Setup.ps1
+
+# 3. Generate project files
+.\Build\Scripts\GenerateProjectFiles.ps1
 ```
 
 ## 📚 Documentation
