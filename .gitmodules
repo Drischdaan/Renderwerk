@@ -1,3 +1,6 @@
 [submodule "Source/ThirdParty/Catch2"]
 	path = Source/ThirdParty/Catch2
 	url = https://github.com/catchorg/Catch2
+[submodule "Source/ThirdParty/mimalloc"]
+	path = Source/ThirdParty/mimalloc
+	url = https://github.com/microsoft/mimalloc
