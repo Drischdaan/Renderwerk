@@ -1,1 +1,3 @@
-rw_module('Engine')
+local name = 'Engine'
+
+rw_module(name)

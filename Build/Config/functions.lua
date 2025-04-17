@@ -95,9 +95,13 @@ function rw_module(name, properties)
 	properties = properties or {
 		group = 'Modules',
 		is_executable = false,
+		force_console_app = false,
+		disable_precompiled_headers = false,
 	}
 	properties.group = properties.group or 'Modules'
 	properties.is_executable = properties.is_executable or false
+	properties.force_console_app = properties.force_console_app or false
+	properties.disable_precompiled_headers = properties.disable_precompiled_headers or false
 
 	group(properties.group)
 	project(name)
@@ -109,8 +113,6 @@ function rw_module(name, properties)
 		files({
 			rw_module_location(name, '**.hpp'),
 			rw_module_location(name, '**.cpp'),
-			rw_module_location(name, 'pch.hpp'),
-			rw_module_location(name, 'pch.cpp'),
 		})
 
 		includedirs({
@@ -118,25 +120,35 @@ function rw_module(name, properties)
 			rw_module_location(name),
 		})
 
-		pchheader('pch.hpp')
-		pchsource('%{prj.location}/pch.cpp')
+		if properties.disable_precompiled_headers == false then
+			files({
+				rw_module_location(name, 'pch.hpp'),
+				rw_module_location(name, 'pch.cpp'),
+			})
+			pchheader('pch.hpp')
+			pchsource('%{prj.location}/pch.cpp')
+		end
 
 		rw_binaries_output(name)
 		rw_default_compiler_flags()
 
 		-- Kind
 		if properties.is_executable then
-			rw_filter_config(build_configs.Debug)
+			if properties.force_console_app then
 				kind('ConsoleApp')
-			rw_filter_end()
+			else
+				rw_filter_config(build_configs.Debug)
+					kind('ConsoleApp')
+				rw_filter_end()
 
-			rw_filter_config(build_configs.Development)
-				kind('ConsoleApp')
-			rw_filter_end()
+				rw_filter_config(build_configs.Development)
+					kind('ConsoleApp')
+				rw_filter_end()
 
-			rw_filter_config(build_configs.Shipping)
-				kind('WindowedApp')
-			rw_filter_end()
+				rw_filter_config(build_configs.Shipping)
+					kind('WindowedApp')
+				rw_filter_end()
+			end
 		else
 			rw_filter_config(build_configs.Debug)
 				kind('SharedLib')
@@ -212,7 +224,7 @@ end
 function rw_thirdparty_module(name)
 	group('ThirdParty')
 	project(name)
-		location(rw_thirdparty_module_location(name))
+		location(thirdparty_source_path)
 
 		rw_binaries_output(name)
 		rw_default_compiler_flags()

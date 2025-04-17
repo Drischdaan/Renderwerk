@@ -8,4 +8,8 @@ include('workspace.lua')
 
 -- Projects
 include('Projects/Engine.lua')
+include('Projects/EngineTests.lua')
 include('Projects/Editor.lua')
+
+-- ThirdParty Projects
+include('Projects/ThirdParty/Catch2.lua')
