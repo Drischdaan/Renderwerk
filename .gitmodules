@@ -1,0 +1,3 @@
+[submodule "Source/ThirdParty/Catch2"]
+	path = Source/ThirdParty/Catch2
+	url = https://github.com/catchorg/Catch2
