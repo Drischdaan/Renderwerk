@@ -8,6 +8,9 @@ on:
     branches:
       - develop
 
+permissions:
+  contents: read
+
 env:
   SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Shipping
@@ -19,6 +22,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
+      - name: Setup workspace
+        shell: pwsh
+        run: |
+          .\Build\Scripts\Setup.ps1
+      - name: Generate project files
+        shell: pwsh
+        run: |
+          .\Build\Scripts\GenerateProjectFiles.ps1
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
