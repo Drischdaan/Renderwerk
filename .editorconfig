@@ -14,3 +14,7 @@ indent_size = 2
 # C++ files
 [*.{cpp,h,cc,hpp}]
 indent_size = 4
+
+[*.yml]
+indent_size = 2
+indent_style = space
