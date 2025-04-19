@@ -25,14 +25,14 @@ using FWideString = std::basic_string<FWideChar, std::char_traits<FWideChar>, mi
 using FWideStringView = std::basic_string_view<FWideChar>;
 
 template <typename... TArguments>
-using FWideFormatString = std::wformat_string<TArguments...>;
+using TWideFormatString = std::wformat_string<TArguments...>;
 
 using FAnsiChar = char;
 using FAnsiString = std::basic_string<FAnsiChar, std::char_traits<FAnsiChar>, mi_stl_allocator<FAnsiChar>>;
 using FAnsiStringView = std::basic_string_view<FAnsiChar>;
 
 template <typename... TArguments>
-using FAnsiFormatString = std::format_string<TArguments...>;
+using TAnsiFormatString = std::format_string<TArguments...>;
 
 #ifdef RW_USE_WIDE_STRINGS
 using FChar = FWideChar;
@@ -40,12 +40,12 @@ using FString = FWideString;
 using FStringView = FWideStringView;
 
 template <typename... TArguments>
-using FFormatString = FWideFormatString<TArguments...>;
+using TFormatString = TWideFormatString<TArguments...>;
 #else
 using FChar = FAnsiChar;
 using FString = FAnsiString;
 using FStringView = FAnsiStringView;
 
 template <typename... TArguments>
-using FFormatString = FAnsiFormatString<TArguments...>;
+using TFormatString = FAnsiFormatString<TArguments...>;
 #endif
