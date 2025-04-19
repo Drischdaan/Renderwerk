@@ -4,3 +4,6 @@
 [submodule "Source/ThirdParty/mimalloc"]
 	path = Source/ThirdParty/mimalloc
 	url = https://github.com/microsoft/mimalloc
+[submodule "Source/ThirdParty/spdlog"]
+	path = Source/ThirdParty/spdlog
+	url = https://github.com/gabime/spdlog
