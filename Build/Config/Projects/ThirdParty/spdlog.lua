@@ -10,6 +10,10 @@ rw_thirdparty_module(name)
 		rw_thirdparty_module_location(name, 'src', '**.cpp'),
 	})
 
+	defines({
+		'SPDLOG_COMPILED_LIB',
+	})
+
 	usage('PUBLIC')
 		includedirs({
 			rw_thirdparty_module_location(name, 'include'),

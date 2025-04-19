@@ -36,6 +36,7 @@ workspace(engine_name)
 			rw_macro('LINK', '"Modular"'),
 			rw_macro('LINK_MODULAR'),
 			rw_macro('ENABLE_ASSERTIONS'),
+			rw_macro('LOG_VERBOSITY', '0'),
 		})
 	rw_filter_end()
 
@@ -44,6 +45,7 @@ workspace(engine_name)
 			rw_macro('LINK', '"Modular"'),
 			rw_macro('LINK_MODULAR'),
 			rw_macro('ENABLE_ASSERTIONS'),
+			rw_macro('LOG_VERBOSITY', '0'),
 		})
 	rw_filter_end()
 
@@ -51,5 +53,6 @@ workspace(engine_name)
 		defines({
 			rw_macro('LINK', '"Monolithic"'),
 			rw_macro('LINK_MONOLITHIC'),
+			rw_macro('LOG_VERBOSITY', '4'),
 		})
 	rw_filter_end()
