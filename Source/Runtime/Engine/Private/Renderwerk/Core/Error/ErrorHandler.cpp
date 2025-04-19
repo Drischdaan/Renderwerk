@@ -162,7 +162,8 @@ void FErrorHandler::Report(const FErrorDetails& Details)
 	RaiseException(ERROR_ID_REPORT, 0, _countof(Arguments), Arguments);
 }
 
-long FErrorHandler::Handle(const EXCEPTION_POINTERS* Pointers)
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+long FErrorHandler::Handle(EXCEPTION_POINTERS* Pointers)
 {
 	ExitCode = EXIT_FAILURE;
 	if (IsDebuggerPresent())

@@ -32,7 +32,7 @@ class ENGINE_API FErrorHandler
 public:
 	static void Report(const FErrorDetails& Details);
 
-	static long Handle(const EXCEPTION_POINTERS* Pointers);
+	static long Handle(EXCEPTION_POINTERS* Pointers);
 
 public:
 	[[nodiscard]] static int32 GetExitCode();
