@@ -15,7 +15,7 @@
 #define LAUNCH_ENGINE() \
 	LAUNCH_HEADER() \
 	{ \
-		return 0; \
+		return Launch(); \
 	}
 
 [[nodiscard]] ENGINE_API int32 Launch();
