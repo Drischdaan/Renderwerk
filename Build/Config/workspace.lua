@@ -35,6 +35,7 @@ workspace(engine_name)
 		defines({
 			rw_macro('LINK', '"Modular"'),
 			rw_macro('LINK_MODULAR'),
+			rw_macro('ENABLE_ASSERTIONS'),
 		})
 	rw_filter_end()
 
@@ -42,6 +43,7 @@ workspace(engine_name)
 		defines({
 			rw_macro('LINK', '"Modular"'),
 			rw_macro('LINK_MODULAR'),
+			rw_macro('ENABLE_ASSERTIONS'),
 		})
 	rw_filter_end()
 
