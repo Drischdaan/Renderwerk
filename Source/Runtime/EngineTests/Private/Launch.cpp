@@ -3,7 +3,7 @@
 int main(const int ArgumentCount, char* Arguments[])
 {
 	Catch::Session Session;
-	Session.configData().allowZeroTests = true;
-	Session.configData().showDurations = Catch::ShowDurations::Always;
+	Session.configData().waitForKeypress = Catch::WaitForKeypress::Never;
+	Session.configData().verbosity = Catch::Verbosity::High;
 	return Session.run(ArgumentCount, Arguments);
 }

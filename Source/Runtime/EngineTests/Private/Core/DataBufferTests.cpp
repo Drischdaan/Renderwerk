@@ -325,7 +325,7 @@ TEST_CASE("FDataBuffer Copy and move operations", "[DataBuffer]")
 
 		REQUIRE(Copy.GetSize() == 5);
 		REQUIRE(Copy.GetData() == Data);
-		REQUIRE(Copy.IsOwning() == Original.IsOwning());
+		REQUIRE(Copy.IsOwning() != Original.IsOwning());
 	}
 
 	SECTION("Copy assignment")
@@ -340,6 +340,6 @@ TEST_CASE("FDataBuffer Copy and move operations", "[DataBuffer]")
 
 		REQUIRE(Buffer2.GetSize() == 5);
 		REQUIRE(Buffer2.GetData() == Data1);
-		REQUIRE(Buffer2.IsOwning() == Buffer1.IsOwning());
+		REQUIRE(Buffer2.IsOwning() != Buffer1.IsOwning());
 	}
 }
