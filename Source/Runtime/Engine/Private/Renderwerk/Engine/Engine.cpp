@@ -14,6 +14,8 @@ void FEngine::Run()
 void FEngine::Initialize()
 {
 	PrintLogo();
+	{
+	}
 	RW_LOG(Info, "Engine initialized");
 }
 
@@ -23,6 +25,8 @@ void FEngine::RunLoop()
 
 void FEngine::Shutdown()
 {
+	{
+	}
 	RW_LOG(Info, "Engine shutdown");
 }
 

@@ -19,6 +19,16 @@ void FMemory::Free(void* Pointer, const size64 Alignment)
 	mi_free_aligned(Pointer, Alignment);
 }
 
+void FMemory::Copy(void* Destination, const void* Source, const size64 Size)
+{
+	memcpy(Destination, Source, Size);
+}
+
+void FMemory::Set(void* Pointer, const uint8 Value, const size64 Size)
+{
+	memset(Pointer, Value, Size);
+}
+
 bool8 FMemory::IsValidPointer(const void* Pointer)
 {
 	return mi_check_owned(Pointer);
