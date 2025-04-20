@@ -40,9 +40,20 @@ function rw_default_compiler_flags()
 	editandcontinue('Off')
 	characterset('Unicode')
 	exceptionhandling('SEH')
+	fatalwarnings({ 'All' })
+	disablewarnings({ '4251' })
+
+	rw_filter_config(build_configs.Debug)
+		sanitize({ 'Address', 'Thread', 'UndefinedBehavior' })
+	rw_filter_end()
+
+	rw_filter_config(build_configs.Development)
+		sanitize({ 'Address', 'Thread', 'UndefinedBehavior' })
+	rw_filter_end()
 
 	flags({
 		'MultiProcessorCompile',
+		'NoIncrementalLink',
 	})
 end
 
