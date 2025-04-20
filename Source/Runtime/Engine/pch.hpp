@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <type_traits>
 

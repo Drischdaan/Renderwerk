@@ -6,6 +6,7 @@
 #include "Renderwerk/Core/PrimitiveTypes.hpp"
 #include "Renderwerk/Core/Containers/String.hpp"
 #include "Renderwerk/Core/Logging/LogVerbosity.hpp"
+#include "Renderwerk/Core/Misc/StringUtilities.hpp"
 
 using FLoggerLocation = std::source_location;
 

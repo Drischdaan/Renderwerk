@@ -39,3 +39,5 @@
 #define APPEND(X, Y) INNER_APPEND(X, Y)
 
 #define UNIQUE_VARIABLE(Prefix) APPEND(Prefix, __LINE__)
+
+#define FORWARD(...) __VA_ARGS__
