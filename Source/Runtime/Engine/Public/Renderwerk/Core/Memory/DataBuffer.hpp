@@ -22,7 +22,7 @@ public:
 	}
 
 	FDataBuffer(const FDataBuffer& Other)
-		: Data(Other.Data), Size(Other.Size), bIsOwningData(Other.bIsOwningData)
+		: Data(Other.Data), Size(Other.Size), bIsOwningData(false)
 	{
 	}
 
@@ -45,34 +45,36 @@ public:
 public:
 	FDataBuffer& operator=(const FDataBuffer& Other)
 	{
-		if (this != &Other)
+		if (&Other == this)
 		{
-			if (bIsOwningData)
-			{
-				FMemory::Free(Data);
-			}
-			Data = Other.Data;
-			Size = Other.Size;
-			bIsOwningData = Other.bIsOwningData;
+			return *this;
 		}
+		if (bIsOwningData && Data != nullptr)
+		{
+			FMemory::Free(Data);
+		}
+		Data = Other.Data;
+		Size = Other.Size;
+		bIsOwningData = false;
 		return *this;
 	}
 
 	FDataBuffer& operator=(FDataBuffer&& Other) noexcept
 	{
-		if (this != &Other)
+		if (&Other == this)
 		{
-			if (bIsOwningData)
-			{
-				FMemory::Free(Data);
-			}
-			Data = Other.Data;
-			Size = Other.Size;
-			bIsOwningData = Other.bIsOwningData;
-			Other.Data = nullptr;
-			Other.Size = 0;
-			Other.bIsOwningData = false;
+			return *this;
 		}
+		if (bIsOwningData && Data != nullptr)
+		{
+			FMemory::Free(Data);
+		}
+		Data = Other.Data;
+		Size = Other.Size;
+		bIsOwningData = Other.bIsOwningData;
+		Other.Data = nullptr;
+		Other.Size = 0;
+		Other.bIsOwningData = false;
 		return *this;
 	}
 
