@@ -1,12 +1,15 @@
 #pragma once
 
+#include <any>
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <future>
 #include <memory>
 #include <ranges>
 #include <string>
 #include <type_traits>
+#include <variant>
 
 #include "mimalloc.h"
 
