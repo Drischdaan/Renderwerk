@@ -2,32 +2,90 @@
 
 #include "Renderwerk/Engine/Engine.hpp"
 
+#include "Renderwerk/Core/Misc/Guid.hpp"
+#include "Renderwerk/Engine/EngineModule.hpp"
+#include "Renderwerk/Platform/WindowModule.hpp"
+
 TRef<FEngine> GEngine = nullptr;
+
+void FEngine::RequestShutdown()
+{
+	RW_LOG(Warning, "Shutdown was requested");
+	bShouldRun = false;
+}
+
+bool8 FEngine::IsModuleRegistered(const FName Name) const
+{
+	return Modules.contains(Name);
+}
+
+TRef<IEngineModule> FEngine::GetModule(const FName Name)
+{
+	RW_VERIFY_MSG(IsModuleRegistered(Name), "Module is not registered");
+	return Modules.at(Name);
+}
+
+void FEngine::RegisterModule(FName Name, const TRef<IEngineModule>& Module)
+{
+	Modules.insert(std::make_pair(Name, Module));
+}
+
+void FEngine::UnregisterModule(const FName Name)
+{
+	{
+		const TRef<IEngineModule> Module = Modules.at(Name);
+		Module->Shutdown();
+	}
+	Modules.erase(Name);
+}
 
 void FEngine::Run()
 {
-	Initialize();
-	RunLoop();
-	Shutdown();
-}
-
-void FEngine::Initialize()
-{
 	PrintLogo();
+
+	RegisterModule<FWindowModule>();
+
+	MainThread = NewOwned<FMainThread>(&bShouldRun);
+	RenderThread = NewOwned<FRenderThread>(&bShouldRun);
+	UpdateThread = NewOwned<FUpdateThread>(&bShouldRun);
+
+	MainThread->Initialize();
+	while (bShouldRun)
 	{
+		MainThread->OnTick();
 	}
-	RW_LOG(Info, "Engine initialized");
+	MainThread->Shutdown();
+
+	MainThread.reset();
+	RenderThread.reset();
+	UpdateThread.reset();
+
+	Modules.clear();
 }
 
-void FEngine::RunLoop()
+TVector<TRef<IEngineModule>> FEngine::GetModuleList()
 {
+	TVector<TRef<IEngineModule>> ModuleList;
+	ModuleList.reserve(Modules.size());
+	for (TRef<IEngineModule>& Module : Modules | std::views::values)
+	{
+		ModuleList.push_back(Module);
+	}
+	return ModuleList;
 }
 
-void FEngine::Shutdown()
+TVector<TRef<IEngineModule>> FEngine::GetModuleListByAffinity(const EEngineThreadAffinity Affinity)
 {
+	TVector<TRef<IEngineModule>> ModuleList;
+	ModuleList.reserve(Modules.size());
+	for (TRef<IEngineModule>& Module : Modules | std::views::values)
 	{
+		if (Module->GetEngineThreadAffinity() == Affinity)
+		{
+			ModuleList.push_back(Module);
+		}
 	}
-	RW_LOG(Info, "Engine shutdown");
+	return ModuleList;
 }
 
 void FEngine::PrintLogo()
@@ -41,4 +99,10 @@ void FEngine::PrintLogo()
 	RW_LOG(Info, "");
 	RW_LOG(Info, "   {} v{} | Config: {}", TEXT(RW_ENGINE_NAME), TEXT(RW_ENGINE_FULL_VERSION), TEXT(RW_CONFIG));
 	RW_LOG(Info, "");
+}
+
+TRef<FEngine> GetEngine()
+{
+	RW_VERIFY_MSG(GEngine.get() != nullptr, "Invalid engine instance");
+	return GEngine;
 }
