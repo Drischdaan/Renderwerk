@@ -2,7 +2,7 @@
 .idea/
 
 # Visual Studio
-*.sln
+*.sln*
 *.vcxproj*
 
 # Binary output

@@ -7,3 +7,6 @@
 [submodule "Source/ThirdParty/spdlog"]
 	path = Source/ThirdParty/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "Source/ThirdParty/tracy"]
+	path = Source/ThirdParty/tracy
+	url = https://github.com/wolfpld/tracy
