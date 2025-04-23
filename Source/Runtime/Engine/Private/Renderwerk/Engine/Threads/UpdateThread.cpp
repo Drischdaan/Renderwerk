@@ -3,6 +3,7 @@
 #include "Renderwerk/Engine/Threads/UpdateThread.hpp"
 
 #include "Renderwerk/Engine/Engine.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 
 FUpdateThread::FUpdateThread(TAtomic<bool8>* InShouldRun)
 	: IEngineThread(TEXT("Update"), InShouldRun)
@@ -26,6 +27,7 @@ void FUpdateThread::Initialize()
 
 void FUpdateThread::OnTick()
 {
+	PROFILE_FUNCTION();
 }
 
 void FUpdateThread::Shutdown()

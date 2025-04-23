@@ -5,6 +5,9 @@
 #include "Renderwerk/Core/Misc/Guid.hpp"
 #include "Renderwerk/Engine/EngineModule.hpp"
 #include "Renderwerk/Platform/WindowModule.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
+
+#include "tracy/Tracy.hpp"
 
 TRef<FEngine> GEngine = nullptr;
 
@@ -52,6 +55,7 @@ void FEngine::Run()
 	MainThread->Initialize();
 	while (bShouldRun)
 	{
+		PROFILE_FRAME();
 		MainThread->OnTick();
 	}
 	MainThread->Shutdown();

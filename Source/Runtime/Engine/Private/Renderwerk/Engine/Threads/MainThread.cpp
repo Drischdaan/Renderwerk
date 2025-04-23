@@ -6,6 +6,7 @@
 #include "Renderwerk/Engine/EngineModule.hpp"
 #include "Renderwerk/Platform/Window.hpp"
 #include "Renderwerk/Platform/WindowModule.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 
 FMainThread::FMainThread(TAtomic<bool8>* InShouldRun)
 	: IEngineThread(TEXT("Main"), InShouldRun, true)
@@ -14,6 +15,7 @@ FMainThread::FMainThread(TAtomic<bool8>* InShouldRun)
 
 void FMainThread::Initialize()
 {
+	tracy::SetThreadName("Main");
 	const TRef<FEngine> Engine = GetEngine();
 	ChangeState(EEngineThreadState::Initialized);
 	{
@@ -35,6 +37,8 @@ void FMainThread::Initialize()
 
 void FMainThread::OnTick()
 {
+	PROFILE_FUNCTION();
+
 	const TRef<FEngine> Engine = GetEngine();
 	Engine->GetMainThreadTickDelegate().Broadcast();
 

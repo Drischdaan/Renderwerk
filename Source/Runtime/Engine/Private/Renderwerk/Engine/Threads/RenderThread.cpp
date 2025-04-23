@@ -2,7 +2,9 @@
 
 #include "Renderwerk/Engine/Threads/RenderThread.hpp"
 
+#include "Renderwerk/Core/Misc/Chrono.hpp"
 #include "Renderwerk/Engine/Engine.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 
 FRenderThread::FRenderThread(TAtomic<bool8>* InShouldRun)
 	: IEngineThread(TEXT("Render"), InShouldRun)
@@ -24,6 +26,7 @@ void FRenderThread::Initialize()
 
 void FRenderThread::OnTick()
 {
+	PROFILE_FUNCTION();
 }
 
 void FRenderThread::Shutdown()
