@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <type_traits>
+
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Core/PrimitiveTypes.hpp"
 
@@ -20,4 +22,19 @@ public:
 public:
 	[[nodiscard]] static bool8 IsValidPointer(const void* Pointer);
 	[[nodiscard]] static size64 GetAllocationSize(const void* Pointer);
+
+public:
+	template <typename T, typename... TArguments> requires std::is_constructible_v<T, TArguments...>
+	static T* NewInstance(TArguments&&... Arguments)
+	{
+		T* Pointer = static_cast<T*>(Allocate(sizeof(T)));
+		return std::construct_at<T, TArguments...>(Pointer, std::forward<TArguments>(Arguments)...);
+	}
+
+	template <typename T>
+	static void DestroyInstance(T* Pointer)
+	{
+		std::destroy_at<T>(Pointer);
+		Free(static_cast<void*>(Pointer));
+	}
 };
