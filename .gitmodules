@@ -10,3 +10,6 @@
 [submodule "Source/ThirdParty/tracy"]
 	path = Source/ThirdParty/tracy
 	url = https://github.com/wolfpld/tracy
+[submodule "Source/ThirdParty/DirectX-Headers"]
+	path = Source/ThirdParty/DirectX-Headers
+	url = https://github.com/Microsoft/DirectX-Headers
