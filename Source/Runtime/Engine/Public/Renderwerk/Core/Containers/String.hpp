@@ -3,6 +3,7 @@
 #include <format>
 #include <sstream>
 #include <string>
+#include <Windows.h>
 
 #include "mimalloc.h"
 
