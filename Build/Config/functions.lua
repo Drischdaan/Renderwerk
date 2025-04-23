@@ -41,7 +41,7 @@ function rw_default_compiler_flags()
 	characterset('Unicode')
 	exceptionhandling('SEH')
 	fatalwarnings({ 'All' })
-	disablewarnings({ '4251' })
+	disablewarnings({ '4251', '4275' })
 
 	rw_filter_config(build_configs.Debug)
 		sanitize({ 'Address', 'Thread', 'UndefinedBehavior' })
