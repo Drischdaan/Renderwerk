@@ -13,6 +13,8 @@
 #endif
 
 #define LAUNCH_ENGINE() \
+	extern "C" { __declspec(dllexport) extern const uint32 D3D12SDKVersion = 615;} \
+	extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\"; } \
 	LAUNCH_HEADER() \
 	{ \
 		return Launch(); \
