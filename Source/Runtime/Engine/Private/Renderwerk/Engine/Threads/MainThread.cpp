@@ -16,9 +16,8 @@ FMainThread::FMainThread(TAtomic<bool8>* InShouldRun)
 void FMainThread::Initialize()
 {
 	tracy::SetThreadName("Main");
-	const TRef<FEngine> Engine = GetEngine();
-	ChangeState(EEngineThreadState::Initialized);
 	{
+		const TRef<FEngine> Engine = GetEngine();
 		const TVector<TRef<IEngineModule>> Modules = Engine->GetModuleListByAffinity(EEngineThreadAffinity::Main);
 		for (const TRef<IEngineModule>& EngineModule : Modules)
 		{
@@ -32,6 +31,7 @@ void FMainThread::Initialize()
 		Window->Show();
 	}
 	RW_LOG(Info, "Main thread initialized");
+	ChangeState(EEngineThreadState::Initialized);
 	ChangeState(EEngineThreadState::Running);
 }
 

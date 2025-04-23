@@ -7,8 +7,6 @@
 #include "Renderwerk/Platform/WindowModule.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
 
-#include "tracy/Tracy.hpp"
-
 TRef<FEngine> GEngine = nullptr;
 
 void FEngine::RequestShutdown()
