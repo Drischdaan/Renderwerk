@@ -14,7 +14,7 @@ bool8 FLogger::IsAvailable()
 	return spdlog::default_logger() != nullptr;
 }
 
-void FLogger::Log(ELogVerbosity Verbosity, const FString& Message)
+void FLogger::Log(ELogVerbosity Verbosity, const FWideString& Message)
 {
 	if (!IsAvailable())
 	{
@@ -23,7 +23,26 @@ void FLogger::Log(ELogVerbosity Verbosity, const FString& Message)
 	spdlog::log(static_cast<spdlog::level::level_enum>(Verbosity), Message);
 }
 
-void FLogger::Log(ELogVerbosity Verbosity, const FString& Message, const FLoggerLocation& Location)
+void FLogger::Log(ELogVerbosity Verbosity, const FWideString& Message, const FLoggerLocation& Location)
+{
+	if (!IsAvailable())
+	{
+		return;
+	}
+	const spdlog::source_loc SourceLocation(Location.file_name(), static_cast<int32>(Location.line()), Location.function_name());
+	spdlog::log(SourceLocation, static_cast<spdlog::level::level_enum>(Verbosity), Message);
+}
+
+void FLogger::Log(ELogVerbosity Verbosity, const FAnsiString& Message)
+{
+	if (!IsAvailable())
+	{
+		return;
+	}
+	spdlog::log(static_cast<spdlog::level::level_enum>(Verbosity), Message);
+}
+
+void FLogger::Log(ELogVerbosity Verbosity, const FAnsiString& Message, const FLoggerLocation& Location)
 {
 	if (!IsAvailable())
 	{

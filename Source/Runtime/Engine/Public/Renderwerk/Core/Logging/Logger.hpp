@@ -15,8 +15,11 @@ class ENGINE_API FLogger
 public:
 	[[nodiscard]] static bool8 IsAvailable();
 
-	static void Log(ELogVerbosity Verbosity, const FString& Message);
-	static void Log(ELogVerbosity Verbosity, const FString& Message, const FLoggerLocation& Location);
+	static void Log(ELogVerbosity Verbosity, const FWideString& Message);
+	static void Log(ELogVerbosity Verbosity, const FWideString& Message, const FLoggerLocation& Location);
+
+	static void Log(ELogVerbosity Verbosity, const FAnsiString& Message);
+	static void Log(ELogVerbosity Verbosity, const FAnsiString& Message, const FLoggerLocation& Location);
 
 private:
 	static void Initialize();
