@@ -14,8 +14,12 @@ FUpdateThread::~FUpdateThread() = default;
 
 void FUpdateThread::Initialize()
 {
+	PROFILE_FUNCTION();
+
 	GetEngine()->MainThread->WaitForState(EEngineThreadState::Initialized);
 	{
+		PROFILE_SCOPE("InitializeModules");
+
 		const TVector<TRef<IEngineModule>> Modules = GetEngine()->GetModuleListByAffinity(EEngineThreadAffinity::Update);
 		for (const TRef<IEngineModule>& EngineModule : Modules)
 		{

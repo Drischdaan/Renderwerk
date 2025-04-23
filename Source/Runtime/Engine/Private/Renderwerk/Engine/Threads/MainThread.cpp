@@ -15,15 +15,20 @@ FMainThread::FMainThread(TAtomic<bool8>* InShouldRun)
 
 void FMainThread::Initialize()
 {
+	PROFILE_FUNCTION();
+
 	tracy::SetThreadName("Main");
 	{
 		const TRef<FEngine> Engine = GetEngine();
-		const TVector<TRef<IEngineModule>> Modules = Engine->GetModuleListByAffinity(EEngineThreadAffinity::Main);
-		for (const TRef<IEngineModule>& EngineModule : Modules)
 		{
-			EngineModule->Initialize();
-		}
+			PROFILE_SCOPE("InitializeModules");
 
+			const TVector<TRef<IEngineModule>> Modules = Engine->GetModuleListByAffinity(EEngineThreadAffinity::Main);
+			for (const TRef<IEngineModule>& EngineModule : Modules)
+			{
+				EngineModule->Initialize();
+			}
+		}
 		const TRef<FWindowModule> WindowModule = Engine->GetModule<FWindowModule>();
 
 		const FWindowDesc Description = {};
