@@ -6,6 +6,7 @@
 #include "Renderwerk/Engine/EngineModule.hpp"
 #include "Renderwerk/Platform/WindowModule.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
+#include "Renderwerk/Renderer/RendererModule.hpp"
 
 TRef<FEngine> GEngine = nullptr;
 
@@ -45,6 +46,7 @@ void FEngine::Run()
 	PrintLogo();
 
 	RegisterModule<FWindowModule>();
+	RegisterModule<FRendererModule>();
 
 	MainThread = NewOwned<FMainThread>(&bShouldRun);
 	RenderThread = NewOwned<FRenderThread>(&bShouldRun);
