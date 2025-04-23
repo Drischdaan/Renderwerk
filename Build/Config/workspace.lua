@@ -29,6 +29,9 @@ workspace(engine_name)
 		rw_macro('ENGINE_VERSION_PATCH', engine_version_patch),
 		rw_macro('ENGINE_VERSION_SUFFIX', '"' .. engine_version_suffix .. '"'),
 		rw_macro('ENGINE_FULL_VERSION', '"' .. full_version .. '"'),
+		'TRACY_ENABLE',
+		'TRACY_DELAYED_INIT',
+		'TRACY_MANUAL_LIFETIME',
 	})
 
 	rw_filter_config(build_configs.Debug)
