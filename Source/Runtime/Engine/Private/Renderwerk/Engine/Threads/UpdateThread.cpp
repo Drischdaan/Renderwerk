@@ -28,6 +28,7 @@ void FUpdateThread::Initialize()
 void FUpdateThread::OnTick()
 {
 	PROFILE_FUNCTION();
+	GetEngine()->GetUpdateThreadTickDelegate().Broadcast();
 }
 
 void FUpdateThread::Shutdown()
