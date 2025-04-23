@@ -1,11 +1,10 @@
 ﻿#include "pch.hpp"
 
-#include <dbt.h>
-
 #include "Renderwerk/Platform/WindowModule.hpp"
 
 #include "Renderwerk/Engine/Engine.hpp"
 #include "Renderwerk/Platform/Window.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 
 LRESULT WindowProcess(const HWND WindowHandle, const UINT Message, const WPARAM WParam, const LPARAM LParam)
 {
@@ -39,18 +38,21 @@ TRef<FWindow> FWindowModule::NewWindow(const FWindowDesc& Description)
 	TRef<FWindow> Window = NewRef<FWindow>(WindowClass, Guid, Description);
 	Windows.push_back(Window);
 	RW_LOG(Info, "Created window '{}' (Title: '{}')", Window->GetGuid(), Description.Title);
+	OnWindowAdded.Broadcast(Window);
 	return Window;
 }
 
 void FWindowModule::DestroyWindow(const FGuid& Guid)
 {
-	const auto WindowIterator = std::ranges::find_if(Windows.begin(), Windows.end(), [Guid](const TRef<FWindow>& OtherWindow)
-	{
-		return OtherWindow->GetGuid() == Guid;
-	});
+	const auto WindowIterator = std::ranges::find_if(Windows.begin(), Windows.end(),
+	                                                 [Guid](const TRef<FWindow>& OtherWindow)
+	                                                 {
+		                                                 return OtherWindow->GetGuid() == Guid;
+	                                                 });
 	if (WindowIterator != Windows.end())
 	{
 		RW_LOG(Info, "Destroying window '{}' (Title: '{}')", Guid, (*WindowIterator)->GetState().Title);
+		OnWindowRemoved.Broadcast(*WindowIterator);
 		Windows.erase(WindowIterator);
 	}
 }
@@ -94,10 +96,15 @@ void FWindowModule::Shutdown()
 
 void FWindowModule::OnTick()
 {
-	MSG Message = {};
-	while (PeekMessage(&Message, nullptr, 0, 0, PM_REMOVE))
+	PROFILE_FUNCTION();
 	{
-		TranslateMessage(&Message);
-		DispatchMessage(&Message);
+		PROFILE_SCOPE("MessageLoop");
+
+		MSG Message = {};
+		while (PeekMessage(&Message, nullptr, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&Message);
+			DispatchMessage(&Message);
+		}
 	}
 }

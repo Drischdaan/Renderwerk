@@ -26,6 +26,10 @@ public:
 
 	[[nodiscard]] TRef<FWindow> GetWindow(const FGuid& Guid);
 
+public:
+	[[nodiscard]] TMulticastDelegate<TRef<FWindow>&>& GetOnWindowAdded() { return OnWindowAdded; }
+	[[nodiscard]] TMulticastDelegate<TRef<FWindow>&>& GetOnWindowRemoved() { return OnWindowRemoved; }
+
 private:
 	void Initialize() override;
 	void Shutdown() override;
@@ -41,6 +45,8 @@ private:
 	FDelegateHandle TickDelegateHandle;
 
 	TVector<TRef<FWindow>> Windows;
+	TMulticastDelegate<TRef<FWindow>&> OnWindowAdded = {};
+	TMulticastDelegate<TRef<FWindow>&> OnWindowRemoved = {};
 
 	friend LRESULT WindowProcess(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
 };
