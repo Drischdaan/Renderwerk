@@ -27,6 +27,7 @@ void FRenderThread::Initialize()
 void FRenderThread::OnTick()
 {
 	PROFILE_FUNCTION();
+	GetEngine()->GetRenderThreadTickDelegate().Broadcast();
 }
 
 void FRenderThread::Shutdown()

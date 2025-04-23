@@ -35,7 +35,7 @@
 #define RW_VERIFY_ID(Id) \
 	do \
 	{ \
-		if (Condition < 0) \
+		if (Id < 0) \
 		{ \
 			if(IsDebuggerPresent()) \
 			{ \
@@ -48,7 +48,7 @@
 #define RW_VERIFY_ID_MSG(Id, Message, ...) \
 	do \
 	{ \
-		if (Condition < 0) \
+		if (Id < 0) \
 		{ \
 			if(IsDebuggerPresent()) \
 			{ \
