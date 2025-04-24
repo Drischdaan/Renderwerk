@@ -12,7 +12,7 @@ Since this is my hobby project, updates might be a bit slow sometimes as I work 
 
 ### Prerequisites
 
-> **❗Note:** The engine was only tested on Windows 11 using SDK version 10.0.26100.0, but should also run on Windows 10 and older SDK versions
+> **❗Note:** _The engine was only tested on Windows 11 using SDK version 10.0.26100.0, but should also run on Windows 10 and older SDK versions_
 
 - Windows 11
 - Visual Studio 2022 or Jetbrains Rider
@@ -36,6 +36,18 @@ cd Renderwerk
 ## 📚 Documentation
 
 Comprehensive documentation can be found in the [Documentation](./Documentation) directory.
+
+### ⌚ Profiling
+
+The engine supports performance profiling through [tracy](https://github.com/wolfpld/tracy), allowing you to identify bottlenecks and optimize your code.
+
+1. Download [tracy v0.11.1](https://github.com/wolfpld/tracy/releases/tag/v0.11.1)
+2. Launch the engine application
+3. Open the Tracy profiler and connect to your running instance
+
+> **Note:** _More profiler zones are added continuously to improve visibility into engine performance._
+
+<img src="./Documentation/Assets/Tracy-Example.png" alt="Tracy Example" />
 
 ## 🔄 Project Status
 
