@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CommandList.hpp"
+#include "GraphicsPipeline.hpp"
 #include "Swapchain.hpp"
 
 #include "Renderwerk/Core/CoreAPI.hpp"
@@ -48,6 +49,8 @@ private:
 	TVector<FGraphicsFrame> Frames;
 
 	TObjectHandle<FCommandList> UploadCommandList;
+
+	TObjectHandle<FGraphicsPipeline> GraphicsPipeline;
 
 	FDelegateHandle TickDelegateHandle;
 };
