@@ -56,6 +56,7 @@ workspace(engine_name)
 		defines({
 			rw_macro('LINK', '"Monolithic"'),
 			rw_macro('LINK_MONOLITHIC'),
-			rw_macro('LOG_VERBOSITY', '4'),
+			-- rw_macro('LOG_VERBOSITY', '4'),
+			rw_macro('LOG_VERBOSITY', '0'),
 		})
 	rw_filter_end()
