@@ -63,6 +63,8 @@ public:
 	[[nodiscard]] TMulticastDelegate<>& GetRenderThreadTickDelegate() { return OnRenderThreadTick; }
 	[[nodiscard]] TMulticastDelegate<>& GetUpdateThreadTickDelegate() { return OnUpdateThreadTick; }
 
+	[[nodiscard]] TRef<FWindow> GetWindow() const { return MainThread->Window; }
+
 private:
 	void Run();
 
