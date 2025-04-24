@@ -19,8 +19,14 @@ rw_module(name)
 			'd3d12.lib',
 			'dxgi.lib',
 			'dxguid.lib',
+			'dxcompiler.lib',
+		})
+
+		libdirs({
+			rw_thirdparty_module_location('DirectXShaderCompiler', 'lib'),
 		})
 
 		includedirs({
 			rw_thirdparty_module_location('DirectX-Headers', 'include'),
+			rw_thirdparty_module_location('DirectXShaderCompiler', 'include'),
 		})
