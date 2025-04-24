@@ -12,6 +12,9 @@
 #define PROFILE_FRAME() FrameMark
 #define PROFILE_SECONDARY_FRAME(Name) FrameMarkNamed(Name)
 
+#define PROFILE_POINTER_ALLOCATION(Pointer, Size) TracySecureAlloc(Pointer, Size)
+#define PROFILE_POINTER_FREE(Pointer) TracySecureFree(Pointer)
+
 class ENGINE_API FProfiler
 {
 public:
