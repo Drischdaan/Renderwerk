@@ -1,14 +1,14 @@
 ﻿#pragma once
 
-#include "CommandList.hpp"
-#include "GraphicsPipeline.hpp"
-#include "Swapchain.hpp"
+#include "Pipeline/GraphicsPipeline.hpp"
 
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Engine/EngineModule.hpp"
+#include "Renderwerk/Renderer/CommandList.hpp"
 #include "Renderwerk/Renderer/GraphicsCommon.hpp"
 #include "Renderwerk/Renderer/GraphicsContext.hpp"
+#include "Renderwerk/Renderer/Swapchain.hpp"
 
 #define RW_DEFAULT_FRAME_COUNT FORWARD(3)
 

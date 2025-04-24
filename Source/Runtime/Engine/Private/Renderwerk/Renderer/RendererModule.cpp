@@ -206,7 +206,7 @@ void FRendererModule::OnTick()
 		CommandList->GetHandle()->SetGraphicsRootSignature(GraphicsPipeline->GetRootSignature()->GetHandle());
 		CommandList->GetHandle()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		D3D12_VIEWPORT Viewport = {};
+		D3D12_VIEWPORT Viewport;
 		Viewport.Width = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth);
 		Viewport.Height = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight);
 		Viewport.MinDepth = 0.0f;
@@ -214,7 +214,7 @@ void FRendererModule::OnTick()
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
 
-		D3D12_RECT Rect = {};
+		D3D12_RECT Rect;
 		Rect.right = static_cast<LONG>(Viewport.Width);
 		Rect.bottom = static_cast<LONG>(Viewport.Height);
 		Rect.top = 0;
