@@ -4,18 +4,26 @@
 
 #include "mimalloc.h"
 
+#include "Renderwerk/Profiler/Profiler.hpp"
+
 void* FMemory::Allocate(const size64 Size, const size64 Alignment)
 {
-	return mi_malloc_aligned(Size, Alignment);
+	void* Pointer = mi_malloc_aligned(Size, Alignment);
+	PROFILE_POINTER_ALLOCATION(Pointer, Size);
+	return Pointer;
 }
 
 void* FMemory::Reallocate(void* OriginalPointer, const size64 Size, const size64 Alignment)
 {
+	PROFILE_POINTER_FREE(OriginalPointer);
+	const void* Pointer = mi_realloc_aligned(OriginalPointer, Size, Alignment);
+	PROFILE_POINTER_ALLOCATION(Pointer, Size);
 	return mi_realloc_aligned(OriginalPointer, Size, Alignment);
 }
 
 void FMemory::Free(void* Pointer, const size64 Alignment)
 {
+	PROFILE_POINTER_FREE(Pointer);
 	mi_free_aligned(Pointer, Alignment);
 }
 
