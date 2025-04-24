@@ -83,6 +83,7 @@ FDevice::FDevice(FAdapter* InAdapter, const FDeviceDesc& InDeviceDesc)
 	WorkFence = CreateFence();
 
 	ResourceUploader = NewObjectHandle<FResourceUploader>(this);
+	ShaderCompiler = NewObjectHandle<FShaderCompiler>();
 }
 
 FDevice::~FDevice()

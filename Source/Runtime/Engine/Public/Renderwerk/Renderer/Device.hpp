@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "ShaderCompiler.hpp"
+
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Renderer/CommandList.hpp"
 #include "Renderwerk/Renderer/DescriptorHeap.hpp"
@@ -54,6 +56,7 @@ public:
 	[[nodiscard]] TObjectHandle<FDescriptorHeap> GetRSVDescriptorHeap() const { return RSVDescriptorHeap; }
 
 	[[nodiscard]] TObjectHandle<FResourceUploader> GetResourceUploader() const { return ResourceUploader; }
+	[[nodiscard]] TObjectHandle<FShaderCompiler> GetShaderCompiler() const { return ShaderCompiler; }
 
 private:
 	TObjectHandle<ID3D12CommandQueue> CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE Type) const;
@@ -79,4 +82,5 @@ private:
 	TObjectHandle<FDescriptorHeap> RSVDescriptorHeap;
 
 	TObjectHandle<FResourceUploader> ResourceUploader;
+	TObjectHandle<FShaderCompiler> ShaderCompiler;
 };
