@@ -16,9 +16,9 @@ void* FMemory::Allocate(const size64 Size, const size64 Alignment)
 void* FMemory::Reallocate(void* OriginalPointer, const size64 Size, const size64 Alignment)
 {
 	PROFILE_POINTER_FREE(OriginalPointer);
-	const void* Pointer = mi_realloc_aligned(OriginalPointer, Size, Alignment);
+	void* Pointer = mi_realloc_aligned(OriginalPointer, Size, Alignment);
 	PROFILE_POINTER_ALLOCATION(Pointer, Size);
-	return mi_realloc_aligned(OriginalPointer, Size, Alignment);
+	return Pointer;
 }
 
 void FMemory::Free(void* Pointer, const size64 Alignment)
