@@ -44,8 +44,13 @@ public:
 		return TempRefCount;
 	}
 
-private:
-	TAtomic<uint64> RefCount = 1;
+	[[nodiscard]] uint64 GetRefCount() const
+	{
+		return RefCount.load();
+	}
+
+protected:
+	TAtomic<uint64> RefCount = 0;
 };
 
 template <typename T>
@@ -64,6 +69,12 @@ public:
 
 	TObjectHandle(const TObjectHandle& Other)
 		: Pointer(Other.Pointer)
+	{
+		InternalAddRef();
+	}
+
+	TObjectHandle(T* OtherPointer)
+		: Pointer(OtherPointer)
 	{
 		InternalAddRef();
 	}
@@ -255,6 +266,13 @@ template <typename TObject, typename... TArguments> requires std::is_constructib
 	return TObjectHandle<TObject>(FMemory::NewInstance<TObject>(std::forward<TArguments>(Arguments)...));
 }
 
+_EXPORT_STD template <typename T, typename TOther>
+_NODISCARD TObjectHandle<T> CastObjectHandle(const TObjectHandle<TOther>& Other) noexcept
+{
+	const T* Pointer = static_cast<T*>(Other.Get());
+	return TObjectHandle<T>(Pointer);
+}
+
 namespace D3DUtility
 {
 	[[nodiscard]] constexpr FStringView ToString(const D3D_FEATURE_LEVEL FeatureLevel)
@@ -325,6 +343,19 @@ namespace D3DUtility
 		{
 		case D3D12_MESH_SHADER_TIER_NOT_SUPPORTED: return TEXT("D3D12_MESH_SHADER_TIER_NOT_SUPPORTED");
 		case D3D12_MESH_SHADER_TIER_1: return TEXT("D3D12_MESH_SHADER_TIER_1");
+		}
+		return TEXT("Unknown");
+	}
+
+	[[nodiscard]] constexpr FStringView ToString(const D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapType)
+	{
+		switch (DescriptorHeapType)
+		{
+		case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV: return TEXT("D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV");
+		case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: return TEXT("D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER");
+		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV: return TEXT("D3D12_DESCRIPTOR_HEAP_TYPE_RTV");
+		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV: return TEXT("D3D12_DESCRIPTOR_HEAP_TYPE_DSV");
+		case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES: return TEXT("D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES");
 		}
 		return TEXT("Unknown");
 	}
