@@ -54,3 +54,33 @@
 #define UNIQUE_VARIABLE(Prefix) APPEND(Prefix, __LINE__)
 
 #define FORWARD(...) __VA_ARGS__
+
+#define BIT(x) (1 << x)
+
+#define DEFINE_ENUM_FLAGS(EnumClass) \
+	inline constexpr bool8 operator&(EnumClass First, EnumClass Second) \
+	{ \
+		return static_cast<uint32>(First) & static_cast<uint32>(Second); \
+	} \
+	inline constexpr EnumClass operator|(EnumClass First, EnumClass Second) \
+	{ \
+		return static_cast<EnumClass>(static_cast<uint32>(First) | static_cast<uint32>(Second)); \
+	} \
+	inline constexpr EnumClass operator^(EnumClass First, EnumClass Second) \
+	{ \
+		return static_cast<EnumClass>(static_cast<uint32>(First) ^ static_cast<uint32>(Second)); \
+	} \
+	inline constexpr EnumClass operator~(EnumClass First) \
+	{ \
+		return static_cast<EnumClass>(~static_cast<uint32>(First)); \
+	} \
+	inline EnumClass& operator|=(EnumClass & First, EnumClass Second) \
+	{ \
+		First = First | Second; \
+		return First; \
+	} \
+	inline EnumClass& operator^=(EnumClass & First, EnumClass Second) \
+	{ \
+		First = First ^ Second; \
+		return First; \
+	}
