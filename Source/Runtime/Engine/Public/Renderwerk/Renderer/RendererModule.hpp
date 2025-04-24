@@ -10,6 +10,8 @@
 #include "Renderwerk/Renderer/GraphicsContext.hpp"
 #include "Renderwerk/Renderer/Swapchain.hpp"
 
+#include "tracy/TracyD3D12.hpp"
+
 #define RW_DEFAULT_FRAME_COUNT FORWARD(3)
 
 struct ENGINE_API FGraphicsFrame
@@ -43,14 +45,12 @@ private:
 
 	TObjectHandle<FSwapchain> Swapchain;
 
-	TObjectHandle<FTexture> Texture;
-
 	uint32 FrameIndex = 0;
 	TVector<FGraphicsFrame> Frames;
 
-	TObjectHandle<FCommandList> UploadCommandList;
-
 	TObjectHandle<FGraphicsPipeline> GraphicsPipeline;
+
+	tracy::D3D12QueueCtx* TracyContext = nullptr;
 
 	FDelegateHandle TickDelegateHandle;
 };

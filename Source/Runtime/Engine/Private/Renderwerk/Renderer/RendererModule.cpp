@@ -5,25 +5,8 @@
 #include "Renderwerk/Engine/Engine.hpp"
 #include "Renderwerk/Platform/Window.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
-#include "Renderwerk/Renderer/ResourceUploader.hpp"
 #include "Renderwerk/Renderer/RootSignature.hpp"
 #include "Renderwerk/Renderer/ShaderCompiler.hpp"
-
-TVector<uint8_t> CreateCheckerboardImage()
-{
-	constexpr int width = 16;
-	constexpr int height = 16;
-	TVector<uint8_t> imageData(width * height);
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			const bool isDark = (x / 4 + y / 4) % 2 == 0;
-			imageData[y * width + x] = isDark ? 50 : 200;
-		}
-	}
-	return imageData;
-}
 
 FRendererModule::FRendererModule()
 	: IEngineModule(EEngineThreadAffinity::Render)
@@ -91,27 +74,6 @@ void FRendererModule::Initialize()
 		Frames[Index].Fence = Device->CreateFence();
 	}
 
-	UploadCommandList = NewObjectHandle<FCommandList>(Device.Get(), D3D12_COMMAND_LIST_TYPE_DIRECT);
-
-	// Create texture and queue upload
-	FTextureDesc TextureDesc = {};
-	TextureDesc.Width = 16;
-	TextureDesc.Height = 16;
-	TextureDesc.Usage = ETextureUsage::RenderTarget;
-	TextureDesc.MipLevels = 1;
-	TextureDesc.DebugName = TEXT("TestTexture");
-	Texture = Device->CreateTexture(TextureDesc);
-	Device->UploadTexture(Texture, CreateCheckerboardImage());
-
-	// Upload queued resources
-	const TObjectHandle<FResourceUploader> ResourceUploader = Device->GetResourceUploader();
-	UploadCommandList->Open();
-	ResourceUploader->Flush(UploadCommandList);
-	UploadCommandList->Close();
-	Device->SubmitGraphicsWork(UploadCommandList);
-	Device->FlushWork();
-	ResourceUploader->ReleaseResources();
-
 	const FAnsiString ShaderSource = R"(#pragma vertex VSMain
 #pragma pixel PSMain
 
@@ -148,8 +110,8 @@ float4 PSMain(VertexOut Out) : SV_Target
     return float4(Out.vColor, 1.0);
 })";
 
-	FShaderModule VertexShader = Device->GetShaderCompiler()->CompilerShader(EShaderType::Vertex, ShaderSource, L"VSMain");
-	FShaderModule PixelShader = Device->GetShaderCompiler()->CompilerShader(EShaderType::Pixel, ShaderSource, L"PSMain");
+	const FShaderModule VertexShader = Device->GetShaderCompiler()->CompilerShader(EShaderType::Vertex, ShaderSource, L"VSMain");
+	const FShaderModule PixelShader = Device->GetShaderCompiler()->CompilerShader(EShaderType::Pixel, ShaderSource, L"PSMain");
 
 	FGraphicsPipelineDesc GraphicsPipelineDesc = {};
 	GraphicsPipelineDesc.Shaders[EShaderType::Vertex] = VertexShader;
@@ -157,6 +119,8 @@ float4 PSMain(VertexOut Out) : SV_Target
 	GraphicsPipelineDesc.Formats.push_back(DXGI_FORMAT_R8G8B8A8_UNORM);
 	GraphicsPipelineDesc.RootSignature = NewObjectHandle<FRootSignature>(Device.Get());
 	GraphicsPipeline = NewObjectHandle<FGraphicsPipeline>(Device.Get(), GraphicsPipelineDesc);
+
+	TracyContext = TracyD3D12Context(Device->GetHandle(), Device->GetGraphicsCommandQueue())
 
 	TickDelegateHandle = GetEngine()->GetRenderThreadTickDelegate().BindRaw(this, &FRendererModule::OnTick);
 
@@ -167,14 +131,15 @@ void FRendererModule::Shutdown()
 {
 	GetEngine()->GetRenderThreadTickDelegate().Unbind(TickDelegateHandle);
 
+	TracyD3D12Destroy(TracyContext)
+	TracyContext = nullptr;
+
 	for (size64 Index = 0; Index < Frames.size(); ++Index)
 	{
 		Device->FlushWork();
 	}
 
 	GraphicsPipeline.Reset();
-	UploadCommandList.Reset();
-	Texture.Reset();
 	Frames.clear();
 
 	Swapchain.Reset();
@@ -194,38 +159,51 @@ void FRendererModule::OnTick()
 	const TObjectHandle<FCommandList> CommandList = Frame.CommandList;
 	{
 		PROFILE_SCOPE("CommandListRecording");
+		TracyD3D12NewFrame(TracyContext)
 
 		const TObjectHandle<FTexture> BackBuffer = Swapchain->GetBackBuffer(BackBufferIndex);
 
 		CommandList->Open();
-		CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		constexpr float32 Colors[4] = {1.0f, 0.5f, 0.5f, 1.0f};
-		CommandList->ClearRenderTarget(BackBuffer, Colors);
-		CommandList->SetRenderTarget(BackBuffer);
-		CommandList->GetHandle()->SetPipelineState(GraphicsPipeline->GetHandle());
-		CommandList->GetHandle()->SetGraphicsRootSignature(GraphicsPipeline->GetRootSignature()->GetHandle());
-		CommandList->GetHandle()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		{
+			TracyD3D12Zone(TracyContext, CommandList->GetHandle(), "Frame")
+			{
+				TracyD3D12Zone(TracyContext, CommandList->GetHandle(), "ClearTargets")
 
-		D3D12_VIEWPORT Viewport;
-		Viewport.Width = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth);
-		Viewport.Height = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight);
-		Viewport.MinDepth = 0.0f;
-		Viewport.MaxDepth = 1.0f;
-		Viewport.TopLeftX = 0;
-		Viewport.TopLeftY = 0;
+				CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				constexpr float32 Colors[4] = {1.0f, 0.5f, 0.5f, 1.0f};
+				CommandList->ClearRenderTarget(BackBuffer, Colors);
+				CommandList->SetRenderTarget(BackBuffer);
+			}
 
-		D3D12_RECT Rect;
-		Rect.right = static_cast<LONG>(Viewport.Width);
-		Rect.bottom = static_cast<LONG>(Viewport.Height);
-		Rect.top = 0;
-		Rect.left = 0;
+			{
+				TracyD3D12Zone(TracyContext, CommandList->GetHandle(), "DrawTriangle")
 
-		CommandList->GetHandle()->RSSetViewports(1, &Viewport);
-		CommandList->GetHandle()->RSSetScissorRects(1, &Rect);
+				CommandList->GetHandle()->SetPipelineState(GraphicsPipeline->GetHandle());
+				CommandList->GetHandle()->SetGraphicsRootSignature(GraphicsPipeline->GetRootSignature()->GetHandle());
+				CommandList->GetHandle()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		CommandList->GetHandle()->DrawInstanced(3, 1, 0, 0);
+				D3D12_VIEWPORT Viewport;
+				Viewport.Width = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth);
+				Viewport.Height = static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight);
+				Viewport.MinDepth = 0.0f;
+				Viewport.MaxDepth = 1.0f;
+				Viewport.TopLeftX = 0;
+				Viewport.TopLeftY = 0;
 
-		CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
+				D3D12_RECT Rect;
+				Rect.right = static_cast<LONG>(Viewport.Width);
+				Rect.bottom = static_cast<LONG>(Viewport.Height);
+				Rect.top = 0;
+				Rect.left = 0;
+
+				CommandList->GetHandle()->RSSetViewports(1, &Viewport);
+				CommandList->GetHandle()->RSSetScissorRects(1, &Rect);
+
+				CommandList->GetHandle()->DrawInstanced(3, 1, 0, 0);
+			}
+
+			CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
+		}
 		CommandList->Close();
 	}
 	Device->SubmitGraphicsWork(CommandList);
