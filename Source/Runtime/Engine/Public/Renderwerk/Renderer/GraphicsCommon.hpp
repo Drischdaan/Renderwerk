@@ -359,4 +359,36 @@ namespace D3DUtility
 		}
 		return TEXT("Unknown");
 	}
+
+	[[nodiscard]] constexpr FStringView ToString(const D3D12_VARIABLE_SHADING_RATE_TIER VariableShadingRateTier)
+	{
+		switch (VariableShadingRateTier)
+		{
+		case D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED: return TEXT("D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED");
+		case D3D12_VARIABLE_SHADING_RATE_TIER_1: return TEXT("D3D12_VARIABLE_SHADING_RATE_TIER_1");
+		case D3D12_VARIABLE_SHADING_RATE_TIER_2: return TEXT("D3D12_VARIABLE_SHADING_RATE_TIER_2");
+		}
+		return TEXT("Unknown");
+	}
+
+	[[nodiscard]] constexpr FStringView ToString(const D3D12_WORK_GRAPHS_TIER WorkGraphsTier)
+	{
+		switch (WorkGraphsTier)
+		{
+		case D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED: return TEXT("D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED");
+		case D3D12_WORK_GRAPHS_TIER_1_0: return TEXT("D3D12_WORK_GRAPHS_TIER_1_0");
+		}
+		return TEXT("Unknown");
+	}
+
+	[[nodiscard]] constexpr FStringView ToString(const D3D_ROOT_SIGNATURE_VERSION RootSignatureVersion)
+	{
+		switch (RootSignatureVersion)
+		{
+		case D3D_ROOT_SIGNATURE_VERSION_1_0: return TEXT("D3D_ROOT_SIGNATURE_VERSION_1_0");
+		case D3D_ROOT_SIGNATURE_VERSION_1_1: return TEXT("D3D_ROOT_SIGNATURE_VERSION_1_1");
+		case D3D_ROOT_SIGNATURE_VERSION_1_2: return TEXT("D3D_ROOT_SIGNATURE_VERSION_1_2");
+		}
+		return TEXT("Unknown");
+	}
 }
