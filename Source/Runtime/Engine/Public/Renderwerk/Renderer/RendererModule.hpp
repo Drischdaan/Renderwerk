@@ -1,24 +1,13 @@
 ﻿#pragma once
 
-#include "Pipeline/GraphicsPipeline.hpp"
-
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Engine/EngineModule.hpp"
-#include "Renderwerk/Renderer/CommandList.hpp"
-#include "Renderwerk/Renderer/GraphicsCommon.hpp"
-#include "Renderwerk/Renderer/GraphicsContext.hpp"
-#include "Renderwerk/Renderer/Swapchain.hpp"
 
-#include "tracy/TracyD3D12.hpp"
+#include "Renderwerk/Core/Memory/SmartPointer.hpp"
+#include "Renderwerk/Graphics/GfxCommon.hpp"
 
 #define RW_DEFAULT_FRAME_COUNT FORWARD(3)
-
-struct ENGINE_API FGraphicsFrame
-{
-	TObjectHandle<FCommandList> CommandList;
-	TObjectHandle<FFence> Fence;
-};
 
 class ENGINE_API FRendererModule : public IEngineModule
 {
@@ -32,25 +21,18 @@ private:
 	void Initialize() override;
 	void Shutdown() override;
 
-	void OnTick();
+	void OnTick() const;
 
 public:
 	DEFINE_MODULE_NAME("Renderer")
 
 private:
-	TObjectHandle<FGraphicsContext> Context;
+	TRef<FGfxContext> GfxContext;
 
-	TObjectHandle<FAdapter> Adapter;
-	TObjectHandle<FDevice> Device;
+	TRef<FGfxAdapter> Adapter;
+	TRef<FGfxDevice> Device;
 
-	TObjectHandle<FSwapchain> Swapchain;
-
-	uint32 FrameIndex = 0;
-	TVector<FGraphicsFrame> Frames;
-
-	TObjectHandle<FGraphicsPipeline> GraphicsPipeline;
-
-	tracy::D3D12QueueCtx* TracyContext = nullptr;
+	TRef<FGfxSwapchain> Swapchain;
 
 	FDelegateHandle TickDelegateHandle;
 };
