@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Core/CoreMacros.hpp"
+#include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Core/Memory/SmartPointer.hpp"
 #include "Renderwerk/Core/Misc/Guid.hpp"
 
@@ -31,6 +32,7 @@ struct ENGINE_API FWindowState
 	int32 PositionX = 0;
 	int32 PositionY = 0;
 	FString Title;
+	bool8 bIsMinimized = false;
 	bool8 bIsClosed = false;
 	bool8 bIsDestroyed = false;
 };
@@ -73,15 +75,16 @@ public:
 	[[nodiscard]] HWND GetHandle() const { return WindowHandle; }
 
 	[[nodiscard]] FGuid GetGuid() const { return Guid; }
-
 	[[nodiscard]] FWindowState GetState() const { return State; }
+
+	[[nodiscard]] TMulticastDelegate<uint32, uint32>& GetClientResizeDelegate() { return OnClientResize; }
 
 private:
 	LRESULT WindowProcess(HWND ProcessWindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
 
 	int64 OnCloseMessage(HWND ProcessWindowHandle);
 	int64 OnDestroyMessage();
-	int64 OnSizeMessage(HWND ProcessWindowHandle, LPARAM LParam);
+	int64 OnSizeMessage(HWND ProcessWindowHandle, WPARAM WParam, LPARAM LParam);
 	int64 OnMoveMessage(LPARAM LParam);
 	int64 OnEnterSizeMoveMessage();
 	int64 OnExitSizeMoveMessage(HWND ProcessWindowHandle);
@@ -100,6 +103,8 @@ private:
 
 	bool8 bIsInModalLoop = false;
 	FModalState ModalState = {};
+
+	TMulticastDelegate<uint32, uint32> OnClientResize;
 
 	friend LRESULT WindowProcess(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam);
 };

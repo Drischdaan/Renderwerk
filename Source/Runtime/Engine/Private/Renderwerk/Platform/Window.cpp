@@ -132,7 +132,7 @@ LRESULT FWindow::WindowProcess(const HWND ProcessWindowHandle, const UINT Messag
 	{
 	case WM_CLOSE: return OnCloseMessage(ProcessWindowHandle);
 	case WM_DESTROY: return OnDestroyMessage();
-	case WM_SIZE: return OnSizeMessage(ProcessWindowHandle, LParam);
+	case WM_SIZE: return OnSizeMessage(ProcessWindowHandle, WParam, LParam);
 	case WM_MOVE: return OnMoveMessage(LParam);
 	case WM_ENTERSIZEMOVE: return OnEnterSizeMoveMessage();
 	case WM_EXITSIZEMOVE: return OnExitSizeMoveMessage(ProcessWindowHandle);
@@ -156,12 +156,22 @@ int64 FWindow::OnDestroyMessage()
 	return 0;
 }
 
-int64 FWindow::OnSizeMessage(const HWND ProcessWindowHandle, const LPARAM LParam)
+int64 FWindow::OnSizeMessage(const HWND ProcessWindowHandle, const WPARAM WParam, const LPARAM LParam)
 {
 	if (bIsInModalLoop)
 	{
 		return 0;
 	}
+
+	if (WParam == SIZE_MINIMIZED)
+	{
+		State.bIsMinimized = true;
+	}
+	else
+	{
+		State.bIsMinimized = false;
+	}
+
 	State.ClientWidth = LOWORD(LParam);
 	State.ClientHeight = HIWORD(LParam);
 
@@ -169,6 +179,8 @@ int64 FWindow::OnSizeMessage(const HWND ProcessWindowHandle, const LPARAM LParam
 	GetWindowRect(ProcessWindowHandle, &WindowRect);
 	State.WindowWidth = WindowRect.right - WindowRect.left;
 	State.WindowHeight = WindowRect.bottom - WindowRect.top;
+
+	OnClientResize.Broadcast(State.ClientWidth, State.ClientHeight);
 	return 0;
 }
 
@@ -216,6 +228,8 @@ int64 FWindow::OnExitSizeMoveMessage(const HWND ProcessWindowHandle)
 		GetClientRect(ProcessWindowHandle, &ClientRect);
 		State.ClientWidth = ClientRect.right - ClientRect.left;
 		State.ClientHeight = ClientRect.bottom - ClientRect.top;
+
+		OnClientResize.Broadcast(State.ClientWidth, State.ClientHeight);
 	}
 
 	if (AfterModalState.PositionX != ModalState.PositionX || AfterModalState.PositionY != ModalState.PositionY)
