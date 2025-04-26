@@ -12,6 +12,9 @@ public:
 	NON_COPY_MOVEABLE(IGfxResource)
 
 public:
+	void SetResourceState(D3D12_RESOURCE_STATES NewResourceState);
+
+public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
 
 public:
