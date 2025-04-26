@@ -17,3 +17,6 @@ class FGfxTexture;
 class FGfxBuffer;
 class FGfxResourceManager;
 class FGfxSwapchain;
+class FGfxCommandList;
+class FGfxFence;
+class FGfxSurface;
