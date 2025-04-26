@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "tracy/Tracy.hpp"
+#include "tracy/TracyD3D12.hpp"
 
 #define DEFINE_PROFILER_SCOPE(Name) const char* const Profile##Name = #Name
 #define USE_PROFILER_SCOPE(Name) extern const char* const Profile##Name
@@ -14,6 +15,15 @@
 
 #define PROFILE_POINTER_ALLOCATION(Pointer, Size) TracySecureAlloc(Pointer, Size)
 #define PROFILE_POINTER_FREE(Pointer) TracySecureFree(Pointer)
+
+#define PROFILER_RENDER_CONTEXT(Device, Queue) tracy::CreateD3D12Context(Device, Queue)
+#define PROFILER_DESTROY_RENDER_CONTEXT(Context) tracy::DestroyD3D12Context(Context)
+
+#define PROFILE_RENDER_FRAME(Context) Context->NewFrame()
+#define PROFILE_RENDER_SCOPE(Context, CommandList, Name) TracyD3D12Zone(Context, CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList), Name)
+#define PROFILE_RENDER_COLLECT(Context) Context->Collect()
+
+using FProfilerRenderContext = TracyD3D12Ctx;
 
 class ENGINE_API FProfiler
 {
