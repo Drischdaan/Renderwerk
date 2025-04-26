@@ -7,7 +7,7 @@
 #include "Renderwerk/Graphics/GfxContext.hpp"
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
-#include "Renderwerk/Graphics/GfxSwapchain.hpp"
+#include "Renderwerk/Graphics/GfxSurface.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
 
 FRendererModule::FRendererModule()
@@ -31,9 +31,7 @@ void FRendererModule::Initialize()
 		constexpr FGfxDeviceDesc DeviceDesc = {};
 		Device = Adapter->CreateDevice(DeviceDesc, TEXT("MainDevice"));
 
-		FGfxSwapchainDesc SwapchainDesc = {};
-		SwapchainDesc.Window = GetEngine()->GetWindow();
-		Swapchain = Device->CreateSwapchain(SwapchainDesc);
+		Surface = Device->CreateSurface(GetEngine()->GetWindow());
 
 		TickDelegateHandle = GetEngine()->GetRenderThreadTickDelegate().BindRaw(this, &FRendererModule::OnTick);
 	}
@@ -45,7 +43,9 @@ void FRendererModule::Shutdown()
 	{
 		GetEngine()->GetRenderThreadTickDelegate().Unbind(TickDelegateHandle);
 
-		Swapchain.reset();
+		Device->FlushGraphicsQueue();
+
+		Surface.reset();
 		Device.reset();
 		Adapter.reset();
 		GfxContext.reset();
@@ -55,4 +55,5 @@ void FRendererModule::Shutdown()
 
 void FRendererModule::OnTick() const
 {
+	Surface->Render();
 }

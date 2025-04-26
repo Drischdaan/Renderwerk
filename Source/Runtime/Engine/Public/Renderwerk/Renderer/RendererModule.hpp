@@ -32,7 +32,7 @@ private:
 	TRef<FGfxAdapter> Adapter;
 	TRef<FGfxDevice> Device;
 
-	TRef<FGfxSwapchain> Swapchain;
+	TRef<FGfxSurface> Surface;
 
 	FDelegateHandle TickDelegateHandle;
 };
