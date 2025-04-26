@@ -2,9 +2,13 @@
 
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 
+#include "Renderwerk/Core/Containers/Array.hpp"
 #include "Renderwerk/Graphics/GfxAdapter.hpp"
+#include "Renderwerk/Graphics/GfxCommandList.hpp"
 #include "Renderwerk/Graphics/GfxDescriptorHeap.hpp"
+#include "Renderwerk/Graphics/GfxFence.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
+#include "Renderwerk/Graphics/GfxSurface.hpp"
 #include "Renderwerk/Graphics/GfxSwapchain.hpp"
 
 FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDeviceDesc)
@@ -23,6 +27,8 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	ComputeQueue = CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE);
 	CopyQueue = CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
 
+	GraphicsWorkFence = CreateFence();
+
 	FGfxDescriptorHeapDesc RTVHeapDesc;
 	RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	RTVHeapDesc.DescriptorCount = DeviceDesc.MaxRenderTargets;
@@ -40,11 +46,28 @@ FGfxDevice::~FGfxDevice()
 
 	RTVDescriptorHeap.reset();
 
+	GraphicsWorkFence.reset();
+
 	CopyQueue.Reset();
 	ComputeQueue.Reset();
 	GraphicsQueue.Reset();
 
 	Device.Reset();
+}
+
+void FGfxDevice::FlushGraphicsQueue() const
+{
+	GraphicsWorkFence->SignalCommandQueue(GraphicsQueue);
+	RW_VERIFY(GraphicsWorkFence->Wait());
+}
+
+void FGfxDevice::SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) const
+{
+	const TArray CommandLists = {
+		CommandList->GetNativeObject<ID3D12CommandList>(NativeObjectIds::D3D12_CommandList),
+	};
+	// ReSharper disable once CppRedundantCastExpression
+	GraphicsQueue->ExecuteCommandLists(static_cast<uint32>(CommandLists.size()), CommandLists.data());
 }
 
 TRef<FGfxDescriptorHeap> FGfxDevice::CreateDescriptorHeap(const FGfxDescriptorHeapDesc& HeapDesc, const FStringView& DebugName)
@@ -55,6 +78,21 @@ TRef<FGfxDescriptorHeap> FGfxDevice::CreateDescriptorHeap(const FGfxDescriptorHe
 TRef<FGfxSwapchain> FGfxDevice::CreateSwapchain(const FGfxSwapchainDesc& SwapchainDesc, const FStringView& DebugName)
 {
 	return NewRef<FGfxSwapchain>(this, SwapchainDesc, DebugName);
+}
+
+TRef<FGfxCommandList> FGfxDevice::CreateCommandList(D3D12_COMMAND_LIST_TYPE Type, const FStringView& DebugName)
+{
+	return NewRef<FGfxCommandList>(this, Type, DebugName);
+}
+
+TRef<FGfxFence> FGfxDevice::CreateFence(const FStringView& DebugName)
+{
+	return NewRef<FGfxFence>(this, DebugName);
+}
+
+TRef<FGfxSurface> FGfxDevice::CreateSurface(const TRef<FWindow>& Window, const FStringView& DebugName)
+{
+	return NewRef<FGfxSurface>(this, Window, DebugName);
 }
 
 FNativeObject FGfxDevice::GetRawNativeObject(const FNativeObjectId NativeObjectId)

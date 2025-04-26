@@ -1,8 +1,11 @@
 ﻿#pragma once
 
 #include "Renderwerk/Core/CoreAPI.hpp"
+#include "Renderwerk/Core/Containers/Span.hpp"
 #include "Renderwerk/Core/Memory/SmartPointer.hpp"
 #include "Renderwerk/Graphics/GfxCommon.hpp"
+
+class FWindow;
 
 struct ENGINE_API FGfxDeviceDesc
 {
@@ -19,8 +22,15 @@ public:
 	NON_COPY_MOVEABLE(FGfxDevice)
 
 public:
+	void FlushGraphicsQueue() const;
+
+	void SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) const;
+
 	[[nodiscard]] TRef<FGfxDescriptorHeap> CreateDescriptorHeap(const FGfxDescriptorHeapDesc& HeapDesc, const FStringView& DebugName = TEXT("UnnamedDescriptorHeap"));
 	[[nodiscard]] TRef<FGfxSwapchain> CreateSwapchain(const FGfxSwapchainDesc& SwapchainDesc, const FStringView& DebugName = TEXT("UnnamedSwapchain"));
+	[[nodiscard]] TRef<FGfxCommandList> CreateCommandList(D3D12_COMMAND_LIST_TYPE Type, const FStringView& DebugName = TEXT("UnnamedCommandList"));
+	[[nodiscard]] TRef<FGfxFence> CreateFence(const FStringView& DebugName = TEXT("UnnamedFence"));
+	[[nodiscard]] TRef<FGfxSurface> CreateSurface(const TRef<FWindow>& Window, const FStringView& DebugName = TEXT("UnnamedSurface"));
 
 public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
@@ -44,6 +54,8 @@ private:
 	TComPtr<ID3D12CommandQueue> GraphicsQueue;
 	TComPtr<ID3D12CommandQueue> ComputeQueue;
 	TComPtr<ID3D12CommandQueue> CopyQueue;
+
+	TRef<FGfxFence> GraphicsWorkFence;
 
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
 
