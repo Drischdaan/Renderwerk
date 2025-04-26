@@ -70,7 +70,13 @@ FGfxTexture::FGfxTexture(FGfxDevice* InGfxDevice, const FGfxTextureDesc& InTextu
 	}
 }
 
-FGfxTexture::~FGfxTexture() = default;
+FGfxTexture::~FGfxTexture()
+{
+	if (TextureDesc.Usage & EGfxTextureUsage::RenderTarget)
+	{
+		GfxDevice->GetRTVDescriptorHeap()->Free(RTVDescriptorHandle);
+	}
+}
 
 void FGfxTexture::AllocateRenderTarget()
 {
