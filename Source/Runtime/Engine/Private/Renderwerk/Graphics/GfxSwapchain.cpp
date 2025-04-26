@@ -40,10 +40,13 @@ FGfxSwapchain::FGfxSwapchain(FGfxDevice* InGfxDevice, const FGfxSwapchainDesc& I
 	RW_VERIFY_ID(Result);
 	Result = TempSwapchain.As(&Swapchain);
 	RW_VERIFY_ID(Result);
+
+	AcquireBuffers();
 }
 
 FGfxSwapchain::~FGfxSwapchain()
 {
+	ReleaseBuffers();
 	BackBuffers.clear();
 	Swapchain.Reset();
 }
