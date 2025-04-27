@@ -14,6 +14,7 @@ rw_module(name)
 		rw_link_module('mimalloc')
 		rw_link_module('spdlog')
 		rw_link_module('tracy')
+		rw_link_module('imgui')
 
 		links({
 			'd3d12.lib',
