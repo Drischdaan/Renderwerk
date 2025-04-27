@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "RenderPass/TestRenderPass.hpp"
+
 #include "Renderwerk/Core/Containers/Vector.hpp"
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Core/Memory/SmartPointer.hpp"
@@ -51,8 +53,7 @@ private:
 
 	FProfilerRenderContext ProfilerContext = nullptr;
 
-	TRef<FGfxTexture> TestTexture;
-	TRef<FGfxGraphicsPipeline> GraphicsPipeline;
+	TRef<FTestRenderPass> TestRenderPass;
 
 	FDelegateHandle ResizeDelegateHandle;
 };

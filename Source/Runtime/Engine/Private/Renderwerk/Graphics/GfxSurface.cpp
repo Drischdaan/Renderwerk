@@ -36,77 +36,8 @@ FGfxSurface::FGfxSurface(FGfxDevice* InGfxDevice, const TRef<FWindow>& InWindow,
 	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
 	ProfilerContext = PROFILER_RENDER_CONTEXT(NativeDevice, GfxDevice->GetGraphicsQueue().Get());
 
-	FGfxTextureDesc TextureDesc = {};
-	TextureDesc.Width = 16;
-	TextureDesc.Height = 16;
-	TextureDesc.Usage = EGfxTextureUsage::SharedResource;
-	TestTexture = GfxDevice->GetResourceManager()->AllocateTexture(TextureDesc);
-
-	const TVector<uint8> TextureData = {
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-	};
-	TestTexture->SetData(TextureData);
-
-	const FAnsiString ShaderSource = R"(#pragma vertex VSMain
-#pragma pixel PSMain
-
-static const float3 VERTICES[] = {
-    float3(-0.5, -0.5, 0.0),
-    float3( 0.5, -0.5, 0.0),
-    float3( 0.0,  0.5, 0.0)
-};
-
-static const float3 COLORS[] = {
-    float3(1.0, 0.0, 0.0),
-    float3(0.0, 1.0, 0.0),
-    float3(0.0, 0.0, 1.0)
-};
-
-struct VertexOut
-{
-    float4 vPosition : SV_POSITION;
-    float3 vColor : COLOR;
-};
-
-VertexOut VSMain(uint nVertexID : SV_VertexID)
-{
-    VertexOut Out = (VertexOut)0;
-
-    Out.vPosition = float4(VERTICES[nVertexID], 1.0);
-    Out.vColor = COLORS[nVertexID];
-
-    return Out;
-}
-
-float4 PSMain(VertexOut Out) : SV_Target
-{
-    return float4(Out.vColor, 1.0);
-})";
-
-	const FGfxShaderModule VertexShader = GfxDevice->GetShaderCompiler()->CompilerShader(EGfxShaderType::Vertex, ShaderSource, L"VSMain");
-	const FGfxShaderModule PixelShader = GfxDevice->GetShaderCompiler()->CompilerShader(EGfxShaderType::Pixel, ShaderSource, L"PSMain");
-
-	FGfxGraphicsPipelineDesc GraphicsPipelineDesc = {};
-	GraphicsPipelineDesc.Shaders[EGfxShaderType::Vertex] = VertexShader;
-	GraphicsPipelineDesc.Shaders[EGfxShaderType::Pixel] = PixelShader;
-	GraphicsPipelineDesc.Formats.push_back(DXGI_FORMAT_R8G8B8A8_UNORM);
-	GraphicsPipelineDesc.RootSignature = GfxDevice->CreateRootSignature();
-	GraphicsPipeline = NewRef<FGfxGraphicsPipeline>(GfxDevice, GraphicsPipelineDesc);
+	TestRenderPass = GfxDevice->CreateRenderPass<FTestRenderPass>();
+	TestRenderPass->CreateResources(GfxDevice->GetResourceManager());
 
 	ResizeDelegateHandle = Window->GetClientResizeDelegate().BindRaw(this, &FGfxSurface::OnWindowResize);
 }
@@ -116,10 +47,10 @@ FGfxSurface::~FGfxSurface()
 	Window->GetClientResizeDelegate().Unbind(ResizeDelegateHandle);
 	FlushWork();
 
-	PROFILER_DESTROY_RENDER_CONTEXT(ProfilerContext);
+	TestRenderPass->ReleaseResources(GfxDevice->GetResourceManager());
+	TestRenderPass.reset();
 
-	GraphicsPipeline.reset();
-	TestTexture.reset();
+	PROFILER_DESTROY_RENDER_CONTEXT(ProfilerContext);
 
 	Frames.clear();
 	Swapchain.reset();
@@ -166,13 +97,7 @@ void FGfxSurface::Render()
 		CommandList->ClearRenderTarget(BackBuffer, Color);
 
 		{
-			CommandList->SetPipeline(GraphicsPipeline);
-			CommandList->SetTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-			CommandList->SetViewport(Window->GetState().ClientWidth, Window->GetState().ClientHeight);
-			CommandList->SetScissor(Window->GetState().ClientWidth, Window->GetState().ClientHeight);
-
-			CommandList->DrawInstanced(3, 1);
+			TestRenderPass->Render(CommandList, BackBuffer);
 		}
 
 		CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
@@ -222,6 +147,7 @@ void FGfxSurface::ProcessResizeRequest()
 {
 	FlushWork();
 	Swapchain->Resize(RequestedResizeWidth, RequestedResizeHeight);
+	TestRenderPass->ResizeResources(GfxDevice->GetResourceManager(), RequestedResizeWidth, RequestedResizeHeight);
 	RW_LOG(Trace, "Resized surface {}x{}", RequestedResizeWidth, RequestedResizeHeight);
 	bIsResizedRequested = false;
 }
