@@ -103,6 +103,13 @@ void FGfxCommandList::CopyBufferToTexture(const TRef<IGfxResource>& Destination,
 	}
 }
 
+void FGfxCommandList::CopyTextureToTexture(const TRef<FGfxTexture>& Destination, const TRef<FGfxTexture>& Source) const
+{
+	ID3D12Resource2* NativeDestinationResource = Destination->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
+	ID3D12Resource2* NativeSourceResource = Source->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
+	CommandList->CopyResource(NativeDestinationResource, NativeSourceResource);
+}
+
 void FGfxCommandList::SetPipeline(const TRef<IGfxPipeline>& Pipeline) const
 {
 	ID3D12PipelineState* NativePipelineState = Pipeline->GetNativeObject<ID3D12PipelineState>(NativeObjectIds::D3D12_PipelineState);

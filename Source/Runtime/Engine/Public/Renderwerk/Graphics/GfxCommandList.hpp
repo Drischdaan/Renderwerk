@@ -23,6 +23,7 @@ public:
 	void ResourceBarrier(const TRef<FGfxTexture>& Texture, D3D12_RESOURCE_STATES NewResourceState) const;
 
 	void CopyBufferToTexture(const TRef<IGfxResource>& Destination, const TRef<FGfxBuffer>& Source) const;
+	void CopyTextureToTexture(const TRef<FGfxTexture>& Destination, const TRef<FGfxTexture>& Source) const;
 
 	void SetPipeline(const TRef<IGfxPipeline>& Pipeline) const;
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY Topology) const;
