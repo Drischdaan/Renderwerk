@@ -29,9 +29,6 @@ workspace(engine_name)
 		rw_macro('ENGINE_VERSION_PATCH', engine_version_patch),
 		rw_macro('ENGINE_VERSION_SUFFIX', '"' .. engine_version_suffix .. '"'),
 		rw_macro('ENGINE_FULL_VERSION', '"' .. full_version .. '"'),
-		'TRACY_ENABLE',
-		'TRACY_DELAYED_INIT',
-		'TRACY_MANUAL_LIFETIME',
 	})
 
 	rw_filter_config(build_configs.Debug)
@@ -40,6 +37,9 @@ workspace(engine_name)
 			rw_macro('LINK_MODULAR'),
 			rw_macro('ENABLE_ASSERTIONS'),
 			rw_macro('LOG_VERBOSITY', '0'),
+			'TRACY_ENABLE',
+			'TRACY_DELAYED_INIT',
+			'TRACY_MANUAL_LIFETIME',
 		})
 	rw_filter_end()
 
@@ -49,6 +49,9 @@ workspace(engine_name)
 			rw_macro('LINK_MODULAR'),
 			rw_macro('ENABLE_ASSERTIONS'),
 			rw_macro('LOG_VERBOSITY', '0'),
+			'TRACY_ENABLE',
+			'TRACY_DELAYED_INIT',
+			'TRACY_MANUAL_LIFETIME',
 		})
 	rw_filter_end()
 
@@ -56,7 +59,7 @@ workspace(engine_name)
 		defines({
 			rw_macro('LINK', '"Monolithic"'),
 			rw_macro('LINK_MONOLITHIC'),
-			-- rw_macro('LOG_VERBOSITY', '4'),
 			rw_macro('LOG_VERBOSITY', '0'),
+			'TRACY_ENABLE',
 		})
 	rw_filter_end()

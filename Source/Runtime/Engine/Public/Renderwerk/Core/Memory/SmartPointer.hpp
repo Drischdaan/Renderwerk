@@ -17,6 +17,10 @@ struct FSmartDeleter
 
 	constexpr void operator()(T* Pointer) const noexcept
 	{
+		if (Pointer == nullptr)
+		{
+			return;
+		}
 		std::destroy_at<T>(Pointer);
 		FMemory::Free(static_cast<void*>(Pointer));
 	}
@@ -36,6 +40,19 @@ template <typename T, typename... TArguments> requires std::is_constructible_v<T
 {
 	T* Pointer = static_cast<T*>(FMemory::Allocate(sizeof(T)));
 	return std::shared_ptr<T>(std::construct_at<T, TArguments...>(Pointer, std::forward<TArguments>(Arguments)...), FSmartDeleter<T>());
+}
+
+template <typename T, typename TDeleter, typename... TArguments> requires std::is_constructible_v<T, TArguments...>
+[[nodiscard]] TRef<T> NewRefWithDeleter(TDeleter Deleter, TArguments&&... Arguments)
+{
+	T* Pointer = static_cast<T*>(FMemory::Allocate(sizeof(T)));
+	return std::shared_ptr<T>(std::construct_at<T, TArguments...>(Pointer, std::forward<TArguments>(Arguments)...), Deleter);
+}
+
+template <typename T, typename TDeleter, typename... TArguments> requires std::is_constructible_v<T, TArguments...>
+[[nodiscard]] TRef<T> NewRefWithDeleter(T* Pointer, TDeleter Deleter, TArguments&&... Arguments)
+{
+	return std::shared_ptr<T>(std::construct_at<T, TArguments...>(Pointer, std::forward<TArguments>(Arguments)...), Deleter);
 }
 
 template <typename T, typename... TArguments> requires std::is_constructible_v<T, TArguments...>

@@ -38,6 +38,8 @@ void FMainThread::Initialize()
 	RW_LOG(Info, "Main thread initialized");
 	ChangeState(EEngineThreadState::Initialized);
 	ChangeState(EEngineThreadState::Running);
+	GetEngine()->UpdateThread->WaitForState(EEngineThreadState::Initialized);
+	GetEngine()->RenderThread->WaitForState(EEngineThreadState::Initialized);
 }
 
 void FMainThread::OnTick()
