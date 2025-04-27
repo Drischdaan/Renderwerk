@@ -24,6 +24,11 @@ void IGfxResource::SetResourceState(const D3D12_RESOURCE_STATES NewResourceState
 	ResourceState = NewResourceState;
 }
 
+void IGfxResource::ResetDirtyState()
+{
+	bIsDirty = false;
+}
+
 FNativeObject IGfxResource::GetRawNativeObject(const FNativeObjectId NativeObjectId)
 {
 	if (NativeObjectId == NativeObjectIds::D3D12_Resource)

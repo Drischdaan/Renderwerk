@@ -14,6 +14,8 @@ public:
 public:
 	void SetResourceState(D3D12_RESOURCE_STATES NewResourceState);
 
+	void ResetDirtyState();
+
 public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
 
@@ -34,4 +36,7 @@ protected:
 	uint64 AllocationSize = 0;
 
 	bool8 bIsDirty = false; // Indicates if the resource changed and needs uploading
+
+	friend class ENGINE_API FGfxResourceManager;
+	friend class ENGINE_API FGfxCommandList;
 };

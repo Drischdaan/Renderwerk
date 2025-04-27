@@ -78,6 +78,37 @@ FGfxTexture::~FGfxTexture()
 	}
 }
 
+void FGfxTexture::SetData(const TVector<uint8>& NewData)
+{
+	Data = NewData;
+	bIsDirty = true;
+}
+
+uint32 FGfxTexture::GetWidth() const
+{
+	return TextureDesc.Width;
+}
+
+uint32 FGfxTexture::GetHeight() const
+{
+	return TextureDesc.Height;
+}
+
+uint32 FGfxTexture::GetMipLevels() const
+{
+	return TextureDesc.MipLevels;
+}
+
+EGfxTextureUsage FGfxTexture::GetUsage() const
+{
+	return TextureDesc.Usage;
+}
+
+DXGI_FORMAT FGfxTexture::GetFormat() const
+{
+	return TextureDesc.Format;
+}
+
 void FGfxTexture::AllocateRenderTarget()
 {
 	RTVDescriptorHandle = GfxDevice->GetRTVDescriptorHeap()->Allocate();

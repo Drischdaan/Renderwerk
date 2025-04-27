@@ -28,7 +28,7 @@ struct ENGINE_API FGfxTextureDesc
 	uint32 Width = 0;
 	uint32 Height = 0;
 	DXGI_FORMAT Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	uint16 MipLevels = 0;
+	uint16 MipLevels = 1;
 	EGfxTextureDimension Dimension = EGfxTextureDimension::Texture2D;
 	D3D12_RESOURCE_STATES InitialState = D3D12_RESOURCE_STATE_COMMON;
 	FStringView DebugName;
@@ -45,6 +45,17 @@ public:
 	NON_COPY_MOVEABLE(FGfxTexture)
 
 public:
+	void SetData(const TVector<uint8>& NewData);
+
+	[[nodiscard]] uint32 GetWidth() const;
+	[[nodiscard]] uint32 GetHeight() const;
+	[[nodiscard]] uint32 GetMipLevels() const;
+	[[nodiscard]] EGfxTextureUsage GetUsage() const;
+	[[nodiscard]] DXGI_FORMAT GetFormat() const;
+
+public:
+	[[nodiscard]] const TVector<uint8>& GetData() const { return Data; }
+
 	[[nodiscard]] FGfxDescriptorHandle GetRTVDescriptorHandle() const { return RTVDescriptorHandle; }
 
 private:
@@ -52,6 +63,8 @@ private:
 
 private:
 	FGfxTextureDesc TextureDesc;
+
+	TVector<uint8> Data;
 
 	FGfxDescriptorHandle RTVDescriptorHandle;
 };
