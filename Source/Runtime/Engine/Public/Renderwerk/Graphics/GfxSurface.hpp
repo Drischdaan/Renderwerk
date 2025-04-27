@@ -51,5 +51,8 @@ private:
 
 	FProfilerRenderContext ProfilerContext = nullptr;
 
+	TRef<FGfxTexture> TestTexture;
+	TRef<FGfxGraphicsPipeline> GraphicsPipeline;
+
 	FDelegateHandle ResizeDelegateHandle;
 };
