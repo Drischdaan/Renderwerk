@@ -8,6 +8,8 @@
 #include "Renderwerk/Graphics/GfxDescriptorHeap.hpp"
 #include "Renderwerk/Graphics/GfxFence.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
+#include "Renderwerk/Graphics/GfxRootSignature.hpp"
+#include "Renderwerk/Graphics/GfxShaderCompiler.hpp"
 #include "Renderwerk/Graphics/GfxSurface.hpp"
 #include "Renderwerk/Graphics/GfxSwapchain.hpp"
 
@@ -37,11 +39,15 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	FGfxResourceManagerDesc ResourceManagerDesc = {};
 	ResourceManager = NewRef<FGfxResourceManager>(this, ResourceManagerDesc);
 
+	ShaderCompiler = NewRef<FGfxShaderCompiler>(this, GfxAdapter->GetShaderModel());
+
 	RW_LOG(Debug, "Created device ('{}') for '{}' adapter with {}", GetDebugName(), GfxAdapter->GetName(), D3DUtility::ToString(GfxAdapter->GetFeatureLevel()));
 }
 
 FGfxDevice::~FGfxDevice()
 {
+	ShaderCompiler.reset();
+	ResourceManager->ReleaseUploadRequests();
 	ResourceManager.reset();
 
 	RTVDescriptorHeap.reset();
@@ -93,6 +99,16 @@ TRef<FGfxFence> FGfxDevice::CreateFence(const FStringView& DebugName)
 TRef<FGfxSurface> FGfxDevice::CreateSurface(const TRef<FWindow>& Window, const FStringView& DebugName)
 {
 	return NewRef<FGfxSurface>(this, Window, DebugName);
+}
+
+TRef<FGfxRootSignature> FGfxDevice::CreateRootSignature(const FStringView& DebugName)
+{
+	return NewRef<FGfxRootSignature>(this, DebugName);
+}
+
+TRef<FGfxRootSignature> FGfxDevice::CreateRootSignature(const TVector<EGfxRootType>& RootTypes, size64 PushConstantSize, const FStringView& DebugName)
+{
+	return NewRef<FGfxRootSignature>(this, RootTypes, PushConstantSize, DebugName);
 }
 
 FNativeObject FGfxDevice::GetRawNativeObject(const FNativeObjectId NativeObjectId)

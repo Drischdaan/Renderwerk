@@ -2,6 +2,7 @@
 
 #include "Renderwerk/Core/CoreAPI.hpp"
 #include "Renderwerk/Core/Containers/Span.hpp"
+#include "Renderwerk/Core/Containers/Vector.hpp"
 #include "Renderwerk/Core/Memory/SmartPointer.hpp"
 #include "Renderwerk/Graphics/GfxCommon.hpp"
 
@@ -31,6 +32,9 @@ public:
 	[[nodiscard]] TRef<FGfxCommandList> CreateCommandList(D3D12_COMMAND_LIST_TYPE Type, const FStringView& DebugName = TEXT("UnnamedCommandList"));
 	[[nodiscard]] TRef<FGfxFence> CreateFence(const FStringView& DebugName = TEXT("UnnamedFence"));
 	[[nodiscard]] TRef<FGfxSurface> CreateSurface(const TRef<FWindow>& Window, const FStringView& DebugName = TEXT("UnnamedSurface"));
+	[[nodiscard]] TRef<FGfxRootSignature> CreateRootSignature(const FStringView& DebugName = TEXT("UnnamedRootSignature"));
+	[[nodiscard]] TRef<FGfxRootSignature> CreateRootSignature(const TVector<EGfxRootType>& RootTypes, size64 PushConstantSize,
+	                                                          const FStringView& DebugName = TEXT("UnnamedRootSignature"));
 
 public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
@@ -41,7 +45,9 @@ public:
 	[[nodiscard]] TComPtr<ID3D12CommandQueue> GetCopyQueue() const { return CopyQueue; }
 
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetRTVDescriptorHeap() const { return RTVDescriptorHeap; }
+
 	[[nodiscard]] TRef<FGfxResourceManager> GetResourceManager() const { return ResourceManager; }
+	[[nodiscard]] TRef<FGfxShaderCompiler> GetShaderCompiler() const { return ShaderCompiler; }
 
 private:
 	TComPtr<ID3D12CommandQueue> CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE Type) const;
@@ -60,4 +66,5 @@ private:
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
 
 	TRef<FGfxResourceManager> ResourceManager;
+	TRef<FGfxShaderCompiler> ShaderCompiler;
 };
