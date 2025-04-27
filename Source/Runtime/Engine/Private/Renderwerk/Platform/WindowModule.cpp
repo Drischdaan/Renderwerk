@@ -2,12 +2,21 @@
 
 #include "Renderwerk/Platform/WindowModule.hpp"
 
+#include "imgui.h"
+
 #include "Renderwerk/Engine/Engine.hpp"
 #include "Renderwerk/Platform/Window.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT WindowProcess(const HWND WindowHandle, const UINT Message, const WPARAM WParam, const LPARAM LParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(WindowHandle, Message, WParam, LParam))
+	{
+		return true;
+	}
+
 	FWindow* Window;
 	if (Message == WM_NCCREATE)
 	{
