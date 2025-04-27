@@ -7,6 +7,19 @@
 #include "Renderwerk/Graphics/GfxCommon.hpp"
 #include "Renderwerk/Graphics/GfxTexture.hpp"
 
+enum class ENGINE_API EGfxUploadRequestType : uint8
+{
+	Buffer = 0,
+	Texture,
+};
+
+struct ENGINE_API FGfxUploadRequest
+{
+	EGfxUploadRequestType Type;
+	TRef<IGfxResource> Resource;
+	TRef<FGfxBuffer> StagingBuffer;
+};
+
 struct ENGINE_API FGfxResourceManagerDesc
 {
 	uint64 MaxTextures = 1024;
@@ -57,8 +70,16 @@ public:
 	[[nodiscard]] TRef<FGfxTexture> AllocateTexture(const FGfxTextureDesc& TextureDesc, const FStringView& DebugName = TEXT("UnnamedTexture"));
 	void DestroyTexture(TRef<FGfxTexture>&& Texture);
 
-	[[nodiscard]] TRef<FGfxBuffer> AllocateBuffer(const FStringView& DebugName = TEXT("UnnamedBuffer"));
+	[[nodiscard]] TRef<FGfxBuffer> AllocateBuffer(EGfxBufferType Type, uint64 Size, const FStringView& DebugName = TEXT("UnnamedBuffer"));
 	void DestroyBuffer(TRef<FGfxBuffer>&& Buffer);
+
+	void CollectResourceUploads();
+
+	void QueueTextureUpload(const TRef<FGfxTexture>& Texture);
+	void QueueBufferUpload(const TRef<FGfxBuffer>& Buffer);
+
+	void FlushUploadRequests(const TRef<FGfxCommandList>& CommandList);
+	void ReleaseUploadRequests();
 
 private:
 	FGfxResourceManagerDesc ResourceManagerDesc;
@@ -68,4 +89,7 @@ private:
 
 	TPoolAllocator<FGfxBuffer> BufferPool;
 	TVector<TRef<FGfxBuffer>> Buffers;
+
+	FCriticalSection RequestSection;
+	TVector<FGfxUploadRequest> UploadRequests;
 };
