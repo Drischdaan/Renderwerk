@@ -37,6 +37,13 @@ public:
 	                                                          const FStringView& DebugName = TEXT("UnnamedRootSignature"));
 
 public:
+	template <typename T> requires std::is_base_of_v<IGfxRenderPass, T> && std::is_constructible_v<T, FGfxDevice*, FStringView>
+	[[nodiscard]] TRef<T> CreateRenderPass(const FStringView& DebugName = TEXT("UnnamedRenderPass"))
+	{
+		return NewRef<T>(this, DebugName);
+	}
+
+public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
 
 public:
