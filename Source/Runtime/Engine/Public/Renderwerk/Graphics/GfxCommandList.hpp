@@ -19,7 +19,17 @@ public:
 	void SetRenderTarget(const TRef<FGfxTexture>& Texture) const;
 	void ClearRenderTarget(const TRef<FGfxTexture>& Texture, const float32 Color[4]) const;
 
+	void ResourceBarrier(const TRef<IGfxResource>& Resource, D3D12_RESOURCE_STATES NewResourceState) const;
 	void ResourceBarrier(const TRef<FGfxTexture>& Texture, D3D12_RESOURCE_STATES NewResourceState) const;
+
+	void CopyBufferToTexture(const TRef<IGfxResource>& Destination, const TRef<FGfxBuffer>& Source) const;
+
+	void SetPipeline(const TRef<IGfxPipeline>& Pipeline) const;
+	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY Topology) const;
+	void SetViewport(uint32 Width, uint32 Height) const;
+	void SetScissor(uint32 Width, uint32 Height, uint32 Top = 0, uint32 Left = 0) const;
+
+	void DrawInstanced(uint32 VertexCount, uint32 InstanceCount, uint32 StartVertexLocation = 0, uint32 StartInstanceLocation = 0) const;
 
 public:
 	[[nodiscard]] FNativeObject GetRawNativeObject(FNativeObjectId NativeObjectId) override;
