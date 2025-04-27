@@ -8,3 +8,6 @@
 # Binary output
 Binaries/
 Intermediates/
+
+# Imgui
+imgui.ini
