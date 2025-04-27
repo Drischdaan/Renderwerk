@@ -8,6 +8,12 @@ Renderwerk is a passion project game engine built with DirectX 12. This C++ engi
 
 Since this is my hobby project, updates might be a bit slow sometimes as I work on it in my free time. I'm totally open to having other people join in and contribute! If you're into game engines and modern rendering tech, feel free to get involved.
 
+**Current Preview:**
+
+<div align="center" >
+	<img src="./Documentation/Assets/Current-Preview.png" alt="Preview" align="center" />
+</div>
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -47,7 +53,9 @@ The engine supports performance profiling through [tracy](https://github.com/wol
 
 > **Note:** _More profiler zones are added continuously to improve visibility into engine performance._
 
-<img src="./Documentation/Assets/Tracy-Example.png" alt="Tracy Example" />
+<div align="center" >
+	<img src="./Documentation/Assets/Tracy-Example.png" alt="Tracy Example"/>
+</div>
 
 ## 🔄 Project Status
 
