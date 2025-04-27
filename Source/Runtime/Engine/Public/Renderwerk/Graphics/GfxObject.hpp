@@ -81,4 +81,6 @@ namespace NativeObjectIds
 	DEFINE_NATIVE_OBJECT_ID(D3D12, CommandAllocator, 9);
 	DEFINE_NATIVE_OBJECT_ID(D3D12, CommandList, 10);
 	DEFINE_NATIVE_OBJECT_ID(D3D12, Fence, 11);
+	DEFINE_NATIVE_OBJECT_ID(D3D12, PipelineState, 12);
+	DEFINE_NATIVE_OBJECT_ID(D3D12, RootSignature, 13);
 }
