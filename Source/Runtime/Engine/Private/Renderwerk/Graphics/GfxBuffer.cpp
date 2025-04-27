@@ -3,20 +3,21 @@
 #include "Renderwerk/Graphics/GfxBuffer.hpp"
 
 #include "Renderwerk/Core/Memory/Memory.hpp"
+#include "Renderwerk/Graphics/GfxDevice.hpp"
 
-FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, const uint64 InSize)
-	: FGfxBuffer(InGfxDevice, InType, InSize, TEXT("UnnamedBuffer"))
+FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, const uint64 InDataSize, const uint32 InStride)
+	: FGfxBuffer(InGfxDevice, InType, InDataSize, InStride, TEXT("UnnamedBuffer"))
 {
 }
 
-FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, const uint64 InSize, const FStringView& InDebugName)
-	: IGfxResource(InGfxDevice, InDebugName), Type(InType)
+FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, const uint64 InDataSize, uint32 InStride, const FStringView& InDebugName)
+	: IGfxResource(InGfxDevice, InDebugName), Type(InType), DataSize(InDataSize), Stride(InStride)
 {
-	AllocationSize = InSize;
+	AllocationSize = InDataSize;
 
 	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	ResourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	ResourceDesc.Width = AllocationSize;
+	ResourceDesc.Width = DataSize;
 	ResourceDesc.Height = 1;
 	ResourceDesc.DepthOrArraySize = 1;
 	ResourceDesc.MipLevels = 1;
@@ -47,6 +48,20 @@ FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, con
 		break;
 	}
 	CreateResource(&HeapProperties);
+	Resource->SetName(GetDebugName().c_str());
+
+	if (Type == EGfxBufferType::Vertex)
+	{
+		VertexBufferView.BufferLocation = Resource->GetGPUVirtualAddress();
+		VertexBufferView.SizeInBytes = static_cast<uint32>(DataSize);
+		VertexBufferView.StrideInBytes = Stride;
+	}
+	else if (Type == EGfxBufferType::Index)
+	{
+		IndexBufferView.BufferLocation = Resource->GetGPUVirtualAddress();
+		IndexBufferView.SizeInBytes = static_cast<uint32>(DataSize);
+		IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	}
 }
 
 FGfxBuffer::~FGfxBuffer() = default;
@@ -84,15 +99,16 @@ void FGfxBuffer::Unmap(const uint32 Start, const uint32 End)
 	bIsDirty = true;
 }
 
-void FGfxBuffer::CopyMappedData(const void* Data, const size64 DataSize)
+void FGfxBuffer::CopyMappedData(void* CopyData, const size64 DataSize)
 {
 	void* MappedPointer = nullptr;
 	Map(&MappedPointer);
 	if (MappedPointer)
 	{
-		FMemory::Copy(MappedPointer, Data, DataSize);
+		FMemory::Copy(MappedPointer, CopyData, DataSize);
 	}
 	Unmap();
+	SetData(CopyData, DataSize);
 }
 
 void FGfxBuffer::SetData(void* NewData, const size64 NewSize)

@@ -22,6 +22,8 @@ FGfxResourceManager::FGfxResourceManager(FGfxDevice* InGfxDevice, const FGfxReso
 
 FGfxResourceManager::~FGfxResourceManager()
 {
+	Buffers.clear();
+	Textures.clear();
 	TexturePool.Destroy();
 }
 
@@ -47,11 +49,11 @@ void FGfxResourceManager::DestroyTexture(TRef<FGfxTexture>&& Texture)
 	}
 }
 
-TRef<FGfxBuffer> FGfxResourceManager::AllocateBuffer(EGfxBufferType Type, uint64 Size, const FStringView& DebugName)
+TRef<FGfxBuffer> FGfxResourceManager::AllocateBuffer(EGfxBufferType Type, uint64 Size, uint32 Stride, const FStringView& DebugName)
 {
 	RW_VERIFY_MSG(BufferPool.GetUsage() + 1 <= ResourceManagerDesc.MaxBuffers, "No space to allocate new texture '{}'", DebugName);
 	FGfxBuffer* BufferPointer = BufferPool.Allocate();
-	TRef<FGfxBuffer> Buffer = NewRefWithDeleter<FGfxBuffer>(BufferPointer, FGfxBufferDeleter(this), GfxDevice, Type, Size, DebugName);
+	TRef<FGfxBuffer> Buffer = NewRefWithDeleter<FGfxBuffer>(BufferPointer, FGfxBufferDeleter(this), GfxDevice, Type, Size, Stride, DebugName);
 	Buffers.push_back(Buffer);
 	return Buffer;
 }
@@ -101,7 +103,7 @@ void FGfxResourceManager::QueueTextureUpload(const TRef<FGfxTexture>& Texture)
 
 	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
 	NativeDevice->GetCopyableFootprints1(&Texture->ResourceDesc, 0, Texture->GetMipLevels(), 0, Footprints.data(), NumRows.data(), RowSizes.data(), &TotalSize);
-	Request.StagingBuffer = NewRef<FGfxBuffer>(GfxDevice, EGfxBufferType::Copy, TotalSize);
+	Request.StagingBuffer = NewRef<FGfxBuffer>(GfxDevice, EGfxBufferType::Copy, TotalSize, 0);
 
 	const uint8* Pixels = Texture->GetData().data();
 	uint8* MappedPointer = nullptr;
@@ -127,11 +129,12 @@ void FGfxResourceManager::QueueBufferUpload(const TRef<FGfxBuffer>& Buffer)
 	FGfxUploadRequest Request = {};
 	Request.Type = EGfxUploadRequestType::Buffer;
 	Request.Resource = Buffer;
-	Request.StagingBuffer = NewRef<FGfxBuffer>(GfxDevice, EGfxBufferType::Copy, Buffer->GetAllocationSize());
+	Request.StagingBuffer = NewRef<FGfxBuffer>(GfxDevice, EGfxBufferType::Copy, Buffer->GetDataSize(), Buffer->GetStride(),
+	                                           Buffer->GetDebugName() + TEXT("Staging"));
 
 	void* MappedPointer = nullptr;
 	Request.StagingBuffer->Map(&MappedPointer);
-	FMemory::Copy(MappedPointer, Buffer->GetData(), Buffer->GetAllocationSize());
+	FMemory::Copy(MappedPointer, Buffer->GetData(), Buffer->GetDataSize());
 	Request.StagingBuffer->Unmap();
 
 	FScopedLock Lock(&RequestSection);
@@ -156,7 +159,7 @@ void FGfxResourceManager::FlushUploadRequests(const TRef<FGfxCommandList>& Comma
 		case EGfxUploadRequestType::Buffer:
 			{
 				ID3D12Resource2* NativeUploadResource = UploadRequest.Resource->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
-				ID3D12Resource2* NativeStagingResource = UploadRequest.Resource->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
+				ID3D12Resource2* NativeStagingResource = UploadRequest.StagingBuffer->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
 				CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_COPY_DEST);
 				CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
 				NativeCommandList->CopyResource(NativeUploadResource, NativeStagingResource);

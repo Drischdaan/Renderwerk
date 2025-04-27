@@ -70,7 +70,7 @@ public:
 	[[nodiscard]] TRef<FGfxTexture> AllocateTexture(const FGfxTextureDesc& TextureDesc, const FStringView& DebugName = TEXT("UnnamedTexture"));
 	void DestroyTexture(TRef<FGfxTexture>&& Texture);
 
-	[[nodiscard]] TRef<FGfxBuffer> AllocateBuffer(EGfxBufferType Type, uint64 Size, const FStringView& DebugName = TEXT("UnnamedBuffer"));
+	[[nodiscard]] TRef<FGfxBuffer> AllocateBuffer(EGfxBufferType Type, uint64 Size, uint32 Stride, const FStringView& DebugName = TEXT("UnnamedBuffer"));
 	void DestroyBuffer(TRef<FGfxBuffer>&& Buffer);
 
 	void CollectResourceUploads();
