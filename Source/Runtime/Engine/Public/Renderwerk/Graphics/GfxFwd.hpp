@@ -28,3 +28,4 @@ class FGfxShaderCompiler;
 class IGfxPipeline;
 class FGfxGraphicsPipeline;
 class FGfxRootSignature;
+class IGfxRenderPass;
