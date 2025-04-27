@@ -5,6 +5,31 @@
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxRootSignature.hpp"
 
+constexpr uint32 GetDXGIFormatSize(const DXGI_FORMAT Format)
+{
+	switch (Format)
+	{
+	case DXGI_FORMAT_R32_UINT:
+	case DXGI_FORMAT_R32_SINT:
+	case DXGI_FORMAT_R32_FLOAT:
+		return 4;
+	case DXGI_FORMAT_R32G32_UINT:
+	case DXGI_FORMAT_R32G32_SINT:
+	case DXGI_FORMAT_R32G32_FLOAT:
+		return 8;
+	case DXGI_FORMAT_R32G32B32_UINT:
+	case DXGI_FORMAT_R32G32B32_SINT:
+	case DXGI_FORMAT_R32G32B32_FLOAT:
+		return 12;
+	case DXGI_FORMAT_R32G32B32A32_UINT:
+	case DXGI_FORMAT_R32G32B32A32_SINT:
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		return 16;
+	case DXGI_FORMAT_UNKNOWN:
+	default:
+		return 0;
+	}
+}
 
 FGfxGraphicsPipeline::FGfxGraphicsPipeline(FGfxDevice* InGfxDevice, const FGfxGraphicsPipelineDesc& InGraphicsPipelineDesc)
 	: FGfxGraphicsPipeline(InGfxDevice, InGraphicsPipelineDesc, TEXT("UnnamedGraphicsPipeline"))
@@ -63,6 +88,9 @@ FGfxGraphicsPipeline::FGfxGraphicsPipeline(FGfxDevice* InGfxDevice, const FGfxGr
 	PipelineStateDesc.PS.pShaderBytecode = PixelShaderModule.ByteCode.data();
 	PipelineStateDesc.PS.BytecodeLength = PixelShaderModule.ByteCode.size();
 
+	TVector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
+	// ReSharper disable once CppTooWideScope
+	TVector<FAnsiString> InputElementSemanticNames;
 	if (GraphicsPipelineDesc.bUseShaderReflection)
 	{
 		TComPtr<ID3D12ShaderReflection> VertexShaderReflection = GfxDevice->GetShaderCompiler()->CreateShaderReflection(VertexShaderModule);
@@ -70,8 +98,6 @@ FGfxGraphicsPipeline::FGfxGraphicsPipeline(FGfxDevice* InGfxDevice, const FGfxGr
 		HRESULT Result = VertexShaderReflection->GetDesc(&VertexShaderDesc);
 		RW_VERIFY_ID(Result);
 
-		TVector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
-		TVector<FAnsiString> InputElementSemanticNames(VertexShaderDesc.InputParameters);
 		InputElementDescs.reserve(VertexShaderDesc.InputParameters);
 		InputElementSemanticNames.reserve(VertexShaderDesc.InputParameters);
 
@@ -87,7 +113,7 @@ FGfxGraphicsPipeline::FGfxGraphicsPipeline(FGfxDevice* InGfxDevice, const FGfxGr
 			InputElement.SemanticName = InputElementSemanticNames.back().c_str();
 			InputElement.SemanticIndex = ParameterDesc.SemanticIndex;
 			InputElement.InputSlot = 0;
-			InputElement.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+			InputElement.AlignedByteOffset = ParameterIndex != 0 ? GetDXGIFormatSize(InputElementDescs.at(ParameterIndex - 1).Format) : 0;
 			InputElement.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 			InputElement.InstanceDataStepRate = 0;
 
