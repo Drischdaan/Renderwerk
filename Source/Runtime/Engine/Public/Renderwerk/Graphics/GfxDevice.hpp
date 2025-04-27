@@ -11,6 +11,7 @@ class FWindow;
 struct ENGINE_API FGfxDeviceDesc
 {
 	uint32 MaxRenderTargets = 25;
+	uint32 MaxShaderResources = 100;
 };
 
 class ENGINE_API FGfxDevice : public IGfxAdapterChild
@@ -37,10 +38,10 @@ public:
 	                                                          const FStringView& DebugName = TEXT("UnnamedRootSignature"));
 
 public:
-	template <typename T> requires std::is_base_of_v<IGfxRenderPass, T> && std::is_constructible_v<T, FGfxDevice*, FStringView>
-	[[nodiscard]] TRef<T> CreateRenderPass(const FStringView& DebugName = TEXT("UnnamedRenderPass"))
+	template <typename T> requires std::is_base_of_v<IGfxRenderPass, T> && std::is_constructible_v<T, FGfxDevice*>
+	[[nodiscard]] TRef<T> CreateRenderPass()
 	{
-		return NewRef<T>(this, DebugName);
+		return NewRef<T>(this);
 	}
 
 public:
@@ -52,6 +53,7 @@ public:
 	[[nodiscard]] TComPtr<ID3D12CommandQueue> GetCopyQueue() const { return CopyQueue; }
 
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetRTVDescriptorHeap() const { return RTVDescriptorHeap; }
+	[[nodiscard]] TRef<FGfxDescriptorHeap> GetSRVDescriptorHeap() const { return SRVDescriptorHeap; }
 
 	[[nodiscard]] TRef<FGfxResourceManager> GetResourceManager() const { return ResourceManager; }
 	[[nodiscard]] TRef<FGfxShaderCompiler> GetShaderCompiler() const { return ShaderCompiler; }
@@ -71,6 +73,7 @@ private:
 	TRef<FGfxFence> GraphicsWorkFence;
 
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
+	TRef<FGfxDescriptorHeap> SRVDescriptorHeap;
 
 	TRef<FGfxResourceManager> ResourceManager;
 	TRef<FGfxShaderCompiler> ShaderCompiler;

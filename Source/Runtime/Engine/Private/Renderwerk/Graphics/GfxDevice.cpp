@@ -36,6 +36,11 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	RTVHeapDesc.DescriptorCount = DeviceDesc.MaxRenderTargets;
 	RTVDescriptorHeap = CreateDescriptorHeap(RTVHeapDesc, TEXT("RTVDescriptorHeap"));
 
+	FGfxDescriptorHeapDesc SRVHeapDesc;
+	SRVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	SRVHeapDesc.DescriptorCount = DeviceDesc.MaxShaderResources;
+	SRVDescriptorHeap = CreateDescriptorHeap(SRVHeapDesc, TEXT("SRVDescriptorHeap"));
+
 	FGfxResourceManagerDesc ResourceManagerDesc = {};
 	ResourceManager = NewRef<FGfxResourceManager>(this, ResourceManagerDesc);
 
@@ -50,6 +55,7 @@ FGfxDevice::~FGfxDevice()
 	ResourceManager->ReleaseUploadRequests();
 	ResourceManager.reset();
 
+	SRVDescriptorHeap.reset();
 	RTVDescriptorHeap.reset();
 
 	GraphicsWorkFence.reset();
