@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "RenderPass/GfxImguiRenderPass.hpp"
 #include "RenderPass/TestRenderPass.hpp"
 
 #include "Renderwerk/Core/Containers/Vector.hpp"
@@ -39,6 +40,8 @@ private:
 	void OnWindowResize(uint32 Width, uint32 Height);
 	void ProcessResizeRequest();
 
+	void OnImguiRender();
+
 private:
 	TRef<FWindow> Window;
 
@@ -53,7 +56,9 @@ private:
 
 	FProfilerRenderContext ProfilerContext = nullptr;
 
-	TRef<FTestRenderPass> TestRenderPass;
+	TVector<TRef<IGfxRenderPass>> RenderPasses;
+	TMap<FString, bool8> RenderPassEnableMap;
 
 	FDelegateHandle ResizeDelegateHandle;
+	FDelegateHandle ImguiDelegateHandle;
 };

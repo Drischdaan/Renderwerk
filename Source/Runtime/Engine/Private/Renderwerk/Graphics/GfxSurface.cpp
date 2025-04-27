@@ -2,11 +2,12 @@
 
 #include "Renderwerk/Graphics/GfxSurface.hpp"
 
+#include "imgui.h"
+
 #include "Renderwerk/Graphics/GfxCommandList.hpp"
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxFence.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
-#include "Renderwerk/Graphics/GfxShaderCompiler.hpp"
 #include "Renderwerk/Graphics/GfxSwapchain.hpp"
 #include "Renderwerk/Graphics/Pipeline/GfxGraphicsPipeline.hpp"
 #include "Renderwerk/Platform/Window.hpp"
@@ -36,19 +37,29 @@ FGfxSurface::FGfxSurface(FGfxDevice* InGfxDevice, const TRef<FWindow>& InWindow,
 	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
 	ProfilerContext = PROFILER_RENDER_CONTEXT(NativeDevice, GfxDevice->GetGraphicsQueue().Get());
 
-	TestRenderPass = GfxDevice->CreateRenderPass<FTestRenderPass>();
-	TestRenderPass->CreateResources(GfxDevice->GetResourceManager());
+	RenderPasses.push_back(GfxDevice->CreateRenderPass<FTestRenderPass>());
+	RenderPasses.push_back(GfxDevice->CreateRenderPass<FGfxImguiRenderPass>());
+	for (const TRef<IGfxRenderPass>& RenderPass : RenderPasses)
+	{
+		RenderPass->CreateResources(GfxDevice->GetResourceManager());
+		RenderPassEnableMap.emplace(RenderPass->GetDebugName(), true);
+	}
 
 	ResizeDelegateHandle = Window->GetClientResizeDelegate().BindRaw(this, &FGfxSurface::OnWindowResize);
+	ImguiDelegateHandle = FGfxImguiRenderPass::GetImguiRenderDelegate().BindRaw(this, &FGfxSurface::OnImguiRender);
 }
 
 FGfxSurface::~FGfxSurface()
 {
+	FGfxImguiRenderPass::GetImguiRenderDelegate().Unbind(ImguiDelegateHandle);
 	Window->GetClientResizeDelegate().Unbind(ResizeDelegateHandle);
 	FlushWork();
 
-	TestRenderPass->ReleaseResources(GfxDevice->GetResourceManager());
-	TestRenderPass.reset();
+	for (const TRef<IGfxRenderPass>& RenderPass : RenderPasses)
+	{
+		RenderPass->ReleaseResources(GfxDevice->GetResourceManager());
+	}
+	RenderPasses.clear();
 
 	PROFILER_DESTROY_RENDER_CONTEXT(ProfilerContext);
 
@@ -97,7 +108,25 @@ void FGfxSurface::Render()
 		CommandList->ClearRenderTarget(BackBuffer, Color);
 
 		{
-			TestRenderPass->Render(CommandList, BackBuffer);
+			for (const TRef<IGfxRenderPass>& RenderPass : RenderPasses)
+			{
+				if (RenderPassEnableMap.at(RenderPass->GetDebugName()))
+				{
+					ZoneNamed(RenderPassZone, true);
+
+					FAnsiString Name = FStringUtilities::ConvertToAnsi(RenderPass->GetDebugName());
+					RenderPassZone.Name(Name.c_str(), Name.size());
+					TracyD3D12ZoneTransient(ProfilerContext, D3D12RenderPassZone,
+					                        CommandList->GetNativeObject<ID3D12GraphicsCommandList>(NativeObjectIds::D3D12_CommandList), Name.c_str(), true)
+
+					if (BackBuffer->GetResourceState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
+					{
+						CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+						CommandList->SetRenderTarget(BackBuffer);
+					}
+					RenderPass->Render(CommandList, BackBuffer);
+				}
+			}
 		}
 
 		CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
@@ -147,7 +176,24 @@ void FGfxSurface::ProcessResizeRequest()
 {
 	FlushWork();
 	Swapchain->Resize(RequestedResizeWidth, RequestedResizeHeight);
-	TestRenderPass->ResizeResources(GfxDevice->GetResourceManager(), RequestedResizeWidth, RequestedResizeHeight);
+	for (const TRef<IGfxRenderPass>& RenderPass : RenderPasses)
+	{
+		RenderPass->ResizeResources(GfxDevice->GetResourceManager(), RequestedResizeWidth, RequestedResizeHeight);
+	}
 	RW_LOG(Trace, "Resized surface {}x{}", RequestedResizeWidth, RequestedResizeHeight);
 	bIsResizedRequested = false;
+}
+
+void FGfxSurface::OnImguiRender()
+{
+	PROFILE_FUNCTION();
+	ImGui::Begin("Render Passes");
+	{
+		for (auto& Entry : RenderPassEnableMap)
+		{
+			FAnsiString Name = FStringUtilities::ConvertToAnsi(Entry.first);
+			ImGui::Checkbox(Name.c_str(), &Entry.second);
+		}
+	}
+	ImGui::End();
 }
