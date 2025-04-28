@@ -30,6 +30,7 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	CopyQueue = CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
 
 	GraphicsWorkFence = CreateFence();
+	CopyWorkFence = CreateFence();
 
 	FGfxDescriptorHeapDesc RTVHeapDesc;
 	RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -52,12 +53,12 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 FGfxDevice::~FGfxDevice()
 {
 	ShaderCompiler.reset();
-	ResourceManager->ReleaseUploadRequests();
 	ResourceManager.reset();
 
 	SRVDescriptorHeap.reset();
 	RTVDescriptorHeap.reset();
 
+	CopyWorkFence.reset();
 	GraphicsWorkFence.reset();
 
 	CopyQueue.Reset();
@@ -73,6 +74,12 @@ void FGfxDevice::FlushGraphicsQueue() const
 	RW_VERIFY(GraphicsWorkFence->Wait());
 }
 
+void FGfxDevice::FlushCopyQueue() const
+{
+	CopyWorkFence->SignalCommandQueue(CopyQueue);
+	RW_VERIFY(CopyWorkFence->Wait());
+}
+
 void FGfxDevice::SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) const
 {
 	const TArray CommandLists = {
@@ -80,6 +87,15 @@ void FGfxDevice::SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) co
 	};
 	// ReSharper disable once CppRedundantCastExpression
 	GraphicsQueue->ExecuteCommandLists(static_cast<uint32>(CommandLists.size()), CommandLists.data());
+}
+
+void FGfxDevice::SubmitCopyWork(const TRef<FGfxCommandList>& CommandList) const
+{
+	const TArray CommandLists = {
+		CommandList->GetNativeObject<ID3D12CommandList>(NativeObjectIds::D3D12_CommandList),
+	};
+	// ReSharper disable once CppRedundantCastExpression
+	CopyQueue->ExecuteCommandLists(static_cast<uint32>(CommandLists.size()), CommandLists.data());
 }
 
 TRef<FGfxDescriptorHeap> FGfxDevice::CreateDescriptorHeap(const FGfxDescriptorHeapDesc& HeapDesc, const FStringView& DebugName)

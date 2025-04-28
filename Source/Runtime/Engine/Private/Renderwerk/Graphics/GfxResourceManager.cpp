@@ -2,12 +2,62 @@
 
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
 
+#include "Renderwerk/Engine/Engine.hpp"
 #include "Renderwerk/Graphics/GfxBuffer.hpp"
 #include "Renderwerk/Graphics/GfxCommandList.hpp"
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxTexture.hpp"
+#include "Renderwerk/Job/JobModule.hpp"
 #include "Renderwerk/Platform/Threading/ScopedLock.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
+
+FGfxUploadJob::FGfxUploadJob(FGfxDevice* InGfxDevice, const TVector<FGfxUploadRequest>& InUploadRequests)
+	: GfxDevice(InGfxDevice), UploadRequests(InUploadRequests)
+{
+}
+
+void FGfxUploadJob::Execute()
+{
+	const TRef<FGfxCommandList> CommandList = GfxDevice->CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY);
+	CommandList->Open();
+	{
+		PROFILE_SCOPE("UploadResources");
+		if (UploadRequests.empty())
+		{
+			return;
+		}
+		ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
+		for (const FGfxUploadRequest& UploadRequest : UploadRequests)
+		{
+			RW_LOG(Debug, "Processing upload request for '{}'", UploadRequest.Resource->GetDebugName());
+			switch (UploadRequest.Type)
+			{
+			case EGfxUploadRequestType::Buffer:
+				{
+					ID3D12Resource2* NativeUploadResource = UploadRequest.Resource->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
+					ID3D12Resource2* NativeStagingResource = UploadRequest.StagingBuffer->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
+					CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_COPY_DEST);
+					CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
+					NativeCommandList->CopyResource(NativeUploadResource, NativeStagingResource);
+					CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COMMON);
+				}
+				break;
+			case EGfxUploadRequestType::Texture:
+				{
+					CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_COPY_DEST);
+					CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
+					CommandList->CopyBufferToTexture(UploadRequest.Resource, UploadRequest.StagingBuffer);
+					CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COMMON);
+				}
+				break;
+			}
+		}
+	}
+	CommandList->Close();
+	GfxDevice->SubmitCopyWork(CommandList);
+	GfxDevice->FlushCopyQueue();
+	UploadRequests.clear();
+}
 
 FGfxResourceManager::FGfxResourceManager(FGfxDevice* InGfxDevice, const FGfxResourceManagerDesc& InResourceManagerDesc)
 	: FGfxResourceManager(InGfxDevice, InResourceManagerDesc, TEXT("UnnamedResourceManager"))
@@ -22,7 +72,9 @@ FGfxResourceManager::FGfxResourceManager(FGfxDevice* InGfxDevice, const FGfxReso
 
 FGfxResourceManager::~FGfxResourceManager()
 {
+	UploadRequests.clear();
 	Buffers.clear();
+	BufferPool.Destroy();
 	Textures.clear();
 	TexturePool.Destroy();
 }
@@ -88,6 +140,13 @@ void FGfxResourceManager::CollectResourceUploads()
 			QueueBufferUpload(Buffer);
 		}
 	}
+
+	if (!UploadRequests.empty())
+	{
+		const TRef<FJobModule> JobModule = GetEngine()->GetModule<FJobModule>();
+		JobModule->QueueJob(NewRef<FGfxUploadJob>(GfxDevice, UploadRequests));
+		UploadRequests.clear();
+	}
 }
 
 void FGfxResourceManager::QueueTextureUpload(const TRef<FGfxTexture>& Texture)
@@ -140,47 +199,4 @@ void FGfxResourceManager::QueueBufferUpload(const TRef<FGfxBuffer>& Buffer)
 	FScopedLock Lock(&RequestSection);
 	UploadRequests.push_back(Request);
 	Buffer->ResetDirtyState();
-}
-
-void FGfxResourceManager::FlushUploadRequests(const TRef<FGfxCommandList>& CommandList)
-{
-	PROFILE_FUNCTION();
-	FScopedLock Lock(&RequestSection);
-	if (UploadRequests.empty())
-	{
-		return;
-	}
-	ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
-	for (const FGfxUploadRequest& UploadRequest : UploadRequests)
-	{
-		RW_LOG(Debug, "Processing upload request for '{}'", UploadRequest.Resource->GetDebugName());
-		switch (UploadRequest.Type)
-		{
-		case EGfxUploadRequestType::Buffer:
-			{
-				ID3D12Resource2* NativeUploadResource = UploadRequest.Resource->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
-				ID3D12Resource2* NativeStagingResource = UploadRequest.StagingBuffer->GetNativeObject<ID3D12Resource2>(NativeObjectIds::D3D12_Resource);
-				CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_COPY_DEST);
-				CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
-				NativeCommandList->CopyResource(NativeUploadResource, NativeStagingResource);
-				CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COMMON);
-				CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			}
-			break;
-		case EGfxUploadRequestType::Texture:
-			{
-				CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_COPY_DEST);
-				CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
-				CommandList->CopyBufferToTexture(UploadRequest.Resource, UploadRequest.StagingBuffer);
-				CommandList->ResourceBarrier(UploadRequest.StagingBuffer, D3D12_RESOURCE_STATE_COMMON);
-				CommandList->ResourceBarrier(UploadRequest.Resource, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
-			}
-			break;
-		}
-	}
-}
-
-void FGfxResourceManager::ReleaseUploadRequests()
-{
-	UploadRequests.clear();
 }

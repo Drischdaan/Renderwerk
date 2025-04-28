@@ -7,13 +7,13 @@ DWORD ThreadFunc(const LPVOID ThreadParameter)
 	const FThread* WindowsThread = static_cast<FThread*>(ThreadParameter);
 	if (WindowsThread->Function != nullptr)
 	{
-		return WindowsThread->Function.operator()();
+		return WindowsThread->Function.operator()(WindowsThread->UserData);
 	}
 	return 0;
 }
 
-FThread::FThread(FThreadFunc&& InFunction)
-	: Function(std::move(InFunction))
+FThread::FThread(FThreadFunc&& InFunction, void* InUserData)
+	: Function(std::move(InFunction)), UserData(InUserData)
 {
 }
 

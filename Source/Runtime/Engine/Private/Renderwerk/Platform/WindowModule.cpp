@@ -105,10 +105,7 @@ void FWindowModule::Shutdown()
 
 void FWindowModule::OnTick()
 {
-	PROFILE_FUNCTION();
 	{
-		PROFILE_SCOPE("MessageLoop");
-
 		MSG Message = {};
 		while (PeekMessage(&Message, nullptr, 0, 0, PM_REMOVE))
 		{
