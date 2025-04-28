@@ -4,6 +4,7 @@
 
 #include "Renderwerk/Core/Misc/Guid.hpp"
 #include "Renderwerk/Engine/EngineModule.hpp"
+#include "Renderwerk/Job/JobModule.hpp"
 #include "Renderwerk/Platform/WindowModule.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
 #include "Renderwerk/Renderer/RendererModule.hpp"
@@ -47,6 +48,7 @@ void FEngine::Run()
 
 	RegisterModule<FWindowModule>();
 	RegisterModule<FRendererModule>();
+	RegisterModule<FJobModule>();
 
 	MainThread = NewOwned<FMainThread>(&bShouldRun);
 	RenderThread = NewOwned<FRenderThread>(&bShouldRun);
