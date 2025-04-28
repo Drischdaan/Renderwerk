@@ -27,8 +27,15 @@ rw_module(name)
 			rw_thirdparty_module_location('DirectXShaderCompiler', 'lib'),
 		})
 
+		defines({
+			'GLM_ENABLE_EXPERIMENTAL',
+			'GLM_FORCE_LEFT_HANDED',
+			'GLM_FORCE_DEPTH_ZERO_TO_ONE',
+		})
+
 		includedirs({
 			rw_thirdparty_module_location('DirectX-Headers', 'include'),
 			rw_thirdparty_module_location('DirectXShaderCompiler', 'include'),
 			rw_thirdparty_module_location('entt', 'src'),
+			rw_thirdparty_module_location('glm'),
 		})
