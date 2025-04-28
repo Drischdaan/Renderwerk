@@ -16,8 +16,9 @@ public:
 	void Open() const;
 	void Close() const;
 
-	void SetRenderTarget(const TRef<FGfxTexture>& Texture) const;
+	void SetRenderTarget(const TRef<FGfxTexture>& Texture, const TRef<FGfxTexture>& DepthStencil = nullptr) const;
 	void ClearRenderTarget(const TRef<FGfxTexture>& Texture, const float32 Color[4]) const;
+	void ClearDepthStencil(const TRef<FGfxTexture>& Texture, float32 Depth = 1.0f, uint32 Stencil = 0) const;
 
 	void ResourceBarrier(const TRef<IGfxResource>& Resource, D3D12_RESOURCE_STATES NewResourceState) const;
 	void ResourceBarrier(const TRef<FGfxTexture>& Texture, D3D12_RESOURCE_STATES NewResourceState) const;

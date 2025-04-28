@@ -47,15 +47,29 @@ void FGfxCommandList::Close() const
 	RW_VERIFY_ID(Result);
 }
 
-void FGfxCommandList::SetRenderTarget(const TRef<FGfxTexture>& Texture) const
+void FGfxCommandList::SetRenderTarget(const TRef<FGfxTexture>& Texture, const TRef<FGfxTexture>& DepthStencil) const
 {
 	const D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle = Texture->GetRTVDescriptorHandle().GetCPUHandle();
-	CommandList->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
+	if (DepthStencil)
+	{
+		const D3D12_CPU_DESCRIPTOR_HANDLE DepthCPUHandle = DepthStencil->GetDSVDescriptorHandle().GetCPUHandle();
+		CommandList->OMSetRenderTargets(1, &CPUHandle, true, &DepthCPUHandle);
+	}
+	else
+	{
+		CommandList->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
+	}
 }
 
 void FGfxCommandList::ClearRenderTarget(const TRef<FGfxTexture>& Texture, const float32 Color[4]) const
 {
 	CommandList->ClearRenderTargetView(Texture->GetRTVDescriptorHandle().GetCPUHandle(), Color, 0, nullptr);
+}
+
+void FGfxCommandList::ClearDepthStencil(const TRef<FGfxTexture>& Texture, const float32 Depth, const uint32 Stencil) const
+{
+	constexpr D3D12_CLEAR_FLAGS ClearFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
+	CommandList->ClearDepthStencilView(Texture->GetDSVDescriptorHandle().GetCPUHandle(), ClearFlags, Depth, Stencil, 0, nullptr);
 }
 
 void FGfxCommandList::ResourceBarrier(const TRef<IGfxResource>& Resource, const D3D12_RESOURCE_STATES NewResourceState) const
