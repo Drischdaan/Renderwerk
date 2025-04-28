@@ -57,9 +57,11 @@ public:
 	[[nodiscard]] const TVector<uint8>& GetData() const { return Data; }
 
 	[[nodiscard]] FGfxDescriptorHandle GetRTVDescriptorHandle() const { return RTVDescriptorHandle; }
+	[[nodiscard]] FGfxDescriptorHandle GetDSVDescriptorHandle() const { return DSVDescriptorHandle; }
 
 private:
 	void AllocateRenderTarget();
+	void AllocateDepthStencil();
 
 private:
 	FGfxTextureDesc TextureDesc;
@@ -67,4 +69,5 @@ private:
 	TVector<uint8> Data;
 
 	FGfxDescriptorHandle RTVDescriptorHandle;
+	FGfxDescriptorHandle DSVDescriptorHandle;
 };

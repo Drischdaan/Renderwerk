@@ -68,6 +68,10 @@ FGfxTexture::FGfxTexture(FGfxDevice* InGfxDevice, const FGfxTextureDesc& InTextu
 	{
 		AllocateRenderTarget();
 	}
+	if (TextureDesc.Usage & EGfxTextureUsage::DepthTarget)
+	{
+		AllocateDepthStencil();
+	}
 }
 
 FGfxTexture::~FGfxTexture()
@@ -75,6 +79,10 @@ FGfxTexture::~FGfxTexture()
 	if (TextureDesc.Usage & EGfxTextureUsage::RenderTarget)
 	{
 		GfxDevice->GetRTVDescriptorHeap()->Free(RTVDescriptorHandle);
+	}
+	if (TextureDesc.Usage & EGfxTextureUsage::DepthTarget)
+	{
+		GfxDevice->GetDSVDescriptorHeap()->Free(DSVDescriptorHandle);
 	}
 }
 
@@ -135,4 +143,29 @@ void FGfxTexture::AllocateRenderTarget()
 
 	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
 	NativeDevice->CreateRenderTargetView(Resource.Get(), &RenderTargetViewDesc, RTVDescriptorHandle.GetCPUHandle());
+}
+
+void FGfxTexture::AllocateDepthStencil()
+{
+	DSVDescriptorHandle = GfxDevice->GetDSVDescriptorHeap()->Allocate();
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilView = {};
+	DepthStencilView.Format = TextureDesc.Format;
+
+	switch (TextureDesc.Dimension)
+	{
+	case EGfxTextureDimension::Texture1D:
+		DepthStencilView.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
+		DepthStencilView.Texture1D.MipSlice = 0;
+		break;
+	case EGfxTextureDimension::Texture2D:
+		DepthStencilView.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		DepthStencilView.Texture2D.MipSlice = 0;
+		break;
+	case EGfxTextureDimension::Texture3D:
+		break;
+	}
+
+	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
+	NativeDevice->CreateDepthStencilView(Resource.Get(), &DepthStencilView, DSVDescriptorHandle.GetCPUHandle());
 }
