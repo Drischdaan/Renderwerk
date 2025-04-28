@@ -12,6 +12,7 @@ struct ENGINE_API FGfxDeviceDesc
 {
 	uint32 MaxRenderTargets = 25;
 	uint32 MaxShaderResources = 100;
+	uint32 MaxDepthStencils = 100;
 };
 
 class ENGINE_API FGfxDevice : public IGfxAdapterChild
@@ -56,6 +57,7 @@ public:
 
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetRTVDescriptorHeap() const { return RTVDescriptorHeap; }
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetSRVDescriptorHeap() const { return SRVDescriptorHeap; }
+	[[nodiscard]] TRef<FGfxDescriptorHeap> GetDSVDescriptorHeap() const { return DSVDescriptorHeap; }
 
 	[[nodiscard]] TRef<FGfxResourceManager> GetResourceManager() const { return ResourceManager; }
 	[[nodiscard]] TRef<FGfxShaderCompiler> GetShaderCompiler() const { return ShaderCompiler; }
@@ -77,6 +79,7 @@ private:
 
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
 	TRef<FGfxDescriptorHeap> SRVDescriptorHeap;
+	TRef<FGfxDescriptorHeap> DSVDescriptorHeap;
 
 	TRef<FGfxResourceManager> ResourceManager;
 	TRef<FGfxShaderCompiler> ShaderCompiler;

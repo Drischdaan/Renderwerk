@@ -42,6 +42,11 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	SRVHeapDesc.DescriptorCount = DeviceDesc.MaxShaderResources;
 	SRVDescriptorHeap = CreateDescriptorHeap(SRVHeapDesc, TEXT("SRVDescriptorHeap"));
 
+	FGfxDescriptorHeapDesc DSVHeapDesc;
+	DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DSVHeapDesc.DescriptorCount = DeviceDesc.MaxDepthStencils;
+	DSVDescriptorHeap = CreateDescriptorHeap(DSVHeapDesc, TEXT("DSVDescriptorHeap"));
+
 	FGfxResourceManagerDesc ResourceManagerDesc = {};
 	ResourceManager = NewRef<FGfxResourceManager>(this, ResourceManagerDesc);
 
@@ -55,6 +60,7 @@ FGfxDevice::~FGfxDevice()
 	ShaderCompiler.reset();
 	ResourceManager.reset();
 
+	DSVDescriptorHeap.reset();
 	SRVDescriptorHeap.reset();
 	RTVDescriptorHeap.reset();
 
