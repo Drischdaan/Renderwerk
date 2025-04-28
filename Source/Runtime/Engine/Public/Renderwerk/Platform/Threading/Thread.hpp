@@ -8,7 +8,7 @@
 #include "Renderwerk/Core/CoreMacros.hpp"
 #include "Renderwerk/Core/PrimitiveTypes.hpp"
 
-using FThreadFunc = std::function<int32()>;
+using FThreadFunc = std::function<int32(void*)>;
 
 enum class ENGINE_API EThreadState : uint8
 {
@@ -21,17 +21,17 @@ class ENGINE_API FThread
 {
 public:
 	FThread() = default;
-	FThread(FThreadFunc&& InFunction);
+	FThread(FThreadFunc&& InFunction, void* InUserData = nullptr);
 
 	template <typename TOwner>
-	FThread(TOwner* Owner, int32 (TOwner::*InFunction)())
-		: FThread([Owner, InFunction]() -> int32 { return (Owner->*InFunction)(); })
+	FThread(TOwner* Owner, int32 (TOwner::*InFunction)(void*), void* InUserData = nullptr)
+		: FThread([Owner, InFunction](void* ThreadUserData) -> int32 { return (Owner->*InFunction)(ThreadUserData); }, InUserData)
 	{
 	}
 
 	template <typename TOwner>
-	FThread(TOwner* Owner, int32 (TOwner::*InFunction)() const)
-		: FThread([Owner, InFunction]() -> int32 { return (Owner->*InFunction)(); })
+	FThread(TOwner* Owner, int32 (TOwner::*InFunction)(void*) const, void* InUserData = nullptr)
+		: FThread([Owner, InFunction](void* ThreadUserData) -> int32 { return (Owner->*InFunction)(ThreadUserData); }, InUserData)
 	{
 	}
 
@@ -55,6 +55,8 @@ public:
 
 private:
 	FThreadFunc Function = nullptr;
+	void* UserData = nullptr;
+
 	std::atomic<EThreadState> State = EThreadState::Created;
 
 	HANDLE ThreadHandle = nullptr;
