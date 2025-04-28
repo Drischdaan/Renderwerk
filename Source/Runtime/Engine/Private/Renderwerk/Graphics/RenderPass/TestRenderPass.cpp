@@ -12,6 +12,10 @@
 #include "Renderwerk/Graphics/Pipeline/GfxGraphicsPipeline.hpp"
 #include "Renderwerk/Graphics/RenderPass/GfxImguiRenderPass.hpp"
 #include "Renderwerk/Platform/Window.hpp"
+#include "Renderwerk/Scene/Entity.hpp"
+#include "Renderwerk/Scene/Scene.hpp"
+#include "Renderwerk/Scene/SceneModule.hpp"
+#include "Renderwerk/Scene/Components/MeshComponent.hpp"
 
 FTestRenderPass::FTestRenderPass(FGfxDevice* InGfxDevice)
 	: IGfxRenderPass(InGfxDevice, TEXT("TestRenderPass"))
@@ -39,9 +43,8 @@ struct VertexOut
 
 VertexOut VSMain(VertexInput vertexInput)
 {
-	float3 inColor = vertexInput.inColor;
     float3 inPos = vertexInput.inPos;
-    float3 outColor = inColor;
+    float3 outColor = float3(vertexInput.inColor);
     float4 position = float4(inPos, 1.0f);
 
     VertexOut output;
@@ -63,43 +66,41 @@ float4 PSMain(VertexOut Out) : SV_Target
 	GraphicsPipelineDesc.Shaders[EGfxShaderType::Pixel] = PixelShader;
 	GraphicsPipelineDesc.Formats.push_back(DXGI_FORMAT_R8G8B8A8_UNORM);
 	GraphicsPipelineDesc.CullMode = EGfxCullMode::None;
+	GraphicsPipelineDesc.bHasDepth = true;
+	GraphicsPipelineDesc.bEnableDepthWrite = true;
+	GraphicsPipelineDesc.DepthOperation = EGfxDepthOperation::Less;
+	GraphicsPipelineDesc.DepthFormat = DXGI_FORMAT_D32_FLOAT;
 	GraphicsPipelineDesc.RootSignature = GfxDevice->CreateRootSignature();
 	GraphicsPipelineDesc.bUseShaderReflection = true;
 	GraphicsPipeline = NewRef<FGfxGraphicsPipeline>(GfxDevice, GraphicsPipelineDesc);
 
 	CreateRenderTarget(ResourceManager, GetEngine()->GetWindow()->GetState().ClientWidth, GetEngine()->GetWindow()->GetState().ClientHeight);
+	CreateDepthStencil(ResourceManager, GetEngine()->GetWindow()->GetState().ClientWidth, GetEngine()->GetWindow()->GetState().ClientHeight);
 
-
-	Vertices = {
-		{.Positon = {0.5f, -0.5f, 0.0f}, .Color = {1.0f, 0.0f, 0.0f}},
-		{.Positon = {-0.5f, -0.5f, 0.0f}, .Color = {0.0f, 1.0f, 0.0f}},
-		{.Positon = {0.0f, 0.5f, 0.0f}, .Color = {0.0f, 0.0f, 1.0f}}
-	};
-
-	constexpr size64 VertexSize = sizeof(FVertex);
-	const size64 Size = VertexSize * Vertices.size();
-	VertexBuffer = ResourceManager->AllocateBuffer(EGfxBufferType::Vertex, Size, VertexSize);
-	VertexBuffer->SetData(Vertices.data(), Size);
-
-	Indices = {0, 1, 2};
-	IndexBuffer = ResourceManager->AllocateBuffer(EGfxBufferType::Index, sizeof(uint32) * Indices.size(), sizeof(uint32));
-	IndexBuffer->SetData(Indices.data(), Indices.size());
-
-	TestHandle = FGfxImguiRenderPass::GetImguiRenderDelegate().BindRaw(this, &FTestRenderPass::OnImguiRender);
+	EntityDestroyDelegateHandle = FScene::GetDeleteEntityDelegate().BindRaw(this, &FTestRenderPass::OnEntityDestroy);
 }
 
 void FTestRenderPass::ResizeResources(const TRef<FGfxResourceManager>& ResourceManager, const uint32 NewWidth, const uint32 NewHeight)
 {
 	ResourceManager->DestroyTexture(std::move(RenderTarget));
+	ResourceManager->DestroyTexture(std::move(DepthStencil));
 	CreateRenderTarget(ResourceManager, NewWidth, NewHeight);
+	CreateDepthStencil(ResourceManager, NewWidth, NewHeight);
 }
 
 void FTestRenderPass::ReleaseResources(const TRef<FGfxResourceManager>& ResourceManager)
 {
-	FGfxImguiRenderPass::GetImguiRenderDelegate().Unbind(TestHandle);
+	FScene::GetDeleteEntityDelegate().Unbind(EntityDestroyDelegateHandle);
 
-	ResourceManager->DestroyBuffer(std::move(IndexBuffer));
-	ResourceManager->DestroyBuffer(std::move(VertexBuffer));
+	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
+	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent>();
+	View.each([&](FMeshComponent& MeshComponent)
+	{
+		ResourceManager->DestroyBuffer(std::move(MeshComponent.VertexBuffer));
+		ResourceManager->DestroyBuffer(std::move(MeshComponent.IndexBuffer));
+	});
+
+	ResourceManager->DestroyTexture(std::move(DepthStencil));
 	ResourceManager->DestroyTexture(std::move(RenderTarget));
 	GraphicsPipeline.reset();
 }
@@ -107,10 +108,12 @@ void FTestRenderPass::ReleaseResources(const TRef<FGfxResourceManager>& Resource
 void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRef<FGfxTexture>& BackBuffer)
 {
 	CommandList->ResourceBarrier(RenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	CommandList->SetRenderTarget(RenderTarget);
+	CommandList->ResourceBarrier(DepthStencil, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	CommandList->SetRenderTarget(RenderTarget, DepthStencil);
 
 	constexpr float32 Color[4] = {1.0f, 0.5f, 0.5f, 1.0f};
 	CommandList->ClearRenderTarget(RenderTarget, Color);
+	CommandList->ClearDepthStencil(DepthStencil);
 
 	CommandList->SetPipeline(GraphicsPipeline);
 	CommandList->SetTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -118,20 +121,39 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 	CommandList->SetViewport(RenderTarget->GetWidth(), RenderTarget->GetHeight());
 	CommandList->SetScissor(RenderTarget->GetWidth(), RenderTarget->GetHeight());
 
-	CommandList->ResourceBarrier(VertexBuffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-	CommandList->ResourceBarrier(IndexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
+	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent>();
+	View.each([&](FMeshComponent& MeshComponent)
+	{
+		if (!MeshComponent.VertexBuffer)
+		{
+			const size64 Size = sizeof(FVertex) * MeshComponent.Vertices.size();
+			MeshComponent.VertexBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Vertex, Size, sizeof(FVertex));
+			MeshComponent.VertexBuffer->SetData(MeshComponent.Vertices.data(), Size);
+		}
+		if (!MeshComponent.IndexBuffer)
+		{
+			const size64 Size = sizeof(uint32) * MeshComponent.Indices.size();
+			MeshComponent.IndexBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Index, Size, sizeof(uint32));
+			MeshComponent.IndexBuffer->SetData(MeshComponent.Indices.data(), Size);
+		}
 
-	ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
-	const D3D12_VERTEX_BUFFER_VIEW VertexBufferView = VertexBuffer->GetVertexBufferView();
-	NativeCommandList->IASetVertexBuffers(0, 1, &VertexBufferView);
+		CommandList->ResourceBarrier(MeshComponent.VertexBuffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		CommandList->ResourceBarrier(MeshComponent.IndexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-	const D3D12_INDEX_BUFFER_VIEW IndexBufferView = IndexBuffer->GetIndexBufferView();
-	NativeCommandList->IASetIndexBuffer(&IndexBufferView);
-	NativeCommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+		ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
+		const D3D12_VERTEX_BUFFER_VIEW VertexBufferView = MeshComponent.VertexBuffer->GetVertexBufferView();
+		NativeCommandList->IASetVertexBuffers(0, 1, &VertexBufferView);
 
-	CommandList->ResourceBarrier(VertexBuffer, D3D12_RESOURCE_STATE_COMMON);
-	CommandList->ResourceBarrier(IndexBuffer, D3D12_RESOURCE_STATE_COMMON);
+		const D3D12_INDEX_BUFFER_VIEW IndexBufferView = MeshComponent.IndexBuffer->GetIndexBufferView();
+		NativeCommandList->IASetIndexBuffer(&IndexBufferView);
+		NativeCommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 
+		CommandList->ResourceBarrier(MeshComponent.VertexBuffer, D3D12_RESOURCE_STATE_COMMON);
+		CommandList->ResourceBarrier(MeshComponent.IndexBuffer, D3D12_RESOURCE_STATE_COMMON);
+	});
+
+	CommandList->ResourceBarrier(DepthStencil, D3D12_RESOURCE_STATE_COMMON);
 	CommandList->ResourceBarrier(RenderTarget, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
 	CommandList->CopyTextureToTexture(BackBuffer, RenderTarget);
@@ -146,72 +168,22 @@ void FTestRenderPass::CreateRenderTarget(const TRef<FGfxResourceManager>& Resour
 	RenderTarget = ResourceManager->AllocateTexture(TextureDesc, TEXT("TestPassRenderTarget"));
 }
 
-void FTestRenderPass::OnImguiRender()
+void FTestRenderPass::CreateDepthStencil(const TRef<FGfxResourceManager>& ResourceManager, const uint32 Width, const uint32 Height)
 {
-	if (!ImGui::Begin("Vertex Editor"))
+	FGfxTextureDesc TextureDesc = {};
+	TextureDesc.Width = Width;
+	TextureDesc.Height = Height;
+	TextureDesc.Usage = EGfxTextureUsage::DepthTarget;
+	TextureDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	DepthStencil = ResourceManager->AllocateTexture(TextureDesc, TEXT("TestPassDepthStencil"));
+}
+
+void FTestRenderPass::OnEntityDestroy(FEntity& Entity) const
+{
+	if (Entity.HasComponents<FMeshComponent>())
 	{
-		ImGui::End();
-		return;
+		FMeshComponent& MeshComponent = Entity.GetComponent<FMeshComponent>();
+		GfxDevice->GetResourceManager()->DestroyBuffer(std::move(MeshComponent.VertexBuffer));
+		GfxDevice->GetResourceManager()->DestroyBuffer(std::move(MeshComponent.IndexBuffer));
 	}
-
-	if (ImGui::BeginTable("VertexTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
-	{
-		ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 30.0f);
-		ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-		ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-		ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-		ImGui::TableSetupColumn("Actions");
-		ImGui::TableHeadersRow();
-
-		for (size64 Index = 0; Index < Vertices.size(); Index++)
-		{
-			FVertex& Vertex = Vertices.at(Index);
-			ImGui::TableNextRow();
-
-			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("%zu", Index);
-
-			ImGui::TableSetColumnIndex(1);
-			ImGui::PushID(static_cast<int>(Index * 10 + 0));
-			ImGui::PushItemWidth(60.0f);
-			ImGui::DragFloat("##X", &Vertex.Positon[0], 0.01f);
-			ImGui::PopID();
-
-			ImGui::TableSetColumnIndex(2);
-			ImGui::PushID(static_cast<int>(Index * 10 + 1));
-			ImGui::PushItemWidth(60.0f);
-			ImGui::DragFloat("##Y", &Vertex.Positon[1], 0.01f);
-			ImGui::PopID();
-
-			ImGui::TableSetColumnIndex(3);
-			ImGui::PushID(static_cast<int>(Index * 10 + 2));
-			ImGui::PushItemWidth(60.0f);
-			ImGui::DragFloat("##Z", &Vertex.Positon[2], 0.01f);
-			ImGui::PopID();
-
-			ImGui::TableSetColumnIndex(4);
-			ImGui::PushID(static_cast<int>(Index * 10 + 6));
-			if (ImGui::Button("Color"))
-			{
-				ImGui::OpenPopup("ColorPicker");
-			}
-
-			if (ImGui::BeginPopup("ColorPicker"))
-			{
-				ImGui::ColorPicker3("##picker", Vertex.Color);
-				ImGui::EndPopup();
-			}
-
-			ImGui::SameLine();
-			ImGui::PopID();
-		}
-		ImGui::EndTable();
-	}
-
-	if (ImGui::Button("Apply"))
-	{
-		VertexBuffer->SetData(Vertices.data(), sizeof(FVertex) * Vertices.size());
-	}
-
-	ImGui::End();
 }

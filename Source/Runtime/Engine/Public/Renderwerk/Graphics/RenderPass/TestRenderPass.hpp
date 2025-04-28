@@ -1,14 +1,9 @@
 ﻿#pragma once
 
-#include "Renderwerk/Core/Containers/Vector.hpp"
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Graphics/RenderPass/GfxRenderPass.hpp"
 
-struct ENGINE_API FVertex
-{
-	float32 Positon[3];
-	float32 Color[3];
-};
+class FEntity;
 
 class ENGINE_API FTestRenderPass : public IGfxRenderPass
 {
@@ -27,17 +22,14 @@ public:
 
 private:
 	void CreateRenderTarget(const TRef<FGfxResourceManager>& ResourceManager, uint32 Width, uint32 Height);
+	void CreateDepthStencil(const TRef<FGfxResourceManager>& ResourceManager, uint32 Width, uint32 Height);
 
-	void OnImguiRender();
+	void OnEntityDestroy(FEntity& Entity) const;
 
 private:
 	TRef<FGfxGraphicsPipeline> GraphicsPipeline;
 	TRef<FGfxTexture> RenderTarget;
+	TRef<FGfxTexture> DepthStencil;
 
-	TVector<FVertex> Vertices;
-	TVector<uint32> Indices;
-	TRef<FGfxBuffer> VertexBuffer;
-	TRef<FGfxBuffer> IndexBuffer;
-
-	FDelegateHandle TestHandle;
+	FDelegateHandle EntityDestroyDelegateHandle;
 };
