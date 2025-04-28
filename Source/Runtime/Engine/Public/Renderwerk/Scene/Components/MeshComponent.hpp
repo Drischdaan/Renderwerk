@@ -17,4 +17,5 @@ struct ENGINE_API FMeshComponent
 	TVector<uint32> Indices;
 	TRef<FGfxBuffer> VertexBuffer;
 	TRef<FGfxBuffer> IndexBuffer;
+	TRef<FGfxBuffer> ConstantBuffer;
 };

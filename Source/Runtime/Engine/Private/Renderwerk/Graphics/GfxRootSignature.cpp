@@ -70,9 +70,7 @@ FGfxRootSignature::FGfxRootSignature(FGfxDevice* InGfxDevice, const TVector<EGfx
 	D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc = {};
 	RootSignatureDesc.NumParameters = static_cast<uint32>(Parameters.size());
 	RootSignatureDesc.pParameters = Parameters.data();
-	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-		| D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED
-		| D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
+	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 
 	TComPtr<ID3DBlob> RootSignatureBlob;
 	TComPtr<ID3DBlob> ErrorBlob;

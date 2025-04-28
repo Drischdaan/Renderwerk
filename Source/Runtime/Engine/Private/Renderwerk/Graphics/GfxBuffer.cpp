@@ -17,7 +17,14 @@ FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, con
 
 	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	ResourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	ResourceDesc.Width = DataSize;
+	if (Type == EGfxBufferType::Constant)
+	{
+		ResourceDesc.Width = (DataSize + 255) & ~255;
+	}
+	else
+	{
+		ResourceDesc.Width = DataSize;
+	}
 	ResourceDesc.Height = 1;
 	ResourceDesc.DepthOrArraySize = 1;
 	ResourceDesc.MipLevels = 1;
@@ -62,9 +69,26 @@ FGfxBuffer::FGfxBuffer(FGfxDevice* InGfxDevice, const EGfxBufferType InType, con
 		IndexBufferView.SizeInBytes = static_cast<uint32>(DataSize);
 		IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	}
+	else if (Type == EGfxBufferType::Constant)
+	{
+		SRVDescriptorHandle = GfxDevice->GetSRVDescriptorHeap()->Allocate();
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC ConstantBufferViewDesc = {};
+		ConstantBufferViewDesc.BufferLocation = Resource->GetGPUVirtualAddress();
+		ConstantBufferViewDesc.SizeInBytes = static_cast<uint32>((DataSize + 255) & ~255);
+
+		ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
+		NativeDevice->CreateConstantBufferView(&ConstantBufferViewDesc, SRVDescriptorHandle.GetCPUHandle());
+	}
 }
 
-FGfxBuffer::~FGfxBuffer() = default;
+FGfxBuffer::~FGfxBuffer()
+{
+	if (Type == EGfxBufferType::Constant)
+	{
+		GfxDevice->GetSRVDescriptorHeap()->Free(SRVDescriptorHandle);
+	}
+}
 
 void FGfxBuffer::Map(void** Pointer, const uint32 Start, const uint32 End) const
 {
@@ -96,24 +120,30 @@ void FGfxBuffer::Unmap(const uint32 Start, const uint32 End)
 	{
 		Resource->Unmap(0, nullptr);
 	}
-	bIsDirty = true;
+	if ((Type != EGfxBufferType::Constant) && (Type != EGfxBufferType::Copy))
+	{
+		bIsDirty = true;
+	}
 }
 
-void FGfxBuffer::CopyMappedData(void* CopyData, const size64 DataSize)
+void FGfxBuffer::CopyMappedData(void* CopyData, const size64 InDataSize)
 {
 	void* MappedPointer = nullptr;
 	Map(&MappedPointer);
 	if (MappedPointer)
 	{
-		FMemory::Copy(MappedPointer, CopyData, DataSize);
+		FMemory::Copy(MappedPointer, CopyData, InDataSize);
 	}
 	Unmap();
-	SetData(CopyData, DataSize);
+	SetData(CopyData, InDataSize);
 }
 
 void FGfxBuffer::SetData(void* NewData, const size64 NewSize)
 {
 	Data = NewData;
 	AllocationSize = NewSize;
-	bIsDirty = true;
+	if ((Type != EGfxBufferType::Constant) && (Type != EGfxBufferType::Copy))
+	{
+		bIsDirty = true;
+	}
 }

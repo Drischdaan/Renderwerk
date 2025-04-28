@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "GfxDescriptorHeap.hpp"
+
 #include "Renderwerk/Graphics/GfxResource.hpp"
 
 enum class ENGINE_API EGfxBufferType : uint8
@@ -35,6 +37,8 @@ public:
 	[[nodiscard]] size64 GetDataSize() const { return DataSize; }
 	[[nodiscard]] uint32 GetStride() const { return Stride; }
 
+	[[nodiscard]] FGfxDescriptorHandle GetSRVDescriptorHandle() const { return SRVDescriptorHandle; }
+
 	[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const { return VertexBufferView; }
 	[[nodiscard]] D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const { return IndexBufferView; }
 
@@ -44,6 +48,8 @@ private:
 	void* Data;
 	size64 DataSize;
 	uint32 Stride;
+
+	FGfxDescriptorHandle SRVDescriptorHandle;
 
 	D3D12_VERTEX_BUFFER_VIEW VertexBufferView = {};
 	D3D12_INDEX_BUFFER_VIEW IndexBufferView = {};

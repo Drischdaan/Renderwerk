@@ -8,14 +8,18 @@
 #include "Renderwerk/Graphics/GfxCommandList.hpp"
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
+#include "Renderwerk/Graphics/GfxRootSignature.hpp"
 #include "Renderwerk/Graphics/GfxTexture.hpp"
 #include "Renderwerk/Graphics/Pipeline/GfxGraphicsPipeline.hpp"
 #include "Renderwerk/Graphics/RenderPass/GfxImguiRenderPass.hpp"
 #include "Renderwerk/Platform/Window.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 #include "Renderwerk/Scene/Entity.hpp"
 #include "Renderwerk/Scene/Scene.hpp"
 #include "Renderwerk/Scene/SceneModule.hpp"
+#include "Renderwerk/Scene/Components/CameraComponent.hpp"
 #include "Renderwerk/Scene/Components/MeshComponent.hpp"
+#include "Renderwerk/Scene/Components/TransformComponent.hpp"
 
 FTestRenderPass::FTestRenderPass(FGfxDevice* InGfxDevice)
 	: IGfxRenderPass(InGfxDevice, TEXT("TestRenderPass"))
@@ -28,6 +32,13 @@ void FTestRenderPass::CreateResources(const TRef<FGfxResourceManager>& ResourceM
 {
 	const FAnsiString ShaderSource = R"(#pragma vertex VSMain
 #pragma pixel PSMain
+
+cbuffer cb : register(b0)
+{
+    row_major float4x4 projectionMatrix : packoffset(c0);
+    row_major float4x4 viewMatrix : packoffset(c4);
+    row_major float4x4 modelMatrix : packoffset(c8);
+};
 
 struct VertexInput
 {
@@ -45,7 +56,7 @@ VertexOut VSMain(VertexInput vertexInput)
 {
     float3 inPos = vertexInput.inPos;
     float3 outColor = float3(vertexInput.inColor);
-    float4 position = float4(inPos, 1.0f);
+    float4 position = mul(mul(mul(projectionMatrix, viewMatrix), modelMatrix), float4(inPos, 1.0f));
 
     VertexOut output;
     output.vPosition = position;
@@ -70,18 +81,49 @@ float4 PSMain(VertexOut Out) : SV_Target
 	GraphicsPipelineDesc.bEnableDepthWrite = true;
 	GraphicsPipelineDesc.DepthOperation = EGfxDepthOperation::Less;
 	GraphicsPipelineDesc.DepthFormat = DXGI_FORMAT_D32_FLOAT;
-	GraphicsPipelineDesc.RootSignature = GfxDevice->CreateRootSignature();
+
+	const TVector<EGfxRootType> RootTypes{
+		EGfxRootType::ConstantBuffer,
+	};
+	GraphicsPipelineDesc.RootSignature = GfxDevice->CreateRootSignature(RootTypes, 0);
 	GraphicsPipelineDesc.bUseShaderReflection = true;
 	GraphicsPipeline = NewRef<FGfxGraphicsPipeline>(GfxDevice, GraphicsPipelineDesc);
 
 	CreateRenderTarget(ResourceManager, GetEngine()->GetWindow()->GetState().ClientWidth, GetEngine()->GetWindow()->GetState().ClientHeight);
 	CreateDepthStencil(ResourceManager, GetEngine()->GetWindow()->GetState().ClientWidth, GetEngine()->GetWindow()->GetState().ClientHeight);
 
+	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
+
+	FCameraComponent* CameraComponent;
+	const auto View = SceneModule->GetActiveScene()->CreateView<FCameraComponent>();
+	View.each([&](FCameraComponent& TempCameraComponent)
+	{
+		if (TempCameraComponent.bIsMainCamera)
+		{
+			CameraComponent = &TempCameraComponent;
+		}
+	});
+	CameraComponent->Camera.SetSize(static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth),
+	                                static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight));
+
 	EntityDestroyDelegateHandle = FScene::GetDeleteEntityDelegate().BindRaw(this, &FTestRenderPass::OnEntityDestroy);
 }
 
 void FTestRenderPass::ResizeResources(const TRef<FGfxResourceManager>& ResourceManager, const uint32 NewWidth, const uint32 NewHeight)
 {
+	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
+
+	FCameraComponent* CameraComponent;
+	const auto View = SceneModule->GetActiveScene()->CreateView<FCameraComponent>();
+	View.each([&](FCameraComponent& TempCameraComponent)
+	{
+		if (TempCameraComponent.bIsMainCamera)
+		{
+			CameraComponent = &TempCameraComponent;
+		}
+	});
+	CameraComponent->Camera.SetSize(static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth),
+	                                static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight));
 	ResourceManager->DestroyTexture(std::move(RenderTarget));
 	ResourceManager->DestroyTexture(std::move(DepthStencil));
 	CreateRenderTarget(ResourceManager, NewWidth, NewHeight);
@@ -98,6 +140,7 @@ void FTestRenderPass::ReleaseResources(const TRef<FGfxResourceManager>& Resource
 	{
 		ResourceManager->DestroyBuffer(std::move(MeshComponent.VertexBuffer));
 		ResourceManager->DestroyBuffer(std::move(MeshComponent.IndexBuffer));
+		ResourceManager->DestroyBuffer(std::move(MeshComponent.ConstantBuffer));
 	});
 
 	ResourceManager->DestroyTexture(std::move(DepthStencil));
@@ -115,16 +158,24 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 	CommandList->ClearRenderTarget(RenderTarget, Color);
 	CommandList->ClearDepthStencil(DepthStencil);
 
+	FGfxConstantBuffer ConstantBufferValues = {};
+	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
+	ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
+
+	ID3D12DescriptorHeap* DescriptorHeaps[] = {GfxDevice->GetSRVDescriptorHeap()->GetNativeObject<ID3D12DescriptorHeap>(NativeObjectIds::D3D12_DescriptorHeap)};
+	NativeCommandList->SetDescriptorHeaps(1, DescriptorHeaps);
+
 	CommandList->SetPipeline(GraphicsPipeline);
 	CommandList->SetTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	CommandList->SetViewport(RenderTarget->GetWidth(), RenderTarget->GetHeight());
 	CommandList->SetScissor(RenderTarget->GetWidth(), RenderTarget->GetHeight());
 
-	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
-	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent>();
-	View.each([&](FMeshComponent& MeshComponent)
+	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent, const FTransformComponent>();
+	View.each([&](FMeshComponent& MeshComponent, const FTransformComponent& TransformComponent)
 	{
+		PROFILE_SCOPE("RenderMesh");
+
 		if (!MeshComponent.VertexBuffer)
 		{
 			const size64 Size = sizeof(FVertex) * MeshComponent.Vertices.size();
@@ -137,17 +188,44 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 			MeshComponent.IndexBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Index, Size, sizeof(uint32));
 			MeshComponent.IndexBuffer->SetData(MeshComponent.Indices.data(), Size);
 		}
+		if (!MeshComponent.ConstantBuffer)
+		{
+			MeshComponent.ConstantBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Constant, sizeof(FGfxConstantBuffer),
+			                                                                               sizeof(FGfxConstantBuffer));
+		}
+
+		FCameraComponent* CameraComponent;
+		FTransformComponent* CameraTransformComponent;
+		const auto CameraView = SceneModule->GetActiveScene()->CreateView<FCameraComponent, FTransformComponent>();
+		CameraView.each([&](FCameraComponent& TempCameraComponent, FTransformComponent& TempTransformComponent)
+		{
+			if (TempCameraComponent.bIsMainCamera)
+			{
+				CameraComponent = &TempCameraComponent;
+				CameraTransformComponent = &TempTransformComponent;
+			}
+		});
+		CameraComponent->Camera.Update();
+		ConstantBufferValues.ProjectionMatrix = CameraComponent->Camera.GetProjectionMatrix();
+
+		const glm::mat4 CameraTransform = CameraTransformComponent->GetTransform();
+		ConstantBufferValues.ViewMatrix = glm::inverse(CameraTransform);
+
+		ConstantBufferValues.ModelMatrix = TransformComponent.GetTransform();
+		MeshComponent.ConstantBuffer->CopyMappedData(&ConstantBufferValues, sizeof(ConstantBufferValues));
+
+		const D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle = MeshComponent.ConstantBuffer->GetSRVDescriptorHandle().GetGPUHandle();
+		NativeCommandList->SetGraphicsRootDescriptorTable(0, GPUHandle);
 
 		CommandList->ResourceBarrier(MeshComponent.VertexBuffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		CommandList->ResourceBarrier(MeshComponent.IndexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-		ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
 		const D3D12_VERTEX_BUFFER_VIEW VertexBufferView = MeshComponent.VertexBuffer->GetVertexBufferView();
 		NativeCommandList->IASetVertexBuffers(0, 1, &VertexBufferView);
 
 		const D3D12_INDEX_BUFFER_VIEW IndexBufferView = MeshComponent.IndexBuffer->GetIndexBufferView();
 		NativeCommandList->IASetIndexBuffer(&IndexBufferView);
-		NativeCommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+		NativeCommandList->DrawIndexedInstanced(static_cast<uint32>(MeshComponent.Indices.size()), 1, 0, 0, 0);
 
 		CommandList->ResourceBarrier(MeshComponent.VertexBuffer, D3D12_RESOURCE_STATE_COMMON);
 		CommandList->ResourceBarrier(MeshComponent.IndexBuffer, D3D12_RESOURCE_STATE_COMMON);

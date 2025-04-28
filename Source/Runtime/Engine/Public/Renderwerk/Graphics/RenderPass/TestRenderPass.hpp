@@ -1,9 +1,18 @@
 ﻿#pragma once
 
+#include "glm/glm.hpp"
+
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
 #include "Renderwerk/Graphics/RenderPass/GfxRenderPass.hpp"
 
 class FEntity;
+
+struct ENGINE_API FGfxConstantBuffer
+{
+	glm::mat4 ProjectionMatrix;
+	glm::mat4 ViewMatrix;
+	glm::mat4 ModelMatrix;
+};
 
 class ENGINE_API FTestRenderPass : public IGfxRenderPass
 {
