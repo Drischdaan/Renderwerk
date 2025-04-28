@@ -44,8 +44,6 @@ void FMainThread::Initialize()
 
 void FMainThread::OnTick()
 {
-	PROFILE_FUNCTION();
-
 	const TRef<FEngine> Engine = GetEngine();
 	Engine->GetMainThreadTickDelegate().Broadcast();
 

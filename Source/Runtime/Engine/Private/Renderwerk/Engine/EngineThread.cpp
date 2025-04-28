@@ -12,7 +12,7 @@ IEngineThread::IEngineThread(FString InName, TAtomic<bool8>* InShouldRun, const 
 {
 	if (!bUseExistingThread)
 	{
-		Thread = NewOwned<FThread>([&]()
+		Thread = NewOwned<FThread>([&]([[maybe_unused]] void* UserData)
 		{
 			const FAnsiString ConvertedName = FStringUtilities::ConvertToAnsi(Name);
 			const FAnsiChar* ThreadName = ConvertedName.c_str();
