@@ -19,3 +19,6 @@
 [submodule "Source/ThirdParty/entt"]
 	path = Source/ThirdParty/entt
 	url = https://github.com/skypjack/entt
+[submodule "Source/ThirdParty/glm"]
+	path = Source/ThirdParty/glm
+	url = https://github.com/g-truc/glm
