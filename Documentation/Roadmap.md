@@ -6,7 +6,6 @@ The planned features are not in any particular order and may change in the futur
 ## 📋 Planned Features
 
 - **Asset Manager**
-- **Job System (May use Fibers)**
 - **Virtualized Geometry via Meshlets**
 - **Ray Tracing**
 - **Material System**
@@ -16,7 +15,17 @@ The planned features are not in any particular order and may change in the futur
 - **Shader Hot Reloading**
 - **Particle System**
 - **Level Editor**
+- **Custom UI System (Wrapper on top of imgui or own solution?)**
+
+## 📋 Planned Refactorings
+
+- **Better Graphics Resource Management**
+- **Job Dependencies and Job Bundles**
+
+## ✅ Finished
+
+- [x] **Job System** ([Pull Request](https://github.com/Drischdaan/Renderwerk/pull/3))
 
 ## 🔄 Current Development Focus
 
-The current development focus is on establishing the core rendering engine, a multithreaded job system and asset pipeline.
+The current development focus is on establishing the core rendering engine and asset pipeline.
