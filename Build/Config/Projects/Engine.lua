@@ -30,4 +30,5 @@ rw_module(name)
 		includedirs({
 			rw_thirdparty_module_location('DirectX-Headers', 'include'),
 			rw_thirdparty_module_location('DirectXShaderCompiler', 'include'),
+			rw_thirdparty_module_location('entt', 'src'),
 		})
