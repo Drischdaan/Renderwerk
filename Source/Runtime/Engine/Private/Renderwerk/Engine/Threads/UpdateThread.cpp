@@ -36,6 +36,7 @@ void FUpdateThread::OnTick()
 
 void FUpdateThread::Shutdown()
 {
+	GetEngine()->RenderThread->WaitForState(EEngineThreadState::Exited);
 	{
 		const TVector<TRef<IEngineModule>> Modules = GetEngine()->GetModuleListByAffinity(EEngineThreadAffinity::Update);
 		for (const TRef<IEngineModule>& EngineModule : Modules)
