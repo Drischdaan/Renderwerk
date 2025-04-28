@@ -8,6 +8,7 @@
 #include "Renderwerk/Platform/WindowModule.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
 #include "Renderwerk/Renderer/RendererModule.hpp"
+#include "Renderwerk/Scene/SceneModule.hpp"
 
 TRef<FEngine> GEngine = nullptr;
 
@@ -49,6 +50,7 @@ void FEngine::Run()
 	RegisterModule<FWindowModule>();
 	RegisterModule<FRendererModule>();
 	RegisterModule<FJobModule>();
+	RegisterModule<FSceneModule>();
 
 	MainThread = NewOwned<FMainThread>(&bShouldRun);
 	RenderThread = NewOwned<FRenderThread>(&bShouldRun);
