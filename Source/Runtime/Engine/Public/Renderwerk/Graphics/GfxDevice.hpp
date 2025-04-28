@@ -25,8 +25,10 @@ public:
 
 public:
 	void FlushGraphicsQueue() const;
+	void FlushCopyQueue() const;
 
 	void SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) const;
+	void SubmitCopyWork(const TRef<FGfxCommandList>& CommandList) const;
 
 	[[nodiscard]] TRef<FGfxDescriptorHeap> CreateDescriptorHeap(const FGfxDescriptorHeapDesc& HeapDesc, const FStringView& DebugName = TEXT("UnnamedDescriptorHeap"));
 	[[nodiscard]] TRef<FGfxSwapchain> CreateSwapchain(const FGfxSwapchainDesc& SwapchainDesc, const FStringView& DebugName = TEXT("UnnamedSwapchain"));
@@ -71,6 +73,7 @@ private:
 	TComPtr<ID3D12CommandQueue> CopyQueue;
 
 	TRef<FGfxFence> GraphicsWorkFence;
+	TRef<FGfxFence> CopyWorkFence;
 
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
 	TRef<FGfxDescriptorHeap> SRVDescriptorHeap;

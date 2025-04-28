@@ -6,6 +6,7 @@
 #include "Renderwerk/Graphics/GfxBuffer.hpp"
 #include "Renderwerk/Graphics/GfxCommon.hpp"
 #include "Renderwerk/Graphics/GfxTexture.hpp"
+#include "Renderwerk/Job/Job.hpp"
 
 enum class ENGINE_API EGfxUploadRequestType : uint8
 {
@@ -24,6 +25,22 @@ struct ENGINE_API FGfxResourceManagerDesc
 {
 	uint64 MaxTextures = 1024;
 	uint64 MaxBuffers = 1024;
+};
+
+class ENGINE_API FGfxUploadJob : public IJob
+{
+public:
+	FGfxUploadJob(FGfxDevice* InGfxDevice, const TVector<FGfxUploadRequest>& InUploadRequests);
+	~FGfxUploadJob() override = default;
+
+	NON_COPY_MOVEABLE(FGfxUploadJob)
+
+public:
+	void Execute() override;
+
+private:
+	FGfxDevice* GfxDevice;
+	TVector<FGfxUploadRequest> UploadRequests;
 };
 
 class ENGINE_API FGfxResourceManager : public IGfxDeviceChild
@@ -77,9 +94,6 @@ public:
 
 	void QueueTextureUpload(const TRef<FGfxTexture>& Texture);
 	void QueueBufferUpload(const TRef<FGfxBuffer>& Buffer);
-
-	void FlushUploadRequests(const TRef<FGfxCommandList>& CommandList);
-	void ReleaseUploadRequests();
 
 private:
 	FGfxResourceManagerDesc ResourceManagerDesc;

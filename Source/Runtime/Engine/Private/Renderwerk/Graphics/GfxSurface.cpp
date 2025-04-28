@@ -4,12 +4,13 @@
 
 #include "imgui.h"
 
+#include "Renderwerk/Engine/Engine.hpp"
 #include "Renderwerk/Graphics/GfxCommandList.hpp"
 #include "Renderwerk/Graphics/GfxDevice.hpp"
 #include "Renderwerk/Graphics/GfxFence.hpp"
 #include "Renderwerk/Graphics/GfxResourceManager.hpp"
 #include "Renderwerk/Graphics/GfxSwapchain.hpp"
-#include "Renderwerk/Graphics/Pipeline/GfxGraphicsPipeline.hpp"
+#include "Renderwerk/Job/JobModule.hpp"
 #include "Renderwerk/Platform/Window.hpp"
 #include "Renderwerk/Platform/Threading/ScopedLock.hpp"
 #include "Renderwerk/Profiler/Profiler.hpp"
@@ -86,8 +87,6 @@ void FGfxSurface::Render()
 	const FGfxFrame& Frame = GetCurrentFrame();
 	RW_VERIFY(Frame.Fence->Wait());
 
-	GfxDevice->GetResourceManager()->ReleaseUploadRequests();
-
 	const TRef<FGfxTexture>& BackBuffer = Swapchain->GetBackBuffer(Swapchain->GetBackBufferIndex());
 
 	const TRef<FGfxCommandList> CommandList = Frame.CommandList;
@@ -98,7 +97,6 @@ void FGfxSurface::Render()
 		{
 			PROFILE_RENDER_SCOPE(ProfilerContext, CommandList, "ResourceUploading")
 			GfxDevice->GetResourceManager()->CollectResourceUploads();
-			GfxDevice->GetResourceManager()->FlushUploadRequests(CommandList);
 		}
 
 		CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
