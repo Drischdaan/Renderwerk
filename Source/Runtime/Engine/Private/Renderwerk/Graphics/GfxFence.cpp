@@ -3,6 +3,7 @@
 #include "Renderwerk/Graphics/GfxFence.hpp"
 
 #include "Renderwerk/Graphics/GfxDevice.hpp"
+#include "Renderwerk/Profiler/Profiler.hpp"
 
 FGfxFence::FGfxFence(FGfxDevice* InGfxDevice)
 	: FGfxFence(InGfxDevice, TEXT("UnnamedFence"))
@@ -47,6 +48,7 @@ void FGfxFence::SignalCommandQueue(const TComPtr<ID3D12CommandQueue>& CommandQue
 
 bool8 FGfxFence::Wait(const uint64 Value, const uint64 WaitTime) const
 {
+	PROFILE_FUNCTION();
 	const HRESULT Result = Fence->SetEventOnCompletion(Value, Event);
 	RW_VERIFY_ID(Result);
 	return WaitForSingleObject(Event, static_cast<DWORD>(WaitTime)) == WAIT_OBJECT_0;
