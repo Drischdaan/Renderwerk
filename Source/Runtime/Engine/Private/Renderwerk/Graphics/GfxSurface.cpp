@@ -110,13 +110,14 @@ void FGfxSurface::Render()
 			{
 				if (RenderPassEnableMap.at(RenderPass->GetDebugName()))
 				{
+#ifdef TRACY_ENABLE
 					ZoneNamed(RenderPassZone, true);
 
 					FAnsiString Name = FStringUtilities::ConvertToAnsi(RenderPass->GetDebugName());
 					RenderPassZone.Name(Name.c_str(), Name.size());
 					TracyD3D12ZoneTransient(ProfilerContext, D3D12RenderPassZone,
 					                        CommandList->GetNativeObject<ID3D12GraphicsCommandList>(NativeObjectIds::D3D12_CommandList), Name.c_str(), true)
-
+#endif
 					if (BackBuffer->GetResourceState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
 					{
 						CommandList->ResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
