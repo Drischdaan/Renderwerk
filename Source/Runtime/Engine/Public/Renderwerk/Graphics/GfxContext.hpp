@@ -7,7 +7,6 @@
 struct ENGINE_API FGfxContextDesc
 {
 	bool8 bEnableDebugLayer = false;
-	bool8 bEnableGPUValidation = false;
 };
 
 class ENGINE_API FGfxContext : public IGfxObject
@@ -31,7 +30,6 @@ private:
 	FGfxContextDesc ContextDesc;
 
 	TComPtr<IDXGIDebug1> DXGIDebug;
-	TComPtr<ID3D12Debug6> D3D12Debug;
 
 	TComPtr<IDXGIFactory7> Factory;
 };

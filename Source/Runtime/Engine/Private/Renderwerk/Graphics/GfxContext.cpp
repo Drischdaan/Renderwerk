@@ -11,21 +11,10 @@ FGfxContext::FGfxContext(const FGfxContextDesc& InContextDesc)
 	uint32 FactoryFlags = 0;
 	if (ContextDesc.bEnableDebugLayer)
 	{
-		HRESULT Result = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&DXGIDebug));
+		const HRESULT Result = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&DXGIDebug));
 		RW_VERIFY_ID(Result);
 
 		DXGIDebug->EnableLeakTrackingForThread();
-
-		Result = D3D12GetDebugInterface(IID_PPV_ARGS(&D3D12Debug));
-		RW_VERIFY_ID(Result);
-
-		D3D12Debug->EnableDebugLayer();
-		D3D12Debug->SetEnableAutoName(true);
-		if (ContextDesc.bEnableGPUValidation)
-		{
-			D3D12Debug->SetEnableGPUBasedValidation(true);
-			RW_LOG(Warning, "GPU based validation is enabled. This may impact performance");
-		}
 
 		FactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 	}
@@ -37,7 +26,6 @@ FGfxContext::FGfxContext(const FGfxContextDesc& InContextDesc)
 FGfxContext::~FGfxContext()
 {
 	Factory.Reset();
-	D3D12Debug.Reset();
 	if (ContextDesc.bEnableDebugLayer && DXGIDebug)
 	{
 		const HRESULT Result = DXGIDebug->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_ALL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
@@ -79,7 +67,6 @@ FNativeObject FGfxContext::GetRawNativeObject(const FNativeObjectId NativeObject
 	{
 	case NativeObjectIds::DXGI_Factory: return Factory.Get();
 	case NativeObjectIds::DXGI_Debug: return DXGIDebug.Get();
-	case NativeObjectIds::D3D12_Debug: return D3D12Debug.Get();
 	default:
 		break;
 	}
