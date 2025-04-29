@@ -17,7 +17,7 @@ void FMainThread::Initialize()
 {
 	PROFILE_FUNCTION();
 
-	tracy::SetThreadName("Main");
+	PROFILER_SET_THREAD_NAME("Main");
 	{
 		const TRef<FEngine> Engine = GetEngine();
 		{
@@ -31,7 +31,8 @@ void FMainThread::Initialize()
 		}
 		const TRef<FWindowModule> WindowModule = Engine->GetModule<FWindowModule>();
 
-		const FWindowDesc Description = {};
+		FWindowDesc Description = {};
+		Description.Title = FStringUtilities::Format(TEXT("{} v{} | {}"), TEXT(RW_ENGINE_NAME), TEXT(RW_ENGINE_FULL_VERSION), TEXT(RW_CONFIG));
 		Window = WindowModule->NewWindow(Description);
 		Window->Show();
 	}

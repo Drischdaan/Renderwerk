@@ -16,7 +16,7 @@ IEngineThread::IEngineThread(FString InName, TAtomic<bool8>* InShouldRun, const 
 		{
 			const FAnsiString ConvertedName = FStringUtilities::ConvertToAnsi(Name);
 			const FAnsiChar* ThreadName = ConvertedName.c_str();
-			tracy::SetThreadName(ThreadName);
+			PROFILER_SET_THREAD_NAME(ThreadName);
 			Initialize();
 			ChangeState(EEngineThreadState::Initialized);
 			ChangeState(EEngineThreadState::Running);

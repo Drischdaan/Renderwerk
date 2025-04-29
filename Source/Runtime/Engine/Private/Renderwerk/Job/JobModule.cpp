@@ -68,7 +68,7 @@ void FJobModule::Shutdown()
 
 void FJobModule::WorkerFunc()
 {
-	tracy::SetThreadNameWithHint("WorkerThread", 1);
+	PROFILER_SET_THREAD_NAME_HINT("WorkerThread", 1);
 	while (bIsRunning)
 	{
 		if (TRef<IJob> Job = GetNextJob())
