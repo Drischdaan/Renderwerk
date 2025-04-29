@@ -19,16 +19,27 @@ void FRendererModule::Initialize()
 {
 	PROFILE_FUNCTION();
 	{
-		FGfxContextDesc ContextDesc = {
+		constexpr FGfxContextDesc ContextDesc = {
+#ifdef RW_CONFIG_DEBUG
 			.bEnableDebugLayer = true,
-			.bEnableGPUValidation = true
+#else
+			.bEnableDebugLayer = false,
+#endif
 		};
 		GfxContext = NewRef<FGfxContext>(ContextDesc);
 
 		Adapter = GfxContext->GetSuitableAdapter();
 		Adapter->PrintAdapterInfo();
 
-		constexpr FGfxDeviceDesc DeviceDesc = {};
+		constexpr FGfxDeviceDesc DeviceDesc = {
+#ifdef RW_CONFIG_DEBUG
+			.bEnableDebugLayer = true,
+			.bEnableGPUValidation = true,
+#else
+			.bEnableDebugLayer = false,
+			.bEnableGPUValidation = false,
+#endif
+		};
 		Device = Adapter->CreateDevice(DeviceDesc, TEXT("MainDevice"));
 
 		Surface = Device->CreateSurface(GetEngine()->GetWindow());
