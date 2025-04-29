@@ -39,7 +39,7 @@ workspace(engine_name)
 			rw_macro('LOG_VERBOSITY', '0'),
 			'TRACY_ENABLE',
 			'TRACY_DELAYED_INIT',
-			'TRACY_MANUAL_LIFETIME',
+			'TRACY_ON_DEMAND',
 		})
 	rw_filter_end()
 
@@ -51,7 +51,7 @@ workspace(engine_name)
 			rw_macro('LOG_VERBOSITY', '0'),
 			'TRACY_ENABLE',
 			'TRACY_DELAYED_INIT',
-			'TRACY_MANUAL_LIFETIME',
+			'TRACY_ON_DEMAND',
 		})
 	rw_filter_end()
 
@@ -60,6 +60,5 @@ workspace(engine_name)
 			rw_macro('LINK', '"Monolithic"'),
 			rw_macro('LINK_MONOLITHIC'),
 			rw_macro('LOG_VERBOSITY', '0'),
-			'TRACY_ENABLE',
 		})
 	rw_filter_end()
