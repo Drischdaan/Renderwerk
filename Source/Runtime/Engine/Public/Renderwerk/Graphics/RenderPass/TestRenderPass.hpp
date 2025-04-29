@@ -7,10 +7,14 @@
 
 class FEntity;
 
-struct ENGINE_API FGfxConstantBuffer
+struct ENGINE_API FGfxCameraConstantBuffer
 {
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
+};
+
+struct ENGINE_API FGfxModelConstantBuffer
+{
 	glm::mat4 ModelMatrix;
 };
 
@@ -35,10 +39,16 @@ private:
 
 	void OnEntityDestroy(FEntity& Entity) const;
 
+	void OnImGuiRender() const;
+
 private:
 	TRef<FGfxGraphicsPipeline> GraphicsPipeline;
 	TRef<FGfxTexture> RenderTarget;
 	TRef<FGfxTexture> DepthStencil;
 
+	TRef<FGfxBuffer> CameraConstantBuffer;
+	FGfxCameraConstantBuffer CameraConstantBufferValues = {};
+
 	FDelegateHandle EntityDestroyDelegateHandle;
+	FDelegateHandle ImGuiDelegateHandle;
 };

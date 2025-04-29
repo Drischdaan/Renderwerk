@@ -37,13 +37,17 @@ cbuffer cb : register(b0)
 {
     row_major float4x4 projectionMatrix : packoffset(c0);
     row_major float4x4 viewMatrix : packoffset(c4);
-    row_major float4x4 modelMatrix : packoffset(c8);
+};
+
+cbuffer cb2 : register(b1)
+{
+    row_major float4x4 modelMatrix : packoffset(c0);
 };
 
 struct VertexInput
 {
     float3 inPos : POSITION;
-    float3 inColor : COLOR;
+    float2 inTextureCoords : COLOR;
 };
 
 struct VertexOut
@@ -55,7 +59,7 @@ struct VertexOut
 VertexOut VSMain(VertexInput vertexInput)
 {
     float3 inPos = vertexInput.inPos;
-    float3 outColor = float3(vertexInput.inColor);
+    float3 outColor = float3(vertexInput.inTextureCoords, 1.0f);
     float4 position = mul(mul(mul(projectionMatrix, viewMatrix), modelMatrix), float4(inPos, 1.0f));
 
     VertexOut output;
@@ -84,6 +88,7 @@ float4 PSMain(VertexOut Out) : SV_Target
 
 	const TVector<EGfxRootType> RootTypes{
 		EGfxRootType::ConstantBuffer,
+		EGfxRootType::ConstantBuffer,
 	};
 	GraphicsPipelineDesc.RootSignature = GfxDevice->CreateRootSignature(RootTypes, 0);
 	GraphicsPipelineDesc.bUseShaderReflection = true;
@@ -106,7 +111,10 @@ float4 PSMain(VertexOut Out) : SV_Target
 	CameraComponent->Camera.SetSize(static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientWidth),
 	                                static_cast<float32>(GetEngine()->GetWindow()->GetState().ClientHeight));
 
+	CameraConstantBuffer = ResourceManager->AllocateBuffer(EGfxBufferType::Constant, sizeof(FGfxCameraConstantBuffer), sizeof(FGfxCameraConstantBuffer));
+
 	EntityDestroyDelegateHandle = FScene::GetDeleteEntityDelegate().BindRaw(this, &FTestRenderPass::OnEntityDestroy);
+	ImGuiDelegateHandle = FGfxImguiRenderPass::GetImguiRenderDelegate().BindRaw(this, &FTestRenderPass::OnImGuiRender);
 }
 
 void FTestRenderPass::ResizeResources(const TRef<FGfxResourceManager>& ResourceManager, const uint32 NewWidth, const uint32 NewHeight)
@@ -133,6 +141,7 @@ void FTestRenderPass::ResizeResources(const TRef<FGfxResourceManager>& ResourceM
 void FTestRenderPass::ReleaseResources(const TRef<FGfxResourceManager>& ResourceManager)
 {
 	FScene::GetDeleteEntityDelegate().Unbind(EntityDestroyDelegateHandle);
+	FGfxImguiRenderPass::GetImguiRenderDelegate().Unbind(ImGuiDelegateHandle);
 
 	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
 	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent>();
@@ -143,6 +152,7 @@ void FTestRenderPass::ReleaseResources(const TRef<FGfxResourceManager>& Resource
 		ResourceManager->DestroyBuffer(std::move(MeshComponent.ConstantBuffer));
 	});
 
+	ResourceManager->DestroyBuffer(std::move(CameraConstantBuffer));
 	ResourceManager->DestroyTexture(std::move(DepthStencil));
 	ResourceManager->DestroyTexture(std::move(RenderTarget));
 	GraphicsPipeline.reset();
@@ -158,7 +168,6 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 	CommandList->ClearRenderTarget(RenderTarget, Color);
 	CommandList->ClearDepthStencil(DepthStencil);
 
-	FGfxConstantBuffer ConstantBufferValues = {};
 	const TRef<FSceneModule> SceneModule = GetEngine()->GetModule<FSceneModule>();
 	ID3D12GraphicsCommandList10* NativeCommandList = CommandList->GetNativeObject<ID3D12GraphicsCommandList10>(NativeObjectIds::D3D12_CommandList);
 
@@ -170,6 +179,27 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 
 	CommandList->SetViewport(RenderTarget->GetWidth(), RenderTarget->GetHeight());
 	CommandList->SetScissor(RenderTarget->GetWidth(), RenderTarget->GetHeight());
+
+	{
+		FCameraComponent* CameraComponent;
+		FTransformComponent* CameraTransformComponent;
+		const auto CameraView = SceneModule->GetActiveScene()->CreateView<FCameraComponent, FTransformComponent>();
+		CameraView.each([&](FCameraComponent& TempCameraComponent, FTransformComponent& TempTransformComponent)
+		{
+			if (TempCameraComponent.bIsMainCamera)
+			{
+				CameraComponent = &TempCameraComponent;
+				CameraTransformComponent = &TempTransformComponent;
+			}
+		});
+		CameraComponent->Camera.Update();
+		CameraConstantBufferValues.ProjectionMatrix = CameraComponent->Camera.GetProjectionMatrix();
+		CameraConstantBufferValues.ViewMatrix = glm::inverse(CameraTransformComponent->GetTransform());
+		CameraConstantBuffer->CopyMappedData(&CameraConstantBufferValues, sizeof(CameraConstantBufferValues));
+
+		const D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle = CameraConstantBuffer->GetSRVDescriptorHandle().GetGPUHandle();
+		NativeCommandList->SetGraphicsRootDescriptorTable(0, GPUHandle);
+	}
 
 	const auto View = SceneModule->GetActiveScene()->CreateView<FMeshComponent, const FTransformComponent>();
 	View.each([&](FMeshComponent& MeshComponent, const FTransformComponent& TransformComponent)
@@ -190,32 +220,16 @@ void FTestRenderPass::Render(const TRef<FGfxCommandList>& CommandList, const TRe
 		}
 		if (!MeshComponent.ConstantBuffer)
 		{
-			MeshComponent.ConstantBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Constant, sizeof(FGfxConstantBuffer),
-			                                                                               sizeof(FGfxConstantBuffer));
+			MeshComponent.ConstantBuffer = GfxDevice->GetResourceManager()->AllocateBuffer(EGfxBufferType::Constant, sizeof(FGfxModelConstantBuffer),
+			                                                                               sizeof(FGfxModelConstantBuffer));
 		}
 
-		FCameraComponent* CameraComponent;
-		FTransformComponent* CameraTransformComponent;
-		const auto CameraView = SceneModule->GetActiveScene()->CreateView<FCameraComponent, FTransformComponent>();
-		CameraView.each([&](FCameraComponent& TempCameraComponent, FTransformComponent& TempTransformComponent)
-		{
-			if (TempCameraComponent.bIsMainCamera)
-			{
-				CameraComponent = &TempCameraComponent;
-				CameraTransformComponent = &TempTransformComponent;
-			}
-		});
-		CameraComponent->Camera.Update();
-		ConstantBufferValues.ProjectionMatrix = CameraComponent->Camera.GetProjectionMatrix();
-
-		const glm::mat4 CameraTransform = CameraTransformComponent->GetTransform();
-		ConstantBufferValues.ViewMatrix = glm::inverse(CameraTransform);
-
-		ConstantBufferValues.ModelMatrix = TransformComponent.GetTransform();
-		MeshComponent.ConstantBuffer->CopyMappedData(&ConstantBufferValues, sizeof(ConstantBufferValues));
+		FGfxModelConstantBuffer ModelConstantBufferValues;
+		ModelConstantBufferValues.ModelMatrix = TransformComponent.GetTransform();
+		MeshComponent.ConstantBuffer->CopyMappedData(&ModelConstantBufferValues, sizeof(ModelConstantBufferValues));
 
 		const D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle = MeshComponent.ConstantBuffer->GetSRVDescriptorHandle().GetGPUHandle();
-		NativeCommandList->SetGraphicsRootDescriptorTable(0, GPUHandle);
+		NativeCommandList->SetGraphicsRootDescriptorTable(1, GPUHandle);
 
 		CommandList->ResourceBarrier(MeshComponent.VertexBuffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		CommandList->ResourceBarrier(MeshComponent.IndexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER);
@@ -242,7 +256,7 @@ void FTestRenderPass::CreateRenderTarget(const TRef<FGfxResourceManager>& Resour
 	FGfxTextureDesc TextureDesc = {};
 	TextureDesc.Width = Width;
 	TextureDesc.Height = Height;
-	TextureDesc.Usage = EGfxTextureUsage::RenderTarget;
+	TextureDesc.Usage = EGfxTextureUsage::RenderTarget | EGfxTextureUsage::SharedResource;
 	RenderTarget = ResourceManager->AllocateTexture(TextureDesc, TEXT("TestPassRenderTarget"));
 }
 
@@ -264,4 +278,16 @@ void FTestRenderPass::OnEntityDestroy(FEntity& Entity) const
 		GfxDevice->GetResourceManager()->DestroyBuffer(std::move(MeshComponent.VertexBuffer));
 		GfxDevice->GetResourceManager()->DestroyBuffer(std::move(MeshComponent.IndexBuffer));
 	}
+}
+
+void FTestRenderPass::OnImGuiRender() const
+{
+	ImGui::Begin("RenderTarget");
+	{
+		const D3D12_GPU_DESCRIPTOR_HANDLE ShaderResourceGPUHandle = RenderTarget->GetSRVDescriptorHandle().GetGPUHandle();
+		const float32 Width = static_cast<float32>(RenderTarget->GetWidth());
+		const float32 Height = static_cast<float32>(RenderTarget->GetHeight());
+		ImGui::Image(ShaderResourceGPUHandle.ptr, ImVec2(Width / 3, Height / 3));
+	}
+	ImGui::End();
 }
