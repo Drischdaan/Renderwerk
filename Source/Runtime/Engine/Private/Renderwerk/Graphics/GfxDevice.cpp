@@ -21,9 +21,41 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDeviceDesc, const FStringView& InDebugName)
 	: IGfxAdapterChild(InGfxAdapter, InDebugName), DeviceDesc(InDeviceDesc)
 {
+	if (DeviceDesc.bEnableDebugLayer)
+	{
+		HRESULT Result = D3D12GetDebugInterface(IID_PPV_ARGS(&D3D12Debug));
+		RW_VERIFY_ID(Result);
+
+		D3D12Debug->EnableDebugLayer();
+		D3D12Debug->SetEnableAutoName(true);
+		if (DeviceDesc.bEnableGPUValidation)
+		{
+			D3D12Debug->SetEnableGPUBasedValidation(true);
+			RW_LOG(Warning, "GPU based validation is enabled. This may impact performance");
+		}
+	}
+
 	IDXGIAdapter4* Adapter = GfxAdapter->GetNativeObject<IDXGIAdapter4>(NativeObjectIds::DXGI_Adapter);
 	const HRESULT Result = D3D12CreateDevice(Adapter, GfxAdapter->GetFeatureLevel(), IID_PPV_ARGS(&Device));
 	RW_VERIFY_ID(Result);
+
+	if (DeviceDesc.bEnableDebugLayer)
+	{
+		HRESULT InfoResult = Device.As(&InfoQueue);
+		RW_VERIFY_ID(InfoResult);
+
+		TVector<D3D12_MESSAGE_ID> MessageIds = {
+			D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+			D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
+		};
+
+		D3D12_INFO_QUEUE_FILTER InfoQueueFilter = {};
+		InfoQueueFilter.DenyList.NumIDs = static_cast<uint32>(MessageIds.size());
+		InfoQueueFilter.DenyList.pIDList = MessageIds.data();
+
+		InfoResult = InfoQueue->AddStorageFilterEntries(&InfoQueueFilter);
+		RW_VERIFY_ID(InfoResult);
+	}
 
 	GraphicsQueue = CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	ComputeQueue = CreateInternalCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE);
@@ -47,6 +79,11 @@ FGfxDevice::FGfxDevice(FGfxAdapter* InGfxAdapter, const FGfxDeviceDesc& InDevice
 	DSVHeapDesc.DescriptorCount = DeviceDesc.MaxDepthStencils;
 	DSVDescriptorHeap = CreateDescriptorHeap(DSVHeapDesc, TEXT("DSVDescriptorHeap"));
 
+	FGfxDescriptorHeapDesc SamplerHeapDesc;
+	SamplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	SamplerHeapDesc.DescriptorCount = DeviceDesc.MaxSamplers;
+	SamplerDescriptorHeap = CreateDescriptorHeap(SamplerHeapDesc, TEXT("SamplerDescriptorHeap"));
+
 	FGfxResourceManagerDesc ResourceManagerDesc = {};
 	ResourceManager = NewRef<FGfxResourceManager>(this, ResourceManagerDesc);
 
@@ -60,6 +97,7 @@ FGfxDevice::~FGfxDevice()
 	ShaderCompiler.reset();
 	ResourceManager.reset();
 
+	SamplerDescriptorHeap.reset();
 	DSVDescriptorHeap.reset();
 	SRVDescriptorHeap.reset();
 	RTVDescriptorHeap.reset();
@@ -71,7 +109,14 @@ FGfxDevice::~FGfxDevice()
 	ComputeQueue.Reset();
 	GraphicsQueue.Reset();
 
+	if (DeviceDesc.bEnableDebugLayer)
+	{
+		InfoQueue.Reset();
+	}
+
 	Device.Reset();
+
+	D3D12Debug.Reset();
 }
 
 void FGfxDevice::FlushGraphicsQueue() const
@@ -88,6 +133,7 @@ void FGfxDevice::FlushCopyQueue() const
 
 void FGfxDevice::SubmitGraphicsWork(const TRef<FGfxCommandList>& CommandList) const
 {
+	PROFILE_FUNCTION();
 	const TArray CommandLists = {
 		CommandList->GetNativeObject<ID3D12CommandList>(NativeObjectIds::D3D12_CommandList),
 	};
@@ -143,6 +189,7 @@ FNativeObject FGfxDevice::GetRawNativeObject(const FNativeObjectId NativeObjectI
 {
 	switch (NativeObjectId)
 	{
+	case NativeObjectIds::D3D12_Debug: return D3D12Debug.Get();
 	case NativeObjectIds::D3D12_Device: return Device.Get();
 	case NativeObjectIds::D3D12_GraphicsCommandQueue: return GraphicsQueue.Get();
 	case NativeObjectIds::D3D12_ComputeCommandQueue: return ComputeQueue.Get();

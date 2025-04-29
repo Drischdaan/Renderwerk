@@ -13,6 +13,9 @@ struct ENGINE_API FGfxDeviceDesc
 	uint32 MaxRenderTargets = 25;
 	uint32 MaxShaderResources = 100;
 	uint32 MaxDepthStencils = 100;
+	uint32 MaxSamplers = 100;
+	bool8 bEnableDebugLayer = false;
+	bool8 bEnableGPUValidation = false;
 };
 
 class ENGINE_API FGfxDevice : public IGfxAdapterChild
@@ -58,6 +61,7 @@ public:
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetRTVDescriptorHeap() const { return RTVDescriptorHeap; }
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetSRVDescriptorHeap() const { return SRVDescriptorHeap; }
 	[[nodiscard]] TRef<FGfxDescriptorHeap> GetDSVDescriptorHeap() const { return DSVDescriptorHeap; }
+	[[nodiscard]] TRef<FGfxDescriptorHeap> GetSamplerDescriptorHeap() const { return SamplerDescriptorHeap; }
 
 	[[nodiscard]] TRef<FGfxResourceManager> GetResourceManager() const { return ResourceManager; }
 	[[nodiscard]] TRef<FGfxShaderCompiler> GetShaderCompiler() const { return ShaderCompiler; }
@@ -68,7 +72,9 @@ private:
 private:
 	FGfxDeviceDesc DeviceDesc;
 
+	TComPtr<ID3D12Debug6> D3D12Debug;
 	TComPtr<ID3D12Device14> Device;
+	TComPtr<ID3D12InfoQueue1> InfoQueue;
 
 	TComPtr<ID3D12CommandQueue> GraphicsQueue;
 	TComPtr<ID3D12CommandQueue> ComputeQueue;
@@ -80,6 +86,7 @@ private:
 	TRef<FGfxDescriptorHeap> RTVDescriptorHeap;
 	TRef<FGfxDescriptorHeap> SRVDescriptorHeap;
 	TRef<FGfxDescriptorHeap> DSVDescriptorHeap;
+	TRef<FGfxDescriptorHeap> SamplerDescriptorHeap;
 
 	TRef<FGfxResourceManager> ResourceManager;
 	TRef<FGfxShaderCompiler> ShaderCompiler;
