@@ -24,19 +24,22 @@ FScene::~FScene()
 
 void FScene::Load()
 {
+	FScopedLock Lock(&RegistrySection);
 	SceneMetadataEntity = Registry.create();
 	Registry.emplace<FSceneMetadataComponent>(SceneMetadataEntity, FSceneMetadataComponent{.Name = "UnnamedScene"});
 
 	ImguiDelegateHandle = FGfxImguiRenderPass::GetImguiRenderDelegate().BindRaw(this, &FScene::OnImguiRender);
 }
 
-void FScene::Unload() const
+void FScene::Unload()
 {
+	FScopedLock Lock(&RegistrySection);
 	FGfxImguiRenderPass::GetImguiRenderDelegate().Unbind(ImguiDelegateHandle);
 }
 
 FEntity FScene::CreateEntity(const FAnsiString& Name)
 {
+	FScopedLock Lock(&RegistrySection);
 	FEntity Entity = {this, static_cast<FEntityId>(Registry.create())};
 	Entity.AddComponent<FTagComponent>(Name);
 	Entity.AddComponent<FTransformComponent>();
@@ -46,6 +49,8 @@ FEntity FScene::CreateEntity(const FAnsiString& Name)
 void FScene::DeleteEntity(FEntity& Entity)
 {
 	DeleteEntityDelegate.Broadcast(Entity);
+
+	FScopedLock Lock(&RegistrySection);
 	Registry.destroy(static_cast<entt::entity>(Entity.GetEntityId()));
 	Entity.OwnerScene = nullptr;
 	Entity.EntityId = 0;
@@ -53,13 +58,15 @@ void FScene::DeleteEntity(FEntity& Entity)
 
 FSceneMetadataComponent FScene::GetSceneMetadata()
 {
+	FScopedLock Lock(&RegistrySection);
 	return Registry.get<FSceneMetadataComponent>(SceneMetadataEntity);
 }
 
 void FScene::OnImguiRender()
 {
-	const FSceneMetadataComponent Metadata = GetSceneMetadata();
+	FScopedLock Lock(&RegistrySection);
 	{
+		const FSceneMetadataComponent Metadata = GetSceneMetadata();
 		ImGui::Begin(Metadata.Name.c_str());
 		const auto View = Registry.view<const FTagComponent, FTransformComponent>();
 		View.each([this](const entt::entity& Entity, const FTagComponent& TagComponent, FTransformComponent& TransformComponent)

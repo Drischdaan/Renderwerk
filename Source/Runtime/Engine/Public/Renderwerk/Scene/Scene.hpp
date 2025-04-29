@@ -7,6 +7,8 @@
 #include "entt/entity/registry.hpp"
 
 #include "Renderwerk/Core/Delegates/MulticastDelegate.hpp"
+#include "Renderwerk/Platform/Threading/CriticalSection.hpp"
+#include "Renderwerk/Platform/Threading/ScopedLock.hpp"
 
 class FEntity;
 
@@ -20,7 +22,7 @@ public:
 
 public:
 	void Load();
-	void Unload() const;
+	void Unload();
 
 	[[nodiscard]] FEntity CreateEntity(const FAnsiString& Name = "UnnamedEntity");
 	void DeleteEntity(FEntity& Entity);
@@ -31,6 +33,7 @@ public:
 	template <typename... TComponents>
 	[[nodiscard]] auto CreateView()
 	{
+		FScopedLock Lock(&RegistrySection);
 		return Registry.view<TComponents...>();
 	}
 
@@ -44,6 +47,7 @@ private:
 	static TMulticastDelegate<FEntity&> DeleteEntityDelegate;
 
 private:
+	FCriticalSection RegistrySection;
 	entt::registry Registry;
 	entt::entity SceneMetadataEntity = {};
 
