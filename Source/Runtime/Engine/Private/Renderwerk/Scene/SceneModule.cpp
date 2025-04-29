@@ -30,39 +30,28 @@ void FSceneModule::Initialize()
 		FMeshComponent& MeshComponent = Entity.AddComponent<FMeshComponent>();
 
 		const TVector<FVertex> Vertices = {
-			{{-1.0f, -1.0f, 0.5f}, {1.0f, 0.0f, 0.0f}}, // 0: Front bottom left (red)
-			{{1.0f, -1.0f, 0.5f}, {0.0f, 1.0f, 0.0f}}, // 1: Front bottom right (green)
-			{{-1.0f, 1.0f, 0.5f}, {0.0f, 0.0f, 1.0f}}, // 2: Front top right (blue)
-			{{1.0f, 1.0f, 0.5f}, {1.0f, 1.0f, 0.0f}}, // 3: Front top left (yellow)
-			{{-1.0f, -1.0f, -0.5f}, {1.0f, 1.0f, 0.0f}}, // 3: Front top left (yellow)
-			{{1.0f, -1.0f, -0.5f}, {1.0f, 1.0f, 0.0f}}, // 3: Front top left (yellow)
-			{{-1.0f, 1.0f, -0.5f}, {1.0f, 1.0f, 0.0f}}, // 3: Front top left (yellow)
-			{{1.0f, 1.0f, -0.5f}, {1.0f, 1.0f, 0.0f}}, // 3: Front top left (yellow)
-
+			{.Position = {-1.0f, -1.0f, 0.5f}, .TextureCoordinates = {1.0f, 0.0f}},
+			{.Position = {1.0f, -1.0f, 0.5f}, .TextureCoordinates = {0.0f, 1.0f}},
+			{.Position = {-1.0f, 1.0f, 0.5f}, .TextureCoordinates = {0.0f, 0.0f}},
+			{.Position = {1.0f, 1.0f, 0.5f}, .TextureCoordinates = {1.0f, 1.0f}},
+			{.Position = {-1.0f, -1.0f, -0.5f}, .TextureCoordinates = {1.0f, 1.0f}},
+			{.Position = {1.0f, -1.0f, -0.5f}, .TextureCoordinates = {1.0f, 1.0f}},
+			{.Position = {-1.0f, 1.0f, -0.5f}, .TextureCoordinates = {1.0f, 1.0f}},
+			{.Position = {1.0f, 1.0f, -0.5f}, .TextureCoordinates = {1.0f, 1.0f}},
 		};
 		MeshComponent.Vertices = Vertices;
 
 		const TVector<uint32> Indices = {
 			2, 6, 7,
 			2, 3, 7,
-
-			//Bottom
 			0, 4, 5,
 			0, 1, 5,
-
-			//Left
 			0, 2, 6,
 			0, 4, 6,
-
-			//Right
 			1, 3, 7,
 			1, 5, 7,
-
-			//Front
 			0, 2, 3,
 			0, 1, 3,
-
-			//Back
 			4, 6, 7,
 			4, 5, 7
 		};
@@ -73,9 +62,9 @@ void FSceneModule::Initialize()
 		FMeshComponent& MeshComponent = Entity.AddComponent<FMeshComponent>();
 
 		const TVector<FVertex> Vertices = {
-			FVertex{.Position = {0.5f, -0.5f, 0.0f}, .Color = {1.0f, 1.0f, 1.0f}},
-			FVertex{.Position = {-0.5f, -0.5f, 0.0f}, .Color = {1.0f, 1.0f, 1.0f}},
-			FVertex{.Position = {0.0f, 0.5f, 0.0f}, .Color = {1.0f, 1.0f, 1.0f}},
+			FVertex{.Position = {0.5f, -0.5f, 0.0f}, .TextureCoordinates = {1.0f, 1.0f}},
+			FVertex{.Position = {-0.5f, -0.5f, 0.0f}, .TextureCoordinates = {1.0f, 1.0f}},
+			FVertex{.Position = {0.0f, 0.5f, 0.0f}, .TextureCoordinates = {1.0f, 1.0f}},
 		};
 		MeshComponent.Vertices = Vertices;
 
