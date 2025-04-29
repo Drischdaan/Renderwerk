@@ -58,10 +58,12 @@ public:
 
 	[[nodiscard]] FGfxDescriptorHandle GetRTVDescriptorHandle() const { return RTVDescriptorHandle; }
 	[[nodiscard]] FGfxDescriptorHandle GetDSVDescriptorHandle() const { return DSVDescriptorHandle; }
+	[[nodiscard]] FGfxDescriptorHandle GetSRVDescriptorHandle() const { return SRVDescriptorHandle; }
 
 private:
 	void AllocateRenderTarget();
 	void AllocateDepthStencil();
+	void AllocateSharedSource();
 
 private:
 	FGfxTextureDesc TextureDesc;
@@ -70,4 +72,5 @@ private:
 
 	FGfxDescriptorHandle RTVDescriptorHandle;
 	FGfxDescriptorHandle DSVDescriptorHandle;
+	FGfxDescriptorHandle SRVDescriptorHandle;
 };

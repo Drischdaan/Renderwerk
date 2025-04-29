@@ -72,6 +72,10 @@ FGfxTexture::FGfxTexture(FGfxDevice* InGfxDevice, const FGfxTextureDesc& InTextu
 	{
 		AllocateDepthStencil();
 	}
+	if (TextureDesc.Usage & EGfxTextureUsage::SharedResource)
+	{
+		AllocateSharedSource();
+	}
 }
 
 FGfxTexture::~FGfxTexture()
@@ -83,6 +87,10 @@ FGfxTexture::~FGfxTexture()
 	if (TextureDesc.Usage & EGfxTextureUsage::DepthTarget)
 	{
 		GfxDevice->GetDSVDescriptorHeap()->Free(DSVDescriptorHandle);
+	}
+	if (TextureDesc.Usage & EGfxTextureUsage::SharedResource)
+	{
+		GfxDevice->GetSRVDescriptorHeap()->Free(SRVDescriptorHandle);
 	}
 }
 
@@ -149,23 +157,54 @@ void FGfxTexture::AllocateDepthStencil()
 {
 	DSVDescriptorHandle = GfxDevice->GetDSVDescriptorHeap()->Allocate();
 
-	D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilView = {};
-	DepthStencilView.Format = TextureDesc.Format;
+	D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilViewDesc = {};
+	DepthStencilViewDesc.Format = TextureDesc.Format;
 
 	switch (TextureDesc.Dimension)
 	{
 	case EGfxTextureDimension::Texture1D:
-		DepthStencilView.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
-		DepthStencilView.Texture1D.MipSlice = 0;
+		DepthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
+		DepthStencilViewDesc.Texture1D.MipSlice = 0;
 		break;
 	case EGfxTextureDimension::Texture2D:
-		DepthStencilView.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		DepthStencilView.Texture2D.MipSlice = 0;
+		DepthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		DepthStencilViewDesc.Texture2D.MipSlice = 0;
 		break;
 	case EGfxTextureDimension::Texture3D:
 		break;
 	}
 
 	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
-	NativeDevice->CreateDepthStencilView(Resource.Get(), &DepthStencilView, DSVDescriptorHandle.GetCPUHandle());
+	NativeDevice->CreateDepthStencilView(Resource.Get(), &DepthStencilViewDesc, DSVDescriptorHandle.GetCPUHandle());
+}
+
+void FGfxTexture::AllocateSharedSource()
+{
+	SRVDescriptorHandle = GfxDevice->GetSRVDescriptorHeap()->Allocate();
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc = {};
+	ShaderResourceViewDesc.Format = TextureDesc.Format;
+	ShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	switch (TextureDesc.Dimension)
+	{
+	case EGfxTextureDimension::Texture1D:
+		ShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+		ShaderResourceViewDesc.Texture1D.MipLevels = TextureDesc.MipLevels;
+		ShaderResourceViewDesc.Texture1D.MostDetailedMip = 0;
+		break;
+	case EGfxTextureDimension::Texture2D:
+		ShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		ShaderResourceViewDesc.Texture2D.MipLevels = TextureDesc.MipLevels;
+		ShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		break;
+	case EGfxTextureDimension::Texture3D:
+		ShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		ShaderResourceViewDesc.Texture3D.MipLevels = TextureDesc.MipLevels;
+		ShaderResourceViewDesc.Texture3D.MostDetailedMip = 0;
+		break;
+	}
+
+	ID3D12Device14* NativeDevice = GfxDevice->GetNativeObject<ID3D12Device14>(NativeObjectIds::D3D12_Device);
+	NativeDevice->CreateShaderResourceView(Resource.Get(), &ShaderResourceViewDesc, SRVDescriptorHandle.GetCPUHandle());
 }
