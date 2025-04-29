@@ -57,7 +57,7 @@ private:
 
 		void operator()(FGfxTexture* Texture) const
 		{
-			ResourceManager->TexturePool.Free(Texture);
+			ResourceManager->TexturePool.DestroyInstance(Texture);
 		}
 	};
 
@@ -72,7 +72,7 @@ private:
 
 		void operator()(FGfxBuffer* Buffer) const
 		{
-			ResourceManager->BufferPool.Free(Buffer);
+			ResourceManager->BufferPool.DestroyInstance(Buffer);
 		}
 	};
 
