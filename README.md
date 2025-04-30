@@ -14,6 +14,10 @@ Since this is my hobby project, updates might be a bit slow sometimes as I work 
 	<img src="./Documentation/Assets/Current-Preview.png" alt="Preview" align="center" />
 </div>
 
+## 🔄 Project Status
+
+Renderwerk is under active development. Check the [roadmap](./Documentation/Roadmap.md) for upcoming features.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -57,13 +61,22 @@ The engine supports performance profiling through [tracy](https://github.com/wol
 	<img src="./Documentation/Assets/Tracy-Example.png" alt="Tracy Example"/>
 </div>
 
-## 🔄 Project Status
-
-Renderwerk is under active development. Check the [roadmap](./Documentation/Roadmap.md) for upcoming features.
-
 ## 🤝 Contributing
 
-Contributions are welcome! Please read the [contributing guidelines](./Documentation/Contributing.md) before submitting pull requests. I am also activly searching for people that want to help develop Renderwerk. Feel free to contact me.
+Contributions are welcome! Please read the [contributing guidelines](./Documentation/Contributing.md) before submitting pull requests. I am also actively searching for people that want to help develop Renderwerk. Feel free to contact me.
+
+## 🔗 Dependencies
+
+- [assimp](https://github.com/assimp/assimp)
+- [Catch2](https://github.com/catchorg/Catch2)
+- [DirectX-Headers](https://github.com/microsoft/DirectX-Headers)
+- [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompiler)
+- [entt](https://github.com/skypjack/entt)
+- [glm](https://github.com/g-truc/glm)
+- [imgui](https://github.com/ocornut/imgui)
+- [mimalloc](https://github.com/microsoft/mimalloc)
+- [spdlog](https://github.com/gabime/spdlog)
+- [tracy](https://github.com/wolfpld/tracy)
 
 ## 📄 License
 
