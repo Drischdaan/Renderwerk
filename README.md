@@ -2,9 +2,9 @@
 
 <img src="./Documentation/Assets/Banner.svg" alt="Renderwerk Engine Banner" />
 
-## A Modern DirectX 12 Game Engine
+## A Modern Game Engine
 
-Renderwerk is a passion project game engine built with DirectX 12. This C++ engine aims to implement advanced rendering techniques including virtualized geometry via mesh shaders and hardware-accelerated ray tracing for physically-based lighting.
+Renderwerk is a passion project game engine built with DirectX 12 and Vulkan. This C++ engine aims to implement advanced rendering techniques including virtualized geometry via mesh shaders and hardware-accelerated ray tracing for physically-based lighting.
 
 Since this is my hobby project, updates might be a bit slow sometimes as I work on it in my free time. I'm totally open to having other people join in and contribute! If you're into game engines and modern rendering tech, feel free to get involved.
 
@@ -26,7 +26,7 @@ Renderwerk is under active development. Check the [roadmap](./Documentation/Road
 
 - Windows 11
 - Visual Studio 2022 or Jetbrains Rider
-- DirectX 12 Compatible GPU
+- DirectX 12 and/or Vulkan Compatible GPU
 - Latest Windows 11 SDK
 
 ### Setting up the project
