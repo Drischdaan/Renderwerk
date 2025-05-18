@@ -112,6 +112,58 @@ public:
 		return false;
 	}
 
+	void Resize(const size64 NewCapacity)
+	{
+		if (NewCapacity <= Capacity)
+		{
+			// No need to resize when the new capacity is lower or the same as the current.
+			// Shrinking would invalidate allocated objects
+			return;
+		}
+
+		FBlock* NewMemoryBlock = static_cast<FBlock*>(FMemory::Allocate(sizeof(FBlock) * NewCapacity));
+		for (size64 Index = 0; Index < Capacity; ++Index)
+		{
+			FMemory::Copy(&NewMemoryBlock[Index], &MemoryBlock[Index], sizeof(FBlock));
+		}
+
+		if (NextFreeBlock == nullptr)
+		{
+			NextFreeBlock = &NewMemoryBlock[Capacity];
+			for (size64 Index = Capacity; Index < NewCapacity - 1; ++Index)
+			{
+				NewMemoryBlock[Index].Next = &NewMemoryBlock[Index + 1];
+			}
+			NewMemoryBlock[NewCapacity - 1].Next = nullptr;
+		}
+		else
+		{
+			FBlock** CurrentPtr = &NextFreeBlock;
+			while (*CurrentPtr != nullptr)
+			{
+				*CurrentPtr = &NewMemoryBlock[*CurrentPtr - MemoryBlock];
+				CurrentPtr = &((*CurrentPtr)->Next);
+			}
+			FBlock* LastFreeBlock = nullptr;
+			FBlock* CurrentFreeBlock = NextFreeBlock;
+			while (CurrentFreeBlock != nullptr)
+			{
+				LastFreeBlock = CurrentFreeBlock;
+				CurrentFreeBlock = CurrentFreeBlock->Next;
+			}
+
+			LastFreeBlock->Next = &NewMemoryBlock[Capacity];
+			for (size64 Index = Capacity; Index < NewCapacity - 1; ++Index)
+			{
+				NewMemoryBlock[Index].Next = &NewMemoryBlock[Index + 1];
+			}
+			NewMemoryBlock[NewCapacity - 1].Next = nullptr;
+		}
+		FMemory::Free(static_cast<void*>(MemoryBlock));
+		MemoryBlock = NewMemoryBlock;
+		Capacity = NewCapacity;
+	}
+
 public:
 	[[nodiscard]] size64 GetCapacity() const { return Capacity; }
 	[[nodiscard]] size64 GetUsage() const { return Usage; }
